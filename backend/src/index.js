@@ -35,8 +35,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// TODO: Importar y usar rutas
-// import authRoutes from './routes/auth.routes.js';
+// Importar rutas
+import authRoutes from './routes/auth.routes.js';
 // import appointmentRoutes from './routes/appointment.routes.js';
 // import professionalRoutes from './routes/professional.routes.js';
 // import serviceRoutes from './routes/service.routes.js';
@@ -44,7 +44,8 @@ app.get('/api/health', (req, res) => {
 // import blockerRoutes from './routes/blocker.routes.js';
 // import technicalNoteRoutes from './routes/technicalNote.routes.js';
 
-// app.use('/api/auth', authRoutes);
+// Rutas de la API
+app.use('/api/auth', authRoutes);
 // app.use('/api/appointments', appointmentRoutes);
 // app.use('/api/professionals', professionalRoutes);
 // app.use('/api/services', serviceRoutes);
