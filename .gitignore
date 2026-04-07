@@ -1,0 +1,45 @@
+# ========================
+# Dependencias
+# ========================
+node_modules/
+
+# ========================
+# Entornos y Secretos
+# ========================
+.env
+.env.*
+!.env.example
+
+# ========================
+# Builds y Logs
+# ========================
+dist/
+build/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ========================
+# Sistema Operativo y Editores
+# ========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ========================
+# Obsidian / Kanvas
+# ========================
+# Ignoramos el estado local del espacio de trabajo para evitar conflictos entre tú y tu compañero.
+# Mantenemos el resto de .obsidian para que él también tenga el plugin Canvas Watcher configurado.
+.obsidian/workspace
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/backlink-cache
+
+# ========================
+# Archivos Temporales
+# ========================
+batch.json
+__pycache__/
