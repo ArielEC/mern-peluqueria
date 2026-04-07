@@ -1,0 +1,53 @@
+% !TEX root = ../proyect.tex
+
+\chapter{Conclusiones}\label{cap:conclusiones}
+
+\section{Objetivos Alcanzados}
+
+El desarrollo de este proyecto ha permitido alcanzar los objetivos planteados inicialmente:
+
+Se ha dise\~nado e implementado una base de datos relacional completa que modela todas las entidades del dominio de negocio: clientes, profesionales, servicios, citas y configuraciones. El esquema garantiza la integridad referencial y evita inconsistencias mediante el uso de restricciones, triggers y procedimientos almacenados.
+
+Se ha desarrollado un portal p\'ublico de reservas funcional que permite a los clientes consultar el cat\'alogo de servicios, visualizar la disponibilidad en tiempo real y realizar reservas de forma aut\'onoma las 24 horas del d\'ia.
+
+Se ha implementado un panel de administraci\'on que proporciona a los gestores del negocio las herramientas necesarias para el control total de la agenda, incluyendo un calendario visual, fichas de cliente con historial t\'ecnico, y gesti\'on de horarios.
+
+El sistema garantiza la imposibilidad de solapamiento de citas mediante validaciones implementadas tanto a nivel de base de datos como de aplicaci\'on, cumpliendo con uno de los requisitos m\'as cr\'iticos del proyecto.
+
+\section{Conocimientos Aplicados}
+
+Este proyecto ha permitido aplicar de forma pr\'actica los conocimientos adquiridos en la asignatura de Complementos de Bases de Datos, especialmente en las siguientes \'areas:
+
+\begin{itemize}
+    \item Modelado conceptual mediante diagramas entidad-relaci\'on.
+    \item Transformaci\'on del modelo conceptual al modelo l\'ogico relacional.
+    \item Normalizaci\'on de esquemas relacionales.
+    \item Implementaci\'on de restricciones de integridad.
+    \item Desarrollo de triggers y procedimientos almacenados.
+    \item Optimizaci\'on de consultas mediante \'indices.
+\end{itemize}
+
+\section{Dificultades Encontradas}
+
+Durante el desarrollo se han encontrado algunas dificultades que han requerido especial atenci\'on:
+
+La gesti\'on de zonas horarias y la representaci\'on correcta de fechas y horas ha supuesto un reto, especialmente para garantizar la coherencia entre el almacenamiento en base de datos y la visualizaci\'on en la interfaz de usuario.
+
+La validaci\'on de solapamientos de citas considerando la duraci\'on variable de los servicios ha requerido un dise\~no cuidadoso de las consultas y los triggers asociados.
+
+\section{L\'ineas de Trabajo Futuro}
+
+El sistema desarrollado sienta las bases para futuras ampliaciones que podr\'ian aumentar su valor:
+
+\begin{itemize}
+    \item Implementaci\'on de un sistema de notificaciones (email o SMS) para recordar citas a los clientes.
+    \item Integraci\'on con pasarelas de pago para permitir el cobro anticipado de reservas.
+    \item Desarrollo de un m\'odulo de estad\'isticas y reporting para analizar el rendimiento del negocio.
+    \item Creaci\'on de una aplicaci\'on m\'ovil nativa para mejorar la experiencia de usuario.
+    \item Soporte para m\'ultiples profesionales con agendas independientes.
+\end{itemize}
+
+\section{Valoraci\'on Personal}
+
+Este proyecto ha supuesto una experiencia muy enriquecedora, ya que nos ha permitido abordar un problema real y cercano, desarrollando una soluci\'on completa desde el an\'alisis de requisitos hasta la implementaci\'on. El hecho de que el sistema est\'e destinado a ser utilizado en un negocio familiar ha a\~nadido una motivaci\'on extra y ha permitido obtener retroalimentaci\'on directa de los usuarios finales durante el desarrollo.
+
