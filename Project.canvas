@@ -1,6 +1,51 @@
 {
 	"nodes": [
 		{
+			"id": "group-setupi",
+			"type": "group",
+			"x": 0,
+			"y": 0,
+			"width": 380,
+			"height": 940,
+			"label": "Setup Inicial"
+		},
+		{
+			"id": "group-fronte",
+			"type": "group",
+			"x": 1320,
+			"y": 0,
+			"width": 380,
+			"height": 760,
+			"label": "Frontend Cliente"
+		},
+		{
+			"id": "group-basede",
+			"type": "group",
+			"x": 440,
+			"y": 0,
+			"width": 380,
+			"height": 700,
+			"label": "Base de Datos y Auth"
+		},
+		{
+			"id": "group-apibac",
+			"type": "group",
+			"x": 880,
+			"y": 0,
+			"width": 380,
+			"height": 700,
+			"label": "API Backend"
+		},
+		{
+			"id": "group-panela",
+			"type": "group",
+			"x": 1760,
+			"y": 0,
+			"width": 380,
+			"height": 700,
+			"label": "Panel Administracion"
+		},
+		{
 			"id": "canvas-errors",
 			"type": "text",
 			"text": "## Errors\n✓ None",
@@ -31,51 +76,6 @@
 			"color": "3"
 		},
 		{
-			"id": "group-setupi",
-			"type": "group",
-			"x": 0,
-			"y": 0,
-			"width": 380,
-			"height": 940,
-			"label": "Setup Inicial"
-		},
-		{
-			"id": "group-basede",
-			"type": "group",
-			"x": 440,
-			"y": 0,
-			"width": 380,
-			"height": 700,
-			"label": "Base de Datos y Auth"
-		},
-		{
-			"id": "group-apibac",
-			"type": "group",
-			"x": 880,
-			"y": 0,
-			"width": 380,
-			"height": 700,
-			"label": "API Backend"
-		},
-		{
-			"id": "group-fronte",
-			"type": "group",
-			"x": 1320,
-			"y": 0,
-			"width": 380,
-			"height": 760,
-			"label": "Frontend Cliente"
-		},
-		{
-			"id": "group-panela",
-			"type": "group",
-			"x": 1760,
-			"y": 0,
-			"width": 380,
-			"height": 700,
-			"label": "Panel Administracion"
-		},
-		{
 			"id": "097de31a",
 			"type": "text",
 			"text": "## SI-01 Inicializar backend Node/Express\nCrear estructura de carpetas, package.json con dependencias (express, mongoose, cors, dotenv, bcryptjs, jsonwebtoken, zod, express-rate-limit)",
@@ -83,17 +83,17 @@
 			"y": 40,
 			"width": 280,
 			"height": 160,
-			"color": "6"
+			"color": "5"
 		},
 		{
 			"id": "308febfe",
 			"type": "text",
-			"text": "## SI-02 Configurar MongoDB\nConexiÃ³n con Mongoose, archivo de configuraciÃ³n db.js, variables de entorno en .env",
+			"text": "## SI-02 Configurar MongoDB\nConexión con Mongoose, archivo de configuración db.js, variables de entorno en .env",
 			"x": 20,
 			"y": 220,
 			"width": 280,
 			"height": 160,
-			"color": "6"
+			"color": "0"
 		},
 		{
 			"id": "c2f6e9a9",
@@ -103,7 +103,7 @@
 			"y": 400,
 			"width": 280,
 			"height": 160,
-			"color": "6"
+			"color": "5"
 		},
 		{
 			"id": "a4c53602",
@@ -113,7 +113,7 @@
 			"y": 580,
 			"width": 280,
 			"height": 160,
-			"color": "6"
+			"color": "0"
 		},
 		{
 			"id": "48e39f24",
@@ -128,7 +128,7 @@
 		{
 			"id": "bebe0cff",
 			"type": "text",
-			"text": "## BDD-01 Modelos Mongoose\nCrear esquemas: User, Professional (con horarios por dÃ­a), Service (con profesionalesCapaces), Appointment, Settings, Blocker, TechnicalNote. Validaciones con Zod.",
+			"text": "## BDD-01 Modelos Mongoose\nCrear esquemas: User, Professional (con horarios por dí­a), Service (con profesionalesCapaces), Appointment, Settings, Blocker, TechnicalNote. Validaciones con Zod.",
 			"x": 460,
 			"y": 40,
 			"width": 280,
@@ -168,11 +168,11 @@
 		{
 			"id": "e13cb034",
 			"type": "text",
-			"text": "## AB-03 Endpoints Citas y Overbooking\nGET /appointments (usuario o admin), POST /appointments (asignaciÃ³n automÃ¡tica), DELETE /appointments/:id (cancelar con validaciÃ³n horasMinimasCancelacion), flag forceOverbook para admin",
+			"text": "## AB-03 Endpoints Citas y Overbooking\nGET /appointments (usuario o admin), POST /appointments (asignación automática), DELETE /appointments/:id (cancelar con validación horasMinimasCancelacion), flag forceOverbook para admin",
 			"x": 900,
 			"y": 400,
 			"width": 280,
-			"height": 160,
+			"height": 274,
 			"color": "6"
 		},
 		{
