@@ -3,10 +3,40 @@ import Blocker from '../models/Blocker.js';
 import Professional from '../models/Professional.js';
 import Service from '../models/Service.js';
 import Settings from '../models/Settings.js';
-import { verificarDisponibilidadSlot, encontrarProfesionalDisponible } from '../services/availability.service.js';
+import {
+  verificarDisponibilidadSlot,
+  encontrarProfesionalDisponible,
+  calcularOcupacionOperativa,
+  construirMensajeRedondeoDuracion
+} from '../services/availability.service.js';
 import { createAppointmentSchema, updateAppointmentSchema, cancelAppointmentSchema } from '../validators/appointment.validator.js';
 
 const MAX_REINTENTOS_TRANSACCION = 3;
+
+const construirPoliticaDuracion = (ocupacion) => ({
+  ...ocupacion,
+  mensaje: construirMensajeRedondeoDuracion(ocupacion.duracionServicio, ocupacion.duracionSlot)
+});
+
+const construirPayloadError = (error, politicaDuracionFallback = null) => {
+  const payload = {
+    error: error.message || 'Error de reserva'
+  };
+
+  if (error.code) {
+    payload.code = error.code;
+  }
+
+  if (error.razon) {
+    payload.razon = error.razon;
+  }
+
+  if (error.politicaDuracion || politicaDuracionFallback) {
+    payload.politicaDuracion = error.politicaDuracion || politicaDuracionFallback;
+  }
+
+  return payload;
+};
 
 /**
  * GET /api/appointments
@@ -86,6 +116,8 @@ export const getAppointmentById = async (req, res) => {
  * Crear nueva cita con asignación automática de profesional
  */
 export const createAppointment = async (req, res) => {
+  let politicaDuracionContext = null;
+
   try {
     // Validar datos
     const validationResult = createAppointmentSchema.safeParse(req.body);
@@ -114,6 +146,9 @@ export const createAppointment = async (req, res) => {
     const settings = await Settings.getGlobal();
     const ahora = new Date();
     const diasHastaReserva = Math.ceil((fechaInicio - ahora) / (1000 * 60 * 60 * 24));
+    const ocupacionServicio = calcularOcupacionOperativa(servicio.duracion, settings?.duracionSlot);
+    const politicaDuracion = construirPoliticaDuracion(ocupacionServicio);
+    politicaDuracionContext = politicaDuracion;
     
     if (diasHastaReserva > settings.diasMaximosReserva) {
       return res.status(400).json({ 
@@ -126,28 +161,45 @@ export const createAppointment = async (req, res) => {
     }
 
     // Calcular fecha fin
-    const fechaFin = new Date(fechaInicio.getTime() + servicio.duracion * 60000);
+    const fechaFin = new Date(fechaInicio.getTime() + ocupacionServicio.duracionServicio * 60000);
+    const fechaFinOperativa = new Date(fechaInicio.getTime() + ocupacionServicio.duracionOperativa * 60000);
 
     let profesionalAsignado = null;
 
     if (profesionalId) {
       // Verificar disponibilidad del profesional especificado
-      const disponibilidad = await verificarDisponibilidadSlot(profesionalId, fechaInicio, servicio.duracion);
+      const disponibilidad = await verificarDisponibilidadSlot(
+        profesionalId,
+        fechaInicio,
+        servicio.duracion,
+        null,
+        { settings }
+      );
       
       if (!disponibilidad.disponible && !forceOverbook) {
+        const politicaRespuesta = disponibilidad.ocupacion
+          ? construirPoliticaDuracion(disponibilidad.ocupacion)
+          : politicaDuracion;
+
         return res.status(400).json({ 
           error: 'El profesional no está disponible en este horario',
-          razon: disponibilidad.razon
+          code: 'PROFESSIONAL_UNAVAILABLE',
+          razon: disponibilidad.razon,
+          politicaDuracion: politicaRespuesta
         });
       }
       
       profesionalAsignado = profesionalId;
     } else {
       // Asignación automática
-      const profesional = await encontrarProfesionalDisponible(servicioId, fechaInicio);
+      const profesional = await encontrarProfesionalDisponible(servicioId, fechaInicio, { settings });
       
       if (!profesional) {
-        return res.status(400).json({ error: 'No hay profesionales disponibles en este horario' });
+        return res.status(400).json({
+          error: 'No hay profesionales disponibles en este horario',
+          code: 'NO_AVAILABLE_PROFESSIONALS',
+          politicaDuracion
+        });
       }
       
       profesionalAsignado = profesional._id;
@@ -160,6 +212,8 @@ export const createAppointment = async (req, res) => {
       servicio: servicioId,
       fechaHoraInicio: fechaInicio,
       fechaHoraFin: fechaFin,
+      fechaHoraFinOperativa: fechaFinOperativa,
+      duracionOperativaMinutos: ocupacionServicio.duracionOperativa,
       precioFinal: servicio.precio,
       notasCliente: notasCliente || '',
       forzadaPorAdmin: forceOverbook || false,
@@ -184,6 +238,8 @@ export const createAppointment = async (req, res) => {
             if (!lockResult.matchedCount) {
               const error = new Error('El profesional no está disponible');
               error.status = 400;
+              error.code = 'PROFESSIONAL_UNAVAILABLE';
+              error.politicaDuracion = politicaDuracion;
               throw error;
             }
 
@@ -191,19 +247,26 @@ export const createAppointment = async (req, res) => {
             const citaSolapada = await Appointment.findOne({
               profesional: profesionalAsignado,
               estado: 'confirmada',
-              fechaHoraInicio: { $lt: fechaFin },
-              fechaHoraFin: { $gt: fechaInicio }
+              fechaHoraInicio: { $lt: fechaFinOperativa },
+              $expr: {
+                $gt: [
+                  { $ifNull: ['$fechaHoraFinOperativa', '$fechaHoraFin'] },
+                  fechaInicio
+                ]
+              }
             }).session(session);
 
             if (citaSolapada) {
               const error = new Error('El horario acaba de ocuparse por otra reserva');
               error.status = 409;
+              error.code = 'SLOT_TAKEN';
+              error.politicaDuracion = politicaDuracion;
               throw error;
             }
 
             // Revalidar bloqueos dentro de transacción
             const bloqueoSolapado = await Blocker.findOne({
-              fechaHoraInicio: { $lt: fechaFin },
+              fechaHoraInicio: { $lt: fechaFinOperativa },
               fechaHoraFin: { $gt: fechaInicio },
               $or: [
                 { profesional: profesionalAsignado },
@@ -215,6 +278,8 @@ export const createAppointment = async (req, res) => {
             if (bloqueoSolapado) {
               const error = new Error('Existe un bloqueo en este horario');
               error.status = 409;
+              error.code = 'SLOT_BLOCKED';
+              error.politicaDuracion = politicaDuracion;
               throw error;
             }
           }
@@ -241,7 +306,11 @@ export const createAppointment = async (req, res) => {
     }
 
     if (!appointment) {
-      return res.status(409).json({ error: 'No se pudo completar la reserva por concurrencia' });
+      return res.status(409).json({
+        error: 'No se pudo completar la reserva por concurrencia',
+        code: 'CONCURRENCY_RETRY_EXHAUSTED',
+        politicaDuracion
+      });
     }
 
     // Poblar referencias antes de devolver
@@ -249,15 +318,21 @@ export const createAppointment = async (req, res) => {
     await appointment.populate('profesional', 'nombre color especialidad');
     await appointment.populate('servicio', 'nombre duracion precio');
 
-    res.status(201).json(appointment);
+    const appointmentResponse = appointment.toObject();
+    appointmentResponse.politicaDuracion = politicaDuracion;
+
+    res.status(201).json(appointmentResponse);
   } catch (error) {
     console.error('Error al crear cita:', error);
 
     if (error.status) {
-      return res.status(error.status).json({ error: error.message });
+      return res.status(error.status).json(construirPayloadError(error, politicaDuracionContext));
     }
 
-    res.status(500).json({ error: 'Error al crear la cita' });
+    res.status(500).json(construirPayloadError(
+      { message: 'Error al crear la cita', code: 'APPOINTMENT_CREATE_INTERNAL_ERROR' },
+      politicaDuracionContext
+    ));
   }
 };
 

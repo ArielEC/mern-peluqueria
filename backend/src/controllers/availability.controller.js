@@ -31,17 +31,31 @@ export const getAvailability = async (req, res) => {
       return res.status(400).json({ error: 'No se puede consultar disponibilidad para fechas pasadas' });
     }
 
-    const slots = await getDisponibilidad(fechaDate, servicioId, profesionalId || null);
+    const disponibilidad = await getDisponibilidad(fechaDate, servicioId, profesionalId || null);
+    const slots = disponibilidad.slots || [];
 
     res.json({
       fecha: fecha,
       servicioId: servicioId,
       profesionalId: profesionalId || null,
       totalSlots: slots.length,
-      slots: slots
+      slots: slots,
+      politicaDuracion: disponibilidad.politicaDuracion
     });
   } catch (error) {
     console.error('Error al obtener disponibilidad:', error);
-    res.status(500).json({ error: error.message || 'Error al obtener disponibilidad' });
+
+    if (error.status) {
+      return res.status(error.status).json({
+        error: error.message || 'Error al obtener disponibilidad',
+        code: error.code || 'AVAILABILITY_ERROR',
+        politicaDuracion: error.politicaDuracion
+      });
+    }
+
+    res.status(500).json({
+      error: error.message || 'Error al obtener disponibilidad',
+      code: 'AVAILABILITY_INTERNAL_ERROR'
+    });
   }
 };

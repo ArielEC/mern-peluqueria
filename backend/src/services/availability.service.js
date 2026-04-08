@@ -39,6 +39,52 @@ const resolverDuracionSlot = (duracionSlot) => {
 };
 
 /**
+ * Calcula la ocupación operativa de agenda para un servicio.
+ * La duración real del servicio se conserva, pero la ocupación en agenda
+ * se redondea hacia arriba al múltiplo de slot más cercano.
+ */
+export const calcularOcupacionOperativa = (duracionServicio, duracionSlot) => {
+  const duracionSlotResuelta = resolverDuracionSlot(duracionSlot);
+  const duracionNormalizada = Number(duracionServicio);
+  const duracionReal = Number.isFinite(duracionNormalizada) && duracionNormalizada > 0
+    ? Math.ceil(duracionNormalizada)
+    : duracionSlotResuelta;
+
+  const slotsNecesarios = Math.ceil(duracionReal / duracionSlotResuelta);
+  const duracionOperativa = slotsNecesarios * duracionSlotResuelta;
+
+  return {
+    duracionServicio: duracionReal,
+    duracionSlot: duracionSlotResuelta,
+    slotsNecesarios,
+    duracionOperativa,
+    redondeoAplicado: duracionOperativa !== duracionReal
+  };
+};
+
+/**
+ * Mensaje explicativo para la API sobre la política de duración.
+ */
+export const construirMensajeRedondeoDuracion = (duracionServicio, duracionSlot) => {
+  const ocupacion = calcularOcupacionOperativa(duracionServicio, duracionSlot);
+  const slotsLabel = ocupacion.slotsNecesarios === 1 ? 'slot' : 'slots';
+
+  if (!ocupacion.redondeoAplicado) {
+    return `Duración real y operativa: ${ocupacion.duracionServicio} min (${ocupacion.slotsNecesarios} ${slotsLabel} de ${ocupacion.duracionSlot} min).`;
+  }
+
+  return `Duración real: ${ocupacion.duracionServicio} min. Ocupación operativa: ${ocupacion.duracionOperativa} min (${ocupacion.slotsNecesarios} ${slotsLabel} de ${ocupacion.duracionSlot} min).`;
+};
+
+const crearErrorDisponibilidad = (message, status = 400, code = 'AVAILABILITY_ERROR', extra = {}) => {
+  const error = new Error(message);
+  error.status = status;
+  error.code = code;
+  Object.assign(error, extra);
+  return error;
+};
+
+/**
  * Genera todos los slots para un día basado en el horario del profesional
  * @param {Object} horarioDia - Horario del día del profesional
  * @param {Number} duracionSlot - Duración del slot de agenda en minutos
@@ -98,7 +144,7 @@ const estaBloqueado = (slotStart, slotEnd, blockers) => {
 const tieneCita = (slotStart, slotEnd, appointments) => {
   return appointments.some(appointment => {
     const appointmentStart = new Date(appointment.fechaHoraInicio);
-    const appointmentEnd = new Date(appointment.fechaHoraFin);
+    const appointmentEnd = new Date(appointment.fechaHoraFinOperativa || appointment.fechaHoraFin);
     // Hay solapamiento
     return slotStart < appointmentEnd && slotEnd > appointmentStart;
   });
@@ -109,7 +155,7 @@ const tieneCita = (slotStart, slotEnd, appointments) => {
  * @param {Date} fecha - Fecha para consultar disponibilidad
  * @param {String} servicioId - ID del servicio (para filtrar profesionales capaces y duración)
  * @param {String} profesionalId - (Opcional) ID de profesional específico
- * @returns {Array} Array de slots disponibles: [{hora: "HH:MM", profesionalId: ObjectId, profesionalNombre: String}]
+ * @returns {Object} Objeto con slots disponibles y política de duración aplicada
  */
 export const getDisponibilidad = async (fecha, servicioId, profesionalId = null) => {
   // Obtener servicio y configuración global para conocer duración real y grid de agenda
@@ -119,12 +165,16 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
   ]);
 
   if (!servicio || !servicio.activo) {
-    throw new Error('Servicio no encontrado o no activo');
+    throw crearErrorDisponibilidad('Servicio no encontrado o no activo', 404, 'SERVICE_NOT_AVAILABLE');
   }
 
   const duracionSlot = resolverDuracionSlot(settings?.duracionSlot);
-  const duracionServicio = servicio.duracion; // duración real en minutos
-  const slotsNecesarios = Math.ceil(duracionServicio / duracionSlot); // ocupación en slots
+  const ocupacionServicio = calcularOcupacionOperativa(servicio.duracion, duracionSlot);
+  const { duracionServicio, slotsNecesarios, duracionOperativa } = ocupacionServicio;
+  const politicaDuracion = {
+    ...ocupacionServicio,
+    mensaje: construirMensajeRedondeoDuracion(duracionServicio, duracionSlot)
+  };
 
   // Determinar qué día de la semana es (0 = Domingo, 1 = Lunes, etc.)
   const diaSemana = fecha.getDay();
@@ -138,7 +188,7 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
     // Si el servicio tiene lista explícita de profesionales capaces,
     // no se debe permitir consultar disponibilidad de profesionales no capaces.
     if (profesionalesCapaces.length > 0 && !profesionalesCapaces.includes(profesionalIdStr)) {
-      return [];
+      return { slots: [], politicaDuracion };
     }
 
     filtro._id = profesionalId;
@@ -151,7 +201,7 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
     .lean();
 
   if (profesionales.length === 0) {
-    return [];
+    return { slots: [], politicaDuracion };
   }
 
   // Definir rango del día para consultas
@@ -178,11 +228,16 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
   // Obtener citas confirmadas del día solo para profesionales relevantes
   const citas = await Appointment.find({
     fechaHoraInicio: { $lt: finDia },
-    fechaHoraFin: { $gt: inicioDia },
     estado: 'confirmada',
-    profesional: { $in: profesionalesIds }
+    profesional: { $in: profesionalesIds },
+    $expr: {
+      $gt: [
+        { $ifNull: ['$fechaHoraFinOperativa', '$fechaHoraFin'] },
+        inicioDia
+      ]
+    }
   })
-    .select('_id profesional fechaHoraInicio fechaHoraFin')
+    .select('_id profesional fechaHoraInicio fechaHoraFin fechaHoraFinOperativa')
     .lean();
 
   // Indexar bloqueos por profesional para evitar filtros repetidos en cada iteración
@@ -234,6 +289,7 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
     for (let i = 0; i <= slotsDelDia.length - slotsNecesarios; i++) {
       const slotInicio = slotsDelDia[i];
       const slotFinReal = slotInicio + duracionServicio;
+      const slotFinOperativo = slotInicio + duracionOperativa;
 
       // Verificar que todos los slots necesarios sean consecutivos
       let consecutivos = true;
@@ -252,8 +308,8 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
       const slotStartDate = new Date(fecha);
       slotStartDate.setHours(Math.floor(slotInicio / 60), slotInicio % 60, 0, 0);
       
-      const slotEndDate = new Date(fecha);
-      slotEndDate.setHours(Math.floor(slotFinReal / 60), slotFinReal % 60, 0, 0);
+      const slotEndDateOperativo = new Date(fecha);
+      slotEndDateOperativo.setHours(Math.floor(slotFinOperativo / 60), slotFinOperativo % 60, 0, 0);
 
       // Verificar que no esté en el pasado
       if (slotStartDate <= ahora) {
@@ -261,12 +317,12 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
       }
 
       // Verificar bloqueos
-      if (estaBloqueado(slotStartDate, slotEndDate, bloqueosProf)) {
+      if (estaBloqueado(slotStartDate, slotEndDateOperativo, bloqueosProf)) {
         continue;
       }
 
       // Verificar citas existentes
-      if (tieneCita(slotStartDate, slotEndDate, citasProf)) {
+      if (tieneCita(slotStartDate, slotEndDateOperativo, citasProf)) {
         continue;
       }
 
@@ -274,6 +330,7 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
       slotsDisponibles.push({
         hora: minutesToTime(slotInicio),
         horaFin: minutesToTime(slotFinReal),
+        horaFinOperativa: minutesToTime(slotFinOperativo),
         profesionalId: profesional._id,
         profesionalNombre: profesional.nombre,
         profesionalColor: profesional.color
@@ -289,7 +346,10 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
     return a.profesionalNombre.localeCompare(b.profesionalNombre);
   });
 
-  return slotsDisponibles;
+  return {
+    slots: slotsDisponibles,
+    politicaDuracion
+  };
 };
 
 /**
@@ -307,8 +367,6 @@ export const verificarDisponibilidadSlot = async (
   excludeAppointmentId = null,
   context = {}
 ) => {
-  const fechaHoraFin = new Date(fechaHoraInicio.getTime() + duracion * 60000);
-
   // Permite inyectar entidades ya cargadas para evitar queries repetidas (N+1)
   const profesional = context.profesional || await Professional.findById(profesionalId);
   const settings = context.settings || await Settings.getGlobal();
@@ -318,19 +376,26 @@ export const verificarDisponibilidadSlot = async (
   }
 
   const duracionSlot = resolverDuracionSlot(settings?.duracionSlot);
+  const ocupacion = calcularOcupacionOperativa(duracion, duracionSlot);
+  const mensajeOcupacion = construirMensajeRedondeoDuracion(ocupacion.duracionServicio, duracionSlot);
+  const fechaHoraFinOperativa = new Date(
+    fechaHoraInicio.getTime() + ocupacion.duracionOperativa * 60000
+  );
 
   const diaSemana = fechaHoraInicio.getDay();
   const horarioDia = profesional.horarioSemanal[diaSemana];
 
   if (!horarioDia || !horarioDia.activo) {
-    return { disponible: false, razon: 'El profesional no trabaja este día' };
+    return {
+      disponible: false,
+      razon: `El profesional no trabaja este día. ${mensajeOcupacion}`,
+      ocupacion
+    };
   }
 
   // Verificar que el slot esté dentro del horario laboral
   const minutosInicio = fechaHoraInicio.getHours() * 60 + fechaHoraInicio.getMinutes();
-  const minutosFinReal = minutosInicio + duracion;
-  const slotsNecesarios = Math.ceil(duracion / duracionSlot);
-  const minutosFinAgenda = minutosInicio + (slotsNecesarios * duracionSlot);
+  const minutosFinAgenda = minutosInicio + ocupacion.duracionOperativa;
   const horarioInicio = timeToMinutes(horarioDia.inicio);
   const horarioFin = timeToMinutes(horarioDia.fin);
 
@@ -338,13 +403,18 @@ export const verificarDisponibilidadSlot = async (
   if ((minutosInicio - horarioInicio) % duracionSlot !== 0) {
     return {
       disponible: false,
-      razon: `La hora de inicio debe alinearse al grid de ${duracionSlot} minutos`
+      razon: `La hora de inicio debe alinearse al grid de ${duracionSlot} minutos. ${mensajeOcupacion}`,
+      ocupacion
     };
   }
 
   // Validamos contra el fin operativo de agenda (duración real redondeada a slots)
   if (minutosInicio < horarioInicio || minutosFinAgenda > horarioFin) {
-    return { disponible: false, razon: 'Fuera del horario laboral del profesional' };
+    return {
+      disponible: false,
+      razon: `Fuera del horario laboral del profesional. ${mensajeOcupacion}`,
+      ocupacion
+    };
   }
 
   // Verificar descanso
@@ -352,23 +422,36 @@ export const verificarDisponibilidadSlot = async (
     const descansoInicio = timeToMinutes(horarioDia.descansoInicio);
     const descansoFin = timeToMinutes(horarioDia.descansoFin);
     
-    if (minutosInicio < descansoFin && minutosFinReal > descansoInicio) {
-      return { disponible: false, razon: 'Coincide con el horario de descanso' };
+    if (minutosInicio < descansoFin && minutosFinAgenda > descansoInicio) {
+      return {
+        disponible: false,
+        razon: `Coincide con el horario de descanso. ${mensajeOcupacion}`,
+        ocupacion
+      };
     }
   }
 
   // Verificar bloqueos
-  const hayBloqueo = await Blocker.hayBloqueo(profesionalId, fechaHoraInicio, fechaHoraFin);
+  const hayBloqueo = await Blocker.hayBloqueo(profesionalId, fechaHoraInicio, fechaHoraFinOperativa);
   if (hayBloqueo) {
-    return { disponible: false, razon: 'Existe un bloqueo en este horario' };
+    return {
+      disponible: false,
+      razon: `Existe un bloqueo en este horario. ${mensajeOcupacion}`,
+      ocupacion
+    };
   }
 
   // Verificar citas existentes
   const filtrosCita = {
     profesional: profesionalId,
     estado: 'confirmada',
-    fechaHoraInicio: { $lt: fechaHoraFin },
-    fechaHoraFin: { $gt: fechaHoraInicio }
+    fechaHoraInicio: { $lt: fechaHoraFinOperativa },
+    $expr: {
+      $gt: [
+        { $ifNull: ['$fechaHoraFinOperativa', '$fechaHoraFin'] },
+        fechaHoraInicio
+      ]
+    }
   };
 
   if (excludeAppointmentId) {
@@ -377,22 +460,31 @@ export const verificarDisponibilidadSlot = async (
 
   const citaExistente = await Appointment.findOne(filtrosCita);
   if (citaExistente) {
-    return { disponible: false, razon: 'Ya existe una cita en este horario' };
+    return {
+      disponible: false,
+      razon: `Ya existe una cita en este horario. ${mensajeOcupacion}`,
+      ocupacion
+    };
   }
 
-  return { disponible: true };
+  return { disponible: true, ocupacion };
 };
 
 /**
  * Encuentra el primer profesional disponible para un servicio en un slot específico
  * @param {String} servicioId - ID del servicio
  * @param {Date} fechaHoraInicio - Fecha y hora deseada
+ * @param {Object} context - Contexto opcional (settings)
  * @returns {Object|null} Profesional disponible o null
  */
-export const encontrarProfesionalDisponible = async (servicioId, fechaHoraInicio) => {
+export const encontrarProfesionalDisponible = async (servicioId, fechaHoraInicio, context = {}) => {
+  const settingsPromise = context.settings
+    ? Promise.resolve(context.settings)
+    : Settings.getGlobal();
+
   const [servicio, settings] = await Promise.all([
     Service.findById(servicioId).populate('profesionalesCapaces'),
-    Settings.getGlobal()
+    settingsPromise
   ]);
 
   if (!servicio || !servicio.activo) {

@@ -13,14 +13,14 @@ const serviceSchema = new mongoose.Schema({
     maxlength: [500, 'La descripción no puede exceder 500 caracteres']
   },
   duracion: {
-    type: Number, // Duración en minutos (debe ser múltiplo de 15)
+    type: Number, // Duración real en minutos (independiente del grid de agenda)
     required: [true, 'La duración es obligatoria'],
     min: [15, 'La duración mínima es 15 minutos'],
     validate: {
       validator: function(v) {
-        return v % 15 === 0; // Debe ser múltiplo de 15
+        return Number.isInteger(v) && v > 0;
       },
-      message: 'La duración debe ser múltiplo de 15 minutos'
+      message: 'La duración debe ser un número entero positivo de minutos'
     }
   },
   precio: {

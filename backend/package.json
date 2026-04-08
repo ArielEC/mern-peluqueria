@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "test:ab05": "node src/scripts/test.ab05.rounding.js"
   },
   "keywords": [
     "mern",
