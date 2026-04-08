@@ -37,7 +37,7 @@ app.get('/api/health', (req, res) => {
 
 // Importar rutas
 import authRoutes from './routes/auth.routes.js';
-// import appointmentRoutes from './routes/appointment.routes.js';
+import appointmentRoutes from './routes/appointment.routes.js';
 import professionalRoutes from './routes/professional.routes.js';
 import serviceRoutes from './routes/service.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
@@ -47,7 +47,7 @@ import availabilityRoutes from './routes/availability.routes.js';
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
-// app.use('/api/appointments', appointmentRoutes);
+app.use('/api/appointments', appointmentRoutes);
 app.use('/api/professionals', professionalRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/settings', settingsRoutes);

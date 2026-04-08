@@ -1,0 +1,280 @@
+import Appointment from '../models/Appointment.js';
+import Service from '../models/Service.js';
+import Settings from '../models/Settings.js';
+import { verificarDisponibilidadSlot, encontrarProfesionalDisponible } from '../services/availability.service.js';
+import { createAppointmentSchema, updateAppointmentSchema, cancelAppointmentSchema } from '../validators/appointment.validator.js';
+
+/**
+ * GET /api/appointments
+ * Listar citas - Cliente ve sus citas, Admin ve todas
+ * Query params: desde, hasta, estado, profesionalId (admin), clienteId (admin)
+ */
+export const getAppointments = async (req, res) => {
+  try {
+    const { desde, hasta, estado, profesionalId, clienteId } = req.query;
+    const filter = {};
+
+    // Si no es admin, solo puede ver sus propias citas
+    if (req.user.role !== 'admin') {
+      filter.cliente = req.user._id;
+    } else {
+      // Admin puede filtrar por cliente
+      if (clienteId) {
+        filter.cliente = clienteId;
+      }
+    }
+
+    // Filtros comunes
+    if (profesionalId) {
+      filter.profesional = profesionalId;
+    }
+    if (estado) {
+      filter.estado = estado;
+    }
+    if (desde || hasta) {
+      filter.fechaHoraInicio = {};
+      if (desde) filter.fechaHoraInicio.$gte = new Date(desde);
+      if (hasta) filter.fechaHoraInicio.$lte = new Date(hasta);
+    }
+
+    const appointments = await Appointment.find(filter)
+      .populate('cliente', 'nombre email telefono')
+      .populate('profesional', 'nombre color especialidad')
+      .populate('servicio', 'nombre duracion precio')
+      .sort({ fechaHoraInicio: -1 });
+
+    res.json(appointments);
+  } catch (error) {
+    console.error('Error al obtener citas:', error);
+    res.status(500).json({ error: 'Error al obtener las citas' });
+  }
+};
+
+/**
+ * GET /api/appointments/:id
+ * Obtener una cita específica
+ */
+export const getAppointmentById = async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id)
+      .populate('cliente', 'nombre email telefono')
+      .populate('profesional', 'nombre color especialidad')
+      .populate('servicio', 'nombre duracion precio');
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Cita no encontrada' });
+    }
+
+    // Verificar permisos: solo el cliente dueño o admin
+    if (req.user.role !== 'admin' && appointment.cliente._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'No tienes permiso para ver esta cita' });
+    }
+
+    res.json(appointment);
+  } catch (error) {
+    console.error('Error al obtener cita:', error);
+    res.status(500).json({ error: 'Error al obtener la cita' });
+  }
+};
+
+/**
+ * POST /api/appointments
+ * Crear nueva cita con asignación automática de profesional
+ */
+export const createAppointment = async (req, res) => {
+  try {
+    // Validar datos
+    const validationResult = createAppointmentSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: 'Datos inválidos',
+        details: validationResult.error.errors
+      });
+    }
+
+    const { servicioId, fechaHoraInicio, profesionalId, notasCliente, forceOverbook } = validationResult.data;
+    const fechaInicio = new Date(fechaHoraInicio);
+
+    // Solo admin puede usar forceOverbook
+    if (forceOverbook && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Solo administradores pueden forzar overbooking' });
+    }
+
+    // Obtener servicio
+    const servicio = await Service.findById(servicioId);
+    if (!servicio || !servicio.activo) {
+      return res.status(404).json({ error: 'Servicio no encontrado o no activo' });
+    }
+
+    // Obtener settings para validar días máximos de reserva
+    const settings = await Settings.getGlobal();
+    const ahora = new Date();
+    const diasHastaReserva = Math.ceil((fechaInicio - ahora) / (1000 * 60 * 60 * 24));
+    
+    if (diasHastaReserva > settings.diasMaximosReserva) {
+      return res.status(400).json({ 
+        error: `No se puede reservar con más de ${settings.diasMaximosReserva} días de antelación` 
+      });
+    }
+
+    if (fechaInicio <= ahora) {
+      return res.status(400).json({ error: 'No se puede reservar en el pasado' });
+    }
+
+    // Calcular fecha fin
+    const fechaFin = new Date(fechaInicio.getTime() + servicio.duracion * 60000);
+
+    let profesionalAsignado = null;
+
+    if (profesionalId) {
+      // Verificar disponibilidad del profesional especificado
+      const disponibilidad = await verificarDisponibilidadSlot(profesionalId, fechaInicio, servicio.duracion);
+      
+      if (!disponibilidad.disponible && !forceOverbook) {
+        return res.status(400).json({ 
+          error: 'El profesional no está disponible en este horario',
+          razon: disponibilidad.razon
+        });
+      }
+      
+      profesionalAsignado = profesionalId;
+    } else {
+      // Asignación automática
+      const profesional = await encontrarProfesionalDisponible(servicioId, fechaInicio);
+      
+      if (!profesional) {
+        return res.status(400).json({ error: 'No hay profesionales disponibles en este horario' });
+      }
+      
+      profesionalAsignado = profesional._id;
+    }
+
+    // Crear la cita
+    const appointment = new Appointment({
+      cliente: req.user._id,
+      profesional: profesionalAsignado,
+      servicio: servicioId,
+      fechaHoraInicio: fechaInicio,
+      fechaHoraFin: fechaFin,
+      precioFinal: servicio.precio,
+      notasCliente: notasCliente || '',
+      forzadaPorAdmin: forceOverbook || false,
+      estado: 'confirmada'
+    });
+
+    await appointment.save();
+
+    // Poblar referencias antes de devolver
+    await appointment.populate('cliente', 'nombre email telefono');
+    await appointment.populate('profesional', 'nombre color especialidad');
+    await appointment.populate('servicio', 'nombre duracion precio');
+
+    res.status(201).json(appointment);
+  } catch (error) {
+    console.error('Error al crear cita:', error);
+    res.status(500).json({ error: 'Error al crear la cita' });
+  }
+};
+
+/**
+ * PUT /api/appointments/:id
+ * Actualizar cita (solo admin)
+ */
+export const updateAppointment = async (req, res) => {
+  try {
+    const validationResult = updateAppointmentSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: 'Datos inválidos',
+        details: validationResult.error.errors
+      });
+    }
+
+    const appointment = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      { $set: validationResult.data },
+      { new: true, runValidators: true }
+    )
+      .populate('cliente', 'nombre email telefono')
+      .populate('profesional', 'nombre color especialidad')
+      .populate('servicio', 'nombre duracion precio');
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Cita no encontrada' });
+    }
+
+    res.json(appointment);
+  } catch (error) {
+    console.error('Error al actualizar cita:', error);
+    res.status(500).json({ error: 'Error al actualizar la cita' });
+  }
+};
+
+/**
+ * DELETE /api/appointments/:id
+ * Cancelar cita con validación de horasMinimasCancelacion
+ */
+export const cancelAppointment = async (req, res) => {
+  try {
+    const validationResult = cancelAppointmentSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: 'Datos inválidos',
+        details: validationResult.error.errors
+      });
+    }
+
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({ error: 'Cita no encontrada' });
+    }
+
+    // Verificar permisos
+    const esAdmin = req.user.role === 'admin';
+    const esPropietario = appointment.cliente.toString() === req.user._id.toString();
+
+    if (!esAdmin && !esPropietario) {
+      return res.status(403).json({ error: 'No tienes permiso para cancelar esta cita' });
+    }
+
+    // Verificar que no esté ya cancelada
+    if (appointment.estado === 'cancelada') {
+      return res.status(400).json({ error: 'La cita ya está cancelada' });
+    }
+
+    // Verificar que no sea pasada
+    if (appointment.fechaHoraInicio <= new Date()) {
+      return res.status(400).json({ error: 'No se puede cancelar una cita pasada' });
+    }
+
+    // Validar horasMinimasCancelacion (solo para clientes, admin puede cancelar siempre)
+    if (!esAdmin) {
+      const settings = await Settings.getGlobal();
+      const puedeCancel = appointment.puedeCancelar(settings.horasMinimasCancelacion);
+      
+      if (!puedeCancel) {
+        return res.status(400).json({ 
+          error: `No se puede cancelar con menos de ${settings.horasMinimasCancelacion} horas de antelación` 
+        });
+      }
+    }
+
+    // Cancelar la cita
+    appointment.estado = 'cancelada';
+    appointment.canceladaPor = esAdmin ? 'admin' : 'cliente';
+    appointment.motivoCancelacion = validationResult.data.motivoCancelacion || '';
+    
+    await appointment.save();
+
+    // Poblar referencias
+    await appointment.populate('cliente', 'nombre email telefono');
+    await appointment.populate('profesional', 'nombre color especialidad');
+    await appointment.populate('servicio', 'nombre duracion precio');
+
+    res.json({ message: 'Cita cancelada correctamente', appointment });
+  } catch (error) {
+    console.error('Error al cancelar cita:', error);
+    res.status(500).json({ error: 'Error al cancelar la cita' });
+  }
+};
