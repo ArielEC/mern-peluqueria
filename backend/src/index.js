@@ -38,20 +38,20 @@ app.get('/api/health', (req, res) => {
 // Importar rutas
 import authRoutes from './routes/auth.routes.js';
 // import appointmentRoutes from './routes/appointment.routes.js';
-// import professionalRoutes from './routes/professional.routes.js';
-// import serviceRoutes from './routes/service.routes.js';
-// import settingsRoutes from './routes/settings.routes.js';
-// import blockerRoutes from './routes/blocker.routes.js';
-// import technicalNoteRoutes from './routes/technicalNote.routes.js';
+import professionalRoutes from './routes/professional.routes.js';
+import serviceRoutes from './routes/service.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
+import blockerRoutes from './routes/blocker.routes.js';
+import technicalNoteRoutes from './routes/technicalNote.routes.js';
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
 // app.use('/api/appointments', appointmentRoutes);
-// app.use('/api/professionals', professionalRoutes);
-// app.use('/api/services', serviceRoutes);
-// app.use('/api/settings', settingsRoutes);
-// app.use('/api/blockers', blockerRoutes);
-// app.use('/api/technical-notes', technicalNoteRoutes);
+app.use('/api/professionals', professionalRoutes);
+app.use('/api/services', serviceRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/blockers', blockerRoutes);
+app.use('/api/technical-notes', technicalNoteRoutes);
 
 // Manejo de errores global
 app.use((err, req, res, next) => {
