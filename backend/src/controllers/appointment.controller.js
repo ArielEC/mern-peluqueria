@@ -1,8 +1,12 @@
 import Appointment from '../models/Appointment.js';
+import Blocker from '../models/Blocker.js';
+import Professional from '../models/Professional.js';
 import Service from '../models/Service.js';
 import Settings from '../models/Settings.js';
 import { verificarDisponibilidadSlot, encontrarProfesionalDisponible } from '../services/availability.service.js';
 import { createAppointmentSchema, updateAppointmentSchema, cancelAppointmentSchema } from '../validators/appointment.validator.js';
+
+const MAX_REINTENTOS_TRANSACCION = 3;
 
 /**
  * GET /api/appointments
@@ -149,8 +153,8 @@ export const createAppointment = async (req, res) => {
       profesionalAsignado = profesional._id;
     }
 
-    // Crear la cita
-    const appointment = new Appointment({
+    // Crear la cita con control de concurrencia para evitar doble reserva
+    const appointmentData = {
       cliente: req.user._id,
       profesional: profesionalAsignado,
       servicio: servicioId,
@@ -160,9 +164,85 @@ export const createAppointment = async (req, res) => {
       notasCliente: notasCliente || '',
       forzadaPorAdmin: forceOverbook || false,
       estado: 'confirmada'
-    });
+    };
 
-    await appointment.save();
+    let appointment = null;
+
+    for (let intento = 1; intento <= MAX_REINTENTOS_TRANSACCION; intento++) {
+      const session = await Appointment.startSession();
+
+      try {
+        await session.withTransaction(async () => {
+          if (!forceOverbook) {
+            // Bloqueo optimista por profesional para serializar reservas concurrentes
+            const lockResult = await Professional.updateOne(
+              { _id: profesionalAsignado, activo: true },
+              { $inc: { __v: 1 } },
+              { session }
+            );
+
+            if (!lockResult.matchedCount) {
+              const error = new Error('El profesional no está disponible');
+              error.status = 400;
+              throw error;
+            }
+
+            // Revalidar cita solapada dentro de transacción
+            const citaSolapada = await Appointment.findOne({
+              profesional: profesionalAsignado,
+              estado: 'confirmada',
+              fechaHoraInicio: { $lt: fechaFin },
+              fechaHoraFin: { $gt: fechaInicio }
+            }).session(session);
+
+            if (citaSolapada) {
+              const error = new Error('El horario acaba de ocuparse por otra reserva');
+              error.status = 409;
+              throw error;
+            }
+
+            // Revalidar bloqueos dentro de transacción
+            const bloqueoSolapado = await Blocker.findOne({
+              fechaHoraInicio: { $lt: fechaFin },
+              fechaHoraFin: { $gt: fechaInicio },
+              $or: [
+                { profesional: profesionalAsignado },
+                { profesional: null },
+                { profesional: { $exists: false } }
+              ]
+            }).session(session);
+
+            if (bloqueoSolapado) {
+              const error = new Error('Existe un bloqueo en este horario');
+              error.status = 409;
+              throw error;
+            }
+          }
+
+          appointment = new Appointment(appointmentData);
+          await appointment.save({ session });
+        });
+
+        await session.endSession();
+        break;
+      } catch (error) {
+        await session.endSession();
+
+        const esTransitorio =
+          error?.errorLabels?.includes('TransientTransactionError') ||
+          error?.codeName === 'WriteConflict';
+
+        if (esTransitorio && intento < MAX_REINTENTOS_TRANSACCION) {
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    if (!appointment) {
+      return res.status(409).json({ error: 'No se pudo completar la reserva por concurrencia' });
+    }
 
     // Poblar referencias antes de devolver
     await appointment.populate('cliente', 'nombre email telefono');
@@ -172,6 +252,11 @@ export const createAppointment = async (req, res) => {
     res.status(201).json(appointment);
   } catch (error) {
     console.error('Error al crear cita:', error);
+
+    if (error.status) {
+      return res.status(error.status).json({ error: error.message });
+    }
+
     res.status(500).json({ error: 'Error al crear la cita' });
   }
 };
