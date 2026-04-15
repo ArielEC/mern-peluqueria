@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .ambient-shadow {
+    box-shadow: 0 12px 40px -12px hsla(262, 83%, 10%, 0.08);
+  }
+  .tracking-display {
+    letter-spacing: -0.02em;
+  }
+}
+
 @theme {
   --color-background: hsl(0 0% 100%);
   --color-foreground: hsl(240 10% 3.9%);

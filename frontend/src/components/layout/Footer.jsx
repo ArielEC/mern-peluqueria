@@ -1,80 +1,46 @@
-import { Scissors, Phone, Mail, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Scissors } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
+
+const footerLinks = [
+  { label: 'Contacto', to: '/#contacto' },
+  { label: 'Política de privacidad', to: '/privacidad' },
+  { label: 'Condiciones de uso', to: '/condiciones' },
+  { label: 'Política de reservas', to: '/politica-reservas' },
+];
 
 export default function Footer() {
   const { data: settings } = useSettings();
 
   const businessName = settings?.nombreNegocio || 'Peluquería';
-  const telefono = settings?.telefono;
-  const email = settings?.email;
-  const direccion = settings?.direccion;
 
   return (
-    <footer className="border-t bg-background">
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
-          {/* Brand */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 font-semibold text-lg">
-              <Scissors className="h-5 w-5 text-primary" />
-              <span>{businessName}</span>
-            </div>
-            {settings?.mensajeBienvenida && (
-              <p className="text-sm text-muted-foreground max-w-xs">
-                {settings.mensajeBienvenida}
-              </p>
-            )}
+    <footer className="w-full border-t border-primary/5 bg-background">
+      <div className="flex flex-col md:flex-row justify-between items-center py-10 px-6 md:px-8 w-full max-w-7xl mx-auto gap-6">
+
+        {/* Brand */}
+        <div>
+          <div className="flex items-center gap-2 text-sm font-bold text-foreground mb-1">
+            <Scissors className="h-4 w-4 text-primary" />
+            {businessName}
           </div>
-
-          {/* Contact */}
-          {(telefono || email || direccion) && (
-            <div className="flex flex-col gap-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Contacto
-              </h3>
-              <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
-                {telefono && (
-                  <li className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 shrink-0 text-primary" />
-                    <a href={`tel:${telefono}`} className="hover:text-foreground transition-colors">
-                      {telefono}
-                    </a>
-                  </li>
-                )}
-                {email && (
-                  <li className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 shrink-0 text-primary" />
-                    <a href={`mailto:${email}`} className="hover:text-foreground transition-colors">
-                      {email}
-                    </a>
-                  </li>
-                )}
-                {direccion && (
-                  <li className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                    <span>{direccion}</span>
-                  </li>
-                )}
-              </ul>
-            </div>
-          )}
-
-          {/* Policy */}
-          {settings?.politicaCancelacion && (
-            <div className="flex flex-col gap-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Política de cancelación
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {settings.politicaCancelacion}
-              </p>
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} {businessName}. Todos los derechos reservados.
+          </p>
         </div>
 
-        <div className="mt-8 border-t pt-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} {businessName}. Todos los derechos reservados.
-        </div>
+        {/* Links */}
+        <nav className="flex flex-wrap gap-6 justify-center">
+          {footerLinks.map(({ label, to }) => (
+            <Link
+              key={to}
+              to={to}
+              className="text-xs text-muted-foreground hover:underline underline-offset-4 opacity-80 hover:opacity-100 transition-opacity"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
       </div>
     </footer>
   );

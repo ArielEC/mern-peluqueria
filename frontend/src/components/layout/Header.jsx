@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 const navLinks = [
   { to: '/', label: 'Inicio' },
   { to: '/book', label: 'Reservar' },
+];
+
+const authLinks = [
   { to: '/appointments', label: 'Mis citas' },
 ];
 
@@ -21,30 +24,48 @@ export default function Header() {
   const businessName = settings?.nombreNegocio || 'Peluquería';
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+    <header className="w-full top-0 sticky z-50 bg-background border-b border-border/40">
+      <div className="flex justify-between items-center px-6 md:px-8 h-16 w-full max-w-7xl mx-auto">
+
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
+        <Link
+          to="/"
+          className="text-xl font-bold tracking-display text-foreground flex items-center gap-2 shrink-0"
+        >
           <Scissors className="h-5 w-5 text-primary" />
-          <span>{businessName}</span>
+          {businessName}
         </Link>
 
         {/* Nav desktop */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex gap-8 items-center text-sm font-medium">
           {navLinks.map(({ to, label }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                `text-sm font-medium transition-colors hover:text-primary ${
-                  isActive ? 'text-primary' : 'text-muted-foreground'
-                }`
+                isActive
+                  ? 'text-primary font-bold border-b-2 border-primary pb-0.5'
+                  : 'text-muted-foreground hover:text-primary transition-colors'
               }
             >
               {label}
             </NavLink>
           ))}
+          {isAuthenticated &&
+            authLinks.map(({ to, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  isActive
+                    ? 'text-primary font-bold border-b-2 border-primary pb-0.5'
+                    : 'text-muted-foreground hover:text-primary transition-colors'
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
         </nav>
 
         {/* Auth actions desktop */}
@@ -52,21 +73,16 @@ export default function Header() {
           {isAuthenticated ? (
             <>
               <span className="text-sm text-muted-foreground">
-                Hola, {user?.nombre || user?.email}
+                {user?.nombre || user?.email}
               </span>
               <Button variant="outline" size="sm" onClick={logout}>
                 Cerrar sesión
               </Button>
             </>
           ) : (
-            <>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/login">Iniciar sesión</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link to="/register">Registrarse</Link>
-              </Button>
-            </>
+            <Button size="sm" asChild className="px-6">
+              <Link to="/login">Login</Link>
+            </Button>
           )}
         </div>
 
@@ -82,9 +98,9 @@ export default function Header() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t bg-background px-4 pb-4 pt-2">
+        <div className="md:hidden border-t border-border/40 bg-background px-6 pb-5 pt-3">
           <nav className="flex flex-col gap-1">
-            {navLinks.map(({ to, label }) => (
+            {[...navLinks, ...(isAuthenticated ? authLinks : [])].map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -93,8 +109,8 @@ export default function Header() {
                 className={({ isActive }) =>
                   `block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                      ? 'bg-primary/10 text-primary font-bold'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   }`
                 }
               >
@@ -102,20 +118,18 @@ export default function Header() {
               </NavLink>
             ))}
           </nav>
-          <div className="mt-3 flex flex-col gap-2">
+          <div className="mt-4 flex flex-col gap-2">
             {isAuthenticated ? (
-              <Button variant="outline" onClick={() => { logout(); setMenuOpen(false); }}>
+              <Button
+                variant="outline"
+                onClick={() => { logout(); setMenuOpen(false); }}
+              >
                 Cerrar sesión
               </Button>
             ) : (
-              <>
-                <Button variant="outline" asChild onClick={() => setMenuOpen(false)}>
-                  <Link to="/login">Iniciar sesión</Link>
-                </Button>
-                <Button asChild onClick={() => setMenuOpen(false)}>
-                  <Link to="/register">Registrarse</Link>
-                </Button>
-              </>
+              <Button asChild onClick={() => setMenuOpen(false)}>
+                <Link to="/login">Login</Link>
+              </Button>
             )}
           </div>
         </div>
