@@ -13,6 +13,21 @@ import {
 import { createAppointmentSchema, updateAppointmentSchema, cancelAppointmentSchema } from '../validators/appointment.validator.js';
 
 const MAX_REINTENTOS_TRANSACCION = 3;
+const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
+const ESTADOS_CITA_VALIDOS = new Set(['confirmada', 'completada', 'cancelada', 'no_presentado']);
+
+const parsearFechaFiltro = (value) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const fecha = new Date(value);
+  if (Number.isNaN(fecha.getTime())) {
+    return null;
+  }
+
+  return fecha;
+};
 
 const construirPoliticaDuracion = (ocupacion) => ({
   ...ocupacion,
@@ -55,21 +70,43 @@ export const getAppointments = async (req, res) => {
     } else {
       // Admin puede filtrar por cliente
       if (clienteId) {
+        if (!OBJECT_ID_REGEX.test(clienteId)) {
+          return res.status(400).json({ error: 'clienteId inválido' });
+        }
         filter.cliente = clienteId;
       }
     }
 
     // Filtros comunes
     if (profesionalId) {
+      if (!OBJECT_ID_REGEX.test(profesionalId)) {
+        return res.status(400).json({ error: 'profesionalId inválido' });
+      }
       filter.profesional = profesionalId;
     }
     if (estado) {
+      if (typeof estado !== 'string' || !ESTADOS_CITA_VALIDOS.has(estado)) {
+        return res.status(400).json({ error: 'estado inválido' });
+      }
       filter.estado = estado;
     }
     if (desde || hasta) {
+      const desdeDate = desde ? parsearFechaFiltro(desde) : null;
+      const hastaDate = hasta ? parsearFechaFiltro(hasta) : null;
+
+      if (desde && !desdeDate) {
+        return res.status(400).json({ error: 'Parámetro desde inválido' });
+      }
+      if (hasta && !hastaDate) {
+        return res.status(400).json({ error: 'Parámetro hasta inválido' });
+      }
+      if (desdeDate && hastaDate && desdeDate > hastaDate) {
+        return res.status(400).json({ error: 'El rango de fechas es inválido' });
+      }
+
       filter.fechaHoraInicio = {};
-      if (desde) filter.fechaHoraInicio.$gte = new Date(desde);
-      if (hasta) filter.fechaHoraInicio.$lte = new Date(hasta);
+      if (desdeDate) filter.fechaHoraInicio.$gte = desdeDate;
+      if (hastaDate) filter.fechaHoraInicio.$lte = hastaDate;
     }
 
     const appointments = await Appointment.find(filter)
@@ -81,6 +118,7 @@ export const getAppointments = async (req, res) => {
     res.json(appointments);
   } catch (error) {
     console.error('Error al obtener citas:', error);
+
     res.status(500).json({ error: 'Error al obtener las citas' });
   }
 };
@@ -91,6 +129,10 @@ export const getAppointments = async (req, res) => {
  */
 export const getAppointmentById = async (req, res) => {
   try {
+    if (!OBJECT_ID_REGEX.test(req.params.id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+
     const appointment = await Appointment.findById(req.params.id)
       .populate('cliente', 'nombre email telefono')
       .populate('profesional', 'nombre color especialidad')
@@ -196,15 +238,46 @@ export const createAppointment = async (req, res) => {
     let profesionalAsignado = null;
 
     if (profesionalId) {
+      const profesionalesCapaces = (servicio.profesionalesCapaces || []).map((id) => id.toString());
+
+      if (profesionalesCapaces.length > 0 && !profesionalesCapaces.includes(profesionalId.toString())) {
+        return res.status(400).json({
+          error: 'El profesional no puede realizar este servicio',
+          code: 'PROFESSIONAL_NOT_QUALIFIED'
+        });
+      }
+
+      if (!forceOverbook) {
+        const hayBloqueoGlobal = await Blocker.findOne({
+          fechaHoraInicio: { $lt: fechaFinOperativa },
+          fechaHoraFin: { $gt: fechaInicio },
+          profesional: null
+        }).select('_id');
+
+        if (hayBloqueoGlobal) {
+          return res.status(400).json({
+            error: 'Existe un bloqueo global en este horario',
+            code: 'GLOBAL_BLOCK_PRESENT',
+            politicaDuracion
+          });
+        }
+      }
+
       const profesionalObjetivo = await Professional.findById(profesionalId)
         .select('_id activo horarioSemanal');
 
       if (!profesionalObjetivo) {
-        return res.status(404).json({ error: 'Profesional no encontrado' });
+        return res.status(404).json({
+          error: 'Profesional no encontrado',
+          code: 'PROFESSIONAL_NOT_FOUND'
+        });
       }
 
       if (!profesionalObjetivo.activo) {
-        return res.status(400).json({ error: 'Profesional no activo' });
+        return res.status(400).json({
+          error: 'Profesional no activo',
+          code: 'PROFESSIONAL_INACTIVE'
+        });
       }
       // Verificar disponibilidad del profesional especificado
       const disponibilidad = await verificarDisponibilidadSlot(
@@ -309,8 +382,7 @@ export const createAppointment = async (req, res) => {
               fechaHoraFin: { $gt: fechaInicio },
               $or: [
                 { profesional: profesionalAsignado },
-                { profesional: null },
-                { profesional: { $exists: false } }
+                { profesional: null }
               ]
             }).session(session);
 
@@ -381,6 +453,10 @@ export const createAppointment = async (req, res) => {
  */
 export const updateAppointment = async (req, res) => {
   try {
+    if (!OBJECT_ID_REGEX.test(req.params.id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+
     const validationResult = updateAppointmentSchema.safeParse(req.body);
     if (!validationResult.success) {
       return res.status(400).json({
@@ -415,6 +491,10 @@ export const updateAppointment = async (req, res) => {
  */
 export const cancelAppointment = async (req, res) => {
   try {
+    if (!OBJECT_ID_REGEX.test(req.params.id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+
     const validationResult = cancelAppointmentSchema.safeParse(req.body);
     if (!validationResult.success) {
       return res.status(400).json({

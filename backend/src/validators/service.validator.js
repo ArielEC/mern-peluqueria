@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
+
+const objectIdSchema = z
+  .string()
+  .regex(OBJECT_ID_REGEX, 'Debe ser un ObjectId válido');
+
 // Validador para crear servicio
 export const createServiceSchema = z.object({
   nombre: z.string().min(1, 'El nombre es obligatorio').max(100, 'El nombre no puede exceder 100 caracteres'),
@@ -9,10 +15,10 @@ export const createServiceSchema = z.object({
     .min(15, 'La duración mínima es 15 minutos'),
   precio: z.number().min(0, 'El precio no puede ser negativo'),
   categoria: z.string().max(50).optional(),
-  profesionalesCapaces: z.array(z.string()).optional(), // Array de ObjectIds como strings
+  profesionalesCapaces: z.array(objectIdSchema).optional(), // Array de ObjectIds válidos
   activo: z.boolean().optional(),
   orden: z.number().optional()
-});
+}).strict();
 
 // Validador para actualizar servicio
 export const updateServiceSchema = z.object({
@@ -24,7 +30,7 @@ export const updateServiceSchema = z.object({
     .optional(),
   precio: z.number().min(0).optional(),
   categoria: z.string().max(50).optional(),
-  profesionalesCapaces: z.array(z.string()).optional(),
+  profesionalesCapaces: z.array(objectIdSchema).optional(),
   activo: z.boolean().optional(),
   orden: z.number().optional()
-});
+}).strict();

@@ -1,6 +1,8 @@
 import Service from '../models/Service.js';
 import { createServiceSchema, updateServiceSchema } from '../validators/service.validator.js';
 
+const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
+
 /**
  * GET /api/services
  * Listar todos los servicios
@@ -12,6 +14,9 @@ export const getAllServices = async (req, res) => {
     const filter = {};
     
     if (activo !== undefined) {
+      if (activo !== 'true' && activo !== 'false') {
+        return res.status(400).json({ error: 'Parámetro activo inválido (usa true/false)' });
+      }
       filter.activo = activo === 'true';
     }
     if (categoria) {
@@ -36,6 +41,10 @@ export const getAllServices = async (req, res) => {
  */
 export const getServiceById = async (req, res) => {
   try {
+    if (!OBJECT_ID_REGEX.test(req.params.id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+
     const service = await Service.findById(req.params.id)
       .populate('profesionalesCapaces', 'nombre especialidad color');
     
@@ -86,6 +95,10 @@ export const createService = async (req, res) => {
  */
 export const updateService = async (req, res) => {
   try {
+    if (!OBJECT_ID_REGEX.test(req.params.id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+
     // Validar datos de entrada
     const validationResult = updateServiceSchema.safeParse(req.body);
     if (!validationResult.success) {
@@ -119,6 +132,10 @@ export const updateService = async (req, res) => {
  */
 export const deleteService = async (req, res) => {
   try {
+    if (!OBJECT_ID_REGEX.test(req.params.id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+
     const service = await Service.findByIdAndUpdate(
       req.params.id,
       { $set: { activo: false } },

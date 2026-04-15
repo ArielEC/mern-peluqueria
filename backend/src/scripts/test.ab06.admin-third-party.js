@@ -57,6 +57,10 @@ const assertError = (res, statusCode, contains) => {
   assert.ok(res.payload?.error?.includes(contains), `Esperado error que incluya "${contains}" y se recibió: ${JSON.stringify(res.payload)}`);
 };
 
+const assertErrorCode = (res, code) => {
+  assert.equal(res.payload?.code, code, `Esperado code "${code}" y se recibió: ${JSON.stringify(res.payload)}`);
+};
+
 const assertValidationErrorEnCampo = (res, campo) => {
   assert.equal(res.statusCode, 400);
   assert.equal(res.payload?.error, 'Datos inválidos');
@@ -195,7 +199,8 @@ const main = async () => {
       assertError(res, 400, 'El cliente especificado está desactivado');
     }
 
-    // Caso 5b: admin con forceOverbook no puede usar profesional inexistente/inactivo
+    // Caso 5b: servicio sin lista explícita de capacidades + profesional inexistente
+    // Debe prevalecer el error de existencia del profesional
     User.findById = () => ({
       select: async () => ({ _id: CLIENTE_ID_VALIDO, role: 'cliente', activo: true })
     });
@@ -224,7 +229,73 @@ const main = async () => {
       });
       const res = crearRes();
       await createAppointment(req, res);
-      assertError(res, 404, 'Profesional no encontrado o no activo');
+      assertError(res, 404, 'Profesional no encontrado');
+      assertErrorCode(res, 'PROFESSIONAL_NOT_FOUND');
+    }
+
+    // Caso 5d: admin recibe código explícito cuando profesional no existe
+    User.findById = () => ({
+      select: async () => ({ _id: CLIENTE_ID_VALIDO, role: 'cliente', activo: true })
+    });
+    Service.findById = async () => ({
+      _id: SERVICIO_ID,
+      activo: true,
+      duracion: 50,
+      precio: 30,
+      profesionalesCapaces: [PROFESIONAL_INEXISTENTE_ID]
+    });
+    Settings.getGlobal = async () => ({
+      diasMaximosReserva: 30,
+      duracionSlot: 15
+    });
+    Professional.findById = () => ({
+      select: async () => null
+    });
+
+    {
+      const req = crearReq({
+        body: {
+          clienteId: CLIENTE_ID_VALIDO,
+          profesionalId: PROFESIONAL_INEXISTENTE_ID,
+          forceOverbook: true
+        },
+        user: { role: 'admin' }
+      });
+      const res = crearRes();
+      await createAppointment(req, res);
+      assertError(res, 404, 'Profesional no encontrado');
+      assertErrorCode(res, 'PROFESSIONAL_NOT_FOUND');
+    }
+
+    // Caso 5c: admin no puede reservar con profesional no apto para el servicio
+    User.findById = () => ({
+      select: async () => ({ _id: CLIENTE_ID_VALIDO, role: 'cliente', activo: true })
+    });
+    Service.findById = async () => ({
+      _id: SERVICIO_ID,
+      activo: true,
+      duracion: 50,
+      precio: 30,
+      profesionalesCapaces: ['507f1f77bcf86cd799439088']
+    });
+    Settings.getGlobal = async () => ({
+      diasMaximosReserva: 30,
+      duracionSlot: 15
+    });
+
+    {
+      const req = crearReq({
+        body: {
+          clienteId: CLIENTE_ID_VALIDO,
+          profesionalId: PROFESIONAL_ID_VALIDO,
+          forceOverbook: true
+        },
+        user: { role: 'admin' }
+      });
+      const res = crearRes();
+      await createAppointment(req, res);
+      assertError(res, 400, 'El profesional no puede realizar este servicio');
+      assertErrorCode(res, 'PROFESSIONAL_NOT_QUALIFIED');
     }
 
     // Caso 6: comportamiento previo para cliente autenticado sin clienteId

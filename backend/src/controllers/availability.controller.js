@@ -1,5 +1,7 @@
 import { getDisponibilidad } from '../services/availability.service.js';
 
+const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
+
 /**
  * GET /api/availability
  * Obtener slots disponibles para una fecha y servicio
@@ -18,9 +20,17 @@ export const getAvailability = async (req, res) => {
       return res.status(400).json({ error: 'El servicioId es requerido' });
     }
 
+    if (!OBJECT_ID_REGEX.test(servicioId)) {
+      return res.status(400).json({ error: 'servicioId inválido' });
+    }
+
+    if (profesionalId && !OBJECT_ID_REGEX.test(profesionalId)) {
+      return res.status(400).json({ error: 'profesionalId inválido' });
+    }
+
     // Parsear fecha
     const fechaDate = new Date(fecha);
-    if (isNaN(fechaDate.getTime())) {
+    if (Number.isNaN(fechaDate.getTime())) {
       return res.status(400).json({ error: 'Formato de fecha inválido' });
     }
 

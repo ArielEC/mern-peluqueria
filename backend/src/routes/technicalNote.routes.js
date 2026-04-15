@@ -12,19 +12,19 @@ const router = express.Router();
 
 // Todas las rutas de notas técnicas requieren autenticación y rol admin
 
-// GET /api/technical-notes/:clienteId
-router.get('/:clienteId', authenticateToken, requireAdmin, getNotesByClient);
+// GET /api/technical-notes?clienteId=...
+router.get('/', authenticateToken, requireAdmin, getNotesByClient);
 
-// GET /api/technical-notes/:clienteId/:noteId
-router.get('/:clienteId/:noteId', authenticateToken, requireAdmin, getNoteById);
+// GET /api/technical-notes/:id
+router.get('/:id', authenticateToken, requireAdmin, getNoteById);
 
-// POST /api/technical-notes/:clienteId
-router.post('/:clienteId', authenticateToken, requireAdmin, createNote);
+// POST /api/technical-notes
+router.post('/', authenticateToken, requireAdmin, createNote);
 
-// PUT /api/technical-notes/:clienteId/:noteId
-router.put('/:clienteId/:noteId', authenticateToken, requireAdmin, updateNote);
+// PUT /api/technical-notes/:id
+router.put('/:id', authenticateToken, requireAdmin, updateNote);
 
-// DELETE /api/technical-notes/:clienteId/:noteId
-router.delete('/:clienteId/:noteId', authenticateToken, requireAdmin, deleteNote);
+// DELETE /api/technical-notes/:id
+router.delete('/:id', authenticateToken, requireAdmin, deleteNote);
 
 export default router;

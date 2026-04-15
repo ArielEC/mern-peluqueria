@@ -1,16 +1,35 @@
 import TechnicalNote from '../models/TechnicalNote.js';
 import User from '../models/User.js';
+import Professional from '../models/Professional.js';
 import { createTechnicalNoteSchema, updateTechnicalNoteSchema } from '../validators/technicalNote.validator.js';
 
+const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
+
+const parseBooleanQuery = (value) => {
+  if (value === undefined) return { ok: true, value: undefined };
+  if (value === 'true') return { ok: true, value: true };
+  if (value === 'false') return { ok: true, value: false };
+  return { ok: false, value: undefined };
+};
+
+const CATEGORIAS_NOTA_VALIDAS = new Set(['color', 'tratamiento', 'alergia', 'preferencia', 'otro']);
+
 /**
- * GET /api/technical-notes/:clienteId
- * Listar todas las notas técnicas de un cliente
+ * GET /api/technical-notes
+ * Listar todas las notas técnicas filtrando por clienteId (query)
  * Acceso: Solo Admin
  */
 export const getNotesByClient = async (req, res) => {
   try {
-    const { clienteId } = req.params;
-    const { categoria, importante } = req.query;
+    const { clienteId, cita, categoria, importante } = req.query;
+
+    if (!clienteId) {
+      return res.status(400).json({ error: 'clienteId es requerido' });
+    }
+
+    if (!OBJECT_ID_REGEX.test(clienteId)) {
+      return res.status(400).json({ error: 'clienteId inválido' });
+    }
     
     // Verificar que el cliente existe
     const cliente = await User.findById(clienteId);
@@ -19,17 +38,31 @@ export const getNotesByClient = async (req, res) => {
     }
 
     const filter = { cliente: clienteId };
+
+    if (cita) {
+      if (!OBJECT_ID_REGEX.test(cita)) {
+        return res.status(400).json({ error: 'cita inválida' });
+      }
+      filter.cita = cita;
+    }
     
     if (categoria) {
+      if (!CATEGORIAS_NOTA_VALIDAS.has(categoria)) {
+        return res.status(400).json({ error: 'categoria inválida' });
+      }
       filter.categoria = categoria;
     }
     if (importante !== undefined) {
-      filter.importante = importante === 'true';
+      const importanteParsed = parseBooleanQuery(importante);
+      if (!importanteParsed.ok) {
+        return res.status(400).json({ error: 'Parámetro importante inválido (usa true/false)' });
+      }
+      filter.importante = importanteParsed.value;
     }
 
     const notes = await TechnicalNote.find(filter)
       .populate('creadaPor', 'nombre')
-      .populate('cita', 'fechaHora')
+      .populate('cita', 'fechaHoraInicio fechaHoraFin estado')
       .sort({ createdAt: -1 });
     
     res.json(notes);
@@ -40,20 +73,21 @@ export const getNotesByClient = async (req, res) => {
 };
 
 /**
- * GET /api/technical-notes/:clienteId/:noteId
+ * GET /api/technical-notes/:id
  * Obtener una nota técnica específica
  * Acceso: Solo Admin
  */
 export const getNoteById = async (req, res) => {
   try {
-    const { clienteId, noteId } = req.params;
+    const { id } = req.params;
+
+    if (!OBJECT_ID_REGEX.test(id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
     
-    const note = await TechnicalNote.findOne({ 
-      _id: noteId, 
-      cliente: clienteId 
-    })
+    const note = await TechnicalNote.findById(id)
       .populate('creadaPor', 'nombre')
-      .populate('cita', 'fechaHora');
+      .populate('cita', 'fechaHoraInicio fechaHoraFin estado');
     
     if (!note) {
       return res.status(404).json({ error: 'Nota técnica no encontrada' });
@@ -67,13 +101,21 @@ export const getNoteById = async (req, res) => {
 };
 
 /**
- * POST /api/technical-notes/:clienteId
+ * POST /api/technical-notes
  * Crear una nueva nota técnica para un cliente
  * Acceso: Solo Admin
  */
 export const createNote = async (req, res) => {
   try {
-    const { clienteId } = req.params;
+    const { clienteId } = req.body;
+
+    if (!clienteId) {
+      return res.status(400).json({ error: 'clienteId es requerido' });
+    }
+
+    if (!OBJECT_ID_REGEX.test(clienteId)) {
+      return res.status(400).json({ error: 'clienteId inválido' });
+    }
     
     // Verificar que el cliente existe
     const cliente = await User.findById(clienteId);
@@ -95,13 +137,27 @@ export const createNote = async (req, res) => {
       cliente: clienteId
     };
 
+    delete noteData.clienteId;
+
+    if (noteData.creadaPor) {
+      if (!OBJECT_ID_REGEX.test(noteData.creadaPor)) {
+        return res.status(400).json({ error: 'creadaPor inválido' });
+      }
+
+      // Verificamos que el profesional exista para mantener coherencia referencial.
+      const profesionalExiste = await Professional.exists({ _id: noteData.creadaPor });
+      if (!profesionalExiste) {
+        return res.status(404).json({ error: 'Profesional no encontrado para creadaPor' });
+      }
+    }
+
     const note = new TechnicalNote(noteData);
     await note.save();
     
     // Poblar referencias antes de devolver
     await note.populate('creadaPor', 'nombre');
     if (note.cita) {
-      await note.populate('cita', 'fechaHora');
+      await note.populate('cita', 'fechaHoraInicio fechaHoraFin estado');
     }
     
     res.status(201).json(note);
@@ -112,13 +168,17 @@ export const createNote = async (req, res) => {
 };
 
 /**
- * PUT /api/technical-notes/:clienteId/:noteId
+ * PUT /api/technical-notes/:id
  * Actualizar una nota técnica
  * Acceso: Solo Admin
  */
 export const updateNote = async (req, res) => {
   try {
-    const { clienteId, noteId } = req.params;
+    const { id } = req.params;
+
+    if (!OBJECT_ID_REGEX.test(id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
     
     // Validar datos de entrada
     const validationResult = updateTechnicalNoteSchema.safeParse(req.body);
@@ -129,13 +189,22 @@ export const updateNote = async (req, res) => {
       });
     }
 
-    const note = await TechnicalNote.findOneAndUpdate(
-      { _id: noteId, cliente: clienteId },
-      { $set: validationResult.data },
+    const updateData = validationResult.data;
+
+    if (updateData.creadaPor) {
+      const profesionalExiste = await Professional.exists({ _id: updateData.creadaPor });
+      if (!profesionalExiste) {
+        return res.status(404).json({ error: 'Profesional no encontrado para creadaPor' });
+      }
+    }
+
+    const note = await TechnicalNote.findByIdAndUpdate(
+      id,
+      { $set: updateData },
       { new: true, runValidators: true }
     )
       .populate('creadaPor', 'nombre')
-      .populate('cita', 'fechaHora');
+      .populate('cita', 'fechaHoraInicio fechaHoraFin estado');
 
     if (!note) {
       return res.status(404).json({ error: 'Nota técnica no encontrada' });
@@ -149,18 +218,19 @@ export const updateNote = async (req, res) => {
 };
 
 /**
- * DELETE /api/technical-notes/:clienteId/:noteId
+ * DELETE /api/technical-notes/:id
  * Eliminar una nota técnica
  * Acceso: Solo Admin
  */
 export const deleteNote = async (req, res) => {
   try {
-    const { clienteId, noteId } = req.params;
+    const { id } = req.params;
+
+    if (!OBJECT_ID_REGEX.test(id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
     
-    const note = await TechnicalNote.findOneAndDelete({ 
-      _id: noteId, 
-      cliente: clienteId 
-    });
+    const note = await TechnicalNote.findByIdAndDelete(id);
 
     if (!note) {
       return res.status(404).json({ error: 'Nota técnica no encontrada' });

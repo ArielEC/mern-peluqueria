@@ -13,7 +13,7 @@ const horarioDiaSchema = z.object({
     return false;
   }
   return true;
-}, { message: 'Si el día está activo, debe tener hora de inicio y fin' });
+}, { message: 'Si el día está activo, debe tener hora de inicio y fin' }).strict();
 
 // Esquema para horario semanal
 const horarioSemanalSchema = z.object({
@@ -24,7 +24,7 @@ const horarioSemanalSchema = z.object({
   4: horarioDiaSchema.optional(), // Jueves
   5: horarioDiaSchema.optional(), // Viernes
   6: horarioDiaSchema.optional()  // Sábado
-});
+}).strict();
 
 // Validador para crear profesional
 export const createProfessionalSchema = z.object({
@@ -33,7 +33,7 @@ export const createProfessionalSchema = z.object({
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Color hexadecimal inválido').optional(),
   activo: z.boolean().optional(),
   horarioSemanal: horarioSemanalSchema.optional()
-});
+}).strict();
 
 // Validador para actualizar profesional
 export const updateProfessionalSchema = z.object({
@@ -42,4 +42,4 @@ export const updateProfessionalSchema = z.object({
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Color hexadecimal inválido').optional(),
   activo: z.boolean().optional(),
   horarioSemanal: horarioSemanalSchema.optional()
-});
+}).strict();

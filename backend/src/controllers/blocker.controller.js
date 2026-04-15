@@ -1,6 +1,22 @@
 import Blocker from '../models/Blocker.js';
 import { createBlockerSchema, updateBlockerSchema } from '../validators/blocker.validator.js';
 
+const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
+const FECHA_SIMPLE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+const parsearFechaFiltro = (value, finDelDia = false) => {
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  const esFechaSimple = FECHA_SIMPLE_REGEX.test(trimmed);
+  const fecha = esFechaSimple
+    ? new Date(`${trimmed}T${finDelDia ? '23:59:59.999' : '00:00:00.000'}`)
+    : new Date(trimmed);
+
+  if (Number.isNaN(fecha.getTime())) return null;
+  return fecha;
+};
+
 /**
  * GET /api/blockers
  * Listar todos los bloqueos
@@ -8,24 +24,48 @@ import { createBlockerSchema, updateBlockerSchema } from '../validators/blocker.
  */
 export const getAllBlockers = async (req, res) => {
   try {
-    const { profesional, desde, hasta, tipo } = req.query;
+    const { desde, hasta, tipo } = req.query;
+    const profesionalId = req.query.profesionalId ?? req.query.profesional;
     const filter = {};
     
-    if (profesional) {
-      filter.profesional = profesional === 'null' ? null : profesional;
+    if (profesionalId) {
+      if (profesionalId === 'null') {
+        filter.profesional = null;
+      } else {
+        if (!OBJECT_ID_REGEX.test(profesionalId)) {
+          return res.status(400).json({ error: 'profesionalId inválido' });
+        }
+        filter.profesional = profesionalId;
+      }
     }
     if (tipo) {
+      const TIPOS_VALIDOS = ['vacaciones', 'festivo', 'personal', 'mantenimiento', 'otro'];
+      if (!TIPOS_VALIDOS.includes(tipo)) {
+        return res.status(400).json({ error: 'tipo inválido' });
+      }
       filter.tipo = tipo;
     }
     
-    // Filtrar por rango de fechas
+    // Filtrar por rango de fechas con intersección de intervalos
     if (desde || hasta) {
-      filter.fechaHoraInicio = {};
-      if (desde) {
-        filter.fechaHoraInicio.$gte = new Date(desde);
+      const desdeDate = desde ? parsearFechaFiltro(desde, false) : null;
+      const hastaDate = hasta ? parsearFechaFiltro(hasta, true) : null;
+
+      if (desde && !desdeDate) {
+        return res.status(400).json({ error: 'Parámetro desde inválido' });
       }
-      if (hasta) {
-        filter.fechaHoraFin = { $lte: new Date(hasta) };
+      if (hasta && !hastaDate) {
+        return res.status(400).json({ error: 'Parámetro hasta inválido' });
+      }
+      if (desdeDate && hastaDate && desdeDate > hastaDate) {
+        return res.status(400).json({ error: 'El rango de fechas es inválido' });
+      }
+
+      if (hastaDate) {
+        filter.fechaHoraInicio = { $lte: hastaDate };
+      }
+      if (desdeDate) {
+        filter.fechaHoraFin = { $gte: desdeDate };
       }
     }
 
@@ -48,6 +88,10 @@ export const getAllBlockers = async (req, res) => {
  */
 export const getBlockerById = async (req, res) => {
   try {
+    if (!OBJECT_ID_REGEX.test(req.params.id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+
     const blocker = await Blocker.findById(req.params.id)
       .populate('profesional', 'nombre color')
       .populate('creadoPor', 'nombre email');
@@ -107,6 +151,10 @@ export const createBlocker = async (req, res) => {
  */
 export const updateBlocker = async (req, res) => {
   try {
+    if (!OBJECT_ID_REGEX.test(req.params.id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+
     // Validar datos de entrada
     const validationResult = updateBlockerSchema.safeParse(req.body);
     if (!validationResult.success) {
@@ -151,6 +199,10 @@ export const updateBlocker = async (req, res) => {
  */
 export const deleteBlocker = async (req, res) => {
   try {
+    if (!OBJECT_ID_REGEX.test(req.params.id)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+
     const blocker = await Blocker.findByIdAndDelete(req.params.id);
 
     if (!blocker) {

@@ -27,6 +27,17 @@ const minutesToTime = (minutes) => {
 };
 
 /**
+ * Construye una fecha con hora/minuto exactos sobre una fecha base
+ */
+const construirFechaDesdeMinutos = (fechaBase, minutos) => {
+  const fecha = new Date(fechaBase);
+  const horas = Math.floor(minutos / 60);
+  const mins = minutos % 60;
+  fecha.setHours(horas, mins, 0, 0);
+  return fecha;
+};
+
+/**
  * Resuelve la duración del slot desde Settings.
  * Usa fallback seguro en caso de dato inválido.
  */
@@ -36,6 +47,40 @@ const resolverDuracionSlot = (duracionSlot) => {
     return 15;
   }
   return Math.floor(valor);
+};
+
+
+/**
+ * Obtiene rango horario válido de un día (en minutos) o null si no aplica.
+ */
+const obtenerRangoHorarioDia = (horarioDia) => {
+  if (!horarioDia || !horarioDia.activo) {
+    return null;
+  }
+
+  if (typeof horarioDia.inicio !== 'string' || typeof horarioDia.fin !== 'string') {
+    return null;
+  }
+
+  const inicioMinutos = timeToMinutes(horarioDia.inicio);
+  const finMinutos = timeToMinutes(horarioDia.fin);
+
+  if (!Number.isFinite(inicioMinutos) || !Number.isFinite(finMinutos) || inicioMinutos >= finMinutos) {
+    return null;
+  }
+
+  return { inicioMinutos, finMinutos };
+};
+
+const mapearCitaPorCompatibilidad = (cita) => {
+  if (cita?.fechaHoraFinOperativa) {
+    return cita;
+  }
+
+  return {
+    ...cita,
+    fechaHoraFinOperativa: cita?.fechaHoraFin || null
+  };
 };
 
 /**
@@ -204,41 +249,77 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
     return { slots: [], politicaDuracion };
   }
 
-  // Definir rango del día para consultas
-  const inicioDia = new Date(fecha);
-  inicioDia.setHours(0, 0, 0, 0);
-  const finDia = new Date(fecha);
-  finDia.setHours(23, 59, 59, 999);
+  // Reducir carga de DB: filtrar primero profesionales con horario activo para el día.
+  // Si nadie trabaja ese día, evitamos consultar bloqueos y citas.
+  const profesionalesActivosDia = [];
+  let inicioMinimoAgenda = null;
+  let finMaximoAgenda = null;
 
-  const profesionalesIds = profesionales.map((p) => p._id);
+  for (const profesional of profesionales) {
+    const horarioDia = profesional.horarioSemanal?.[diaSemana];
+    const rangoHorario = obtenerRangoHorarioDia(horarioDia);
 
-  // Obtener bloqueos del día solo para profesionales relevantes + globales
-  const bloqueos = await Blocker.find({
-    fechaHoraInicio: { $lt: finDia },
-    fechaHoraFin: { $gt: inicioDia },
-    $or: [
-      { profesional: { $in: profesionalesIds } },
-      { profesional: null },
-      { profesional: { $exists: false } }
-    ]
-  })
-    .select('_id profesional fechaHoraInicio fechaHoraFin')
-    .lean();
-
-  // Obtener citas confirmadas del día solo para profesionales relevantes
-  const citas = await Appointment.find({
-    fechaHoraInicio: { $lt: finDia },
-    estado: 'confirmada',
-    profesional: { $in: profesionalesIds },
-    $expr: {
-      $gt: [
-        { $ifNull: ['$fechaHoraFinOperativa', '$fechaHoraFin'] },
-        inicioDia
-      ]
+    if (!rangoHorario) {
+      continue;
     }
-  })
-    .select('_id profesional fechaHoraInicio fechaHoraFin fechaHoraFinOperativa')
-    .lean();
+
+    const { inicioMinutos, finMinutos } = rangoHorario;
+
+    profesionalesActivosDia.push(profesional);
+
+    if (inicioMinimoAgenda === null || inicioMinutos < inicioMinimoAgenda) {
+      inicioMinimoAgenda = inicioMinutos;
+    }
+
+    if (finMaximoAgenda === null || finMinutos > finMaximoAgenda) {
+      finMaximoAgenda = finMinutos;
+    }
+  }
+
+  if (
+    profesionalesActivosDia.length === 0 ||
+    inicioMinimoAgenda === null ||
+    finMaximoAgenda === null
+  ) {
+    return { slots: [], politicaDuracion };
+  }
+
+  // Definir rango mínimo útil del día para reducir datos innecesarios en DB
+  const inicioConsulta = construirFechaDesdeMinutos(fecha, inicioMinimoAgenda);
+  const finConsulta = construirFechaDesdeMinutos(fecha, finMaximoAgenda);
+
+  const profesionalesIds = profesionalesActivosDia.map((p) => p._id);
+
+  // Obtener bloqueos y citas en paralelo para evitar latencia acumulada.
+  // Ambos queries usan rango útil y profesionales relevantes.
+  const [bloqueos, citasRaw] = await Promise.all([
+    Blocker.find({
+      fechaHoraInicio: { $lt: finConsulta },
+      fechaHoraFin: { $gt: inicioConsulta },
+      $or: [
+        { profesional: { $in: profesionalesIds } },
+        { profesional: null }
+      ]
+    })
+      .select('_id profesional fechaHoraInicio fechaHoraFin')
+      .lean(),
+    // Se evita $expr para favorecer uso de índices y mantener compatibilidad
+    // con documentos antiguos sin fechaHoraFinOperativa.
+    Appointment.find({
+      estado: 'confirmada',
+      profesional: { $in: profesionalesIds },
+      fechaHoraInicio: { $lt: finConsulta },
+      $or: [
+        { fechaHoraFinOperativa: { $gt: inicioConsulta } },
+        { fechaHoraFinOperativa: null, fechaHoraFin: { $gt: inicioConsulta } },
+        { fechaHoraFinOperativa: { $exists: false }, fechaHoraFin: { $gt: inicioConsulta } }
+      ]
+    })
+      .select('_id profesional fechaHoraInicio fechaHoraFin fechaHoraFinOperativa')
+      .lean()
+  ]);
+
+  const citas = citasRaw.map(mapearCitaPorCompatibilidad);
 
   // Indexar bloqueos por profesional para evitar filtros repetidos en cada iteración
   const bloqueosGlobales = [];
@@ -267,13 +348,9 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
   const slotsDisponibles = [];
   const ahora = new Date();
 
-  for (const profesional of profesionales) {
+  for (const profesional of profesionalesActivosDia) {
     // Obtener horario del profesional para este día
     const horarioDia = profesional.horarioSemanal[diaSemana];
-    
-    if (!horarioDia || !horarioDia.activo) {
-      continue; // El profesional no trabaja este día
-    }
 
     // Generar slots del día para este profesional
     const slotsDelDia = generarSlotsDelDia(horarioDia, duracionSlot);

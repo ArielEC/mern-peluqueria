@@ -41,7 +41,6 @@ const userSchema = new mongoose.Schema({
 });
 
 // Índices
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 
 // Middleware pre-save para hashear password
