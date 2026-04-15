@@ -1,4 +1,6 @@
 import { getDisponibilidad } from '../services/availability.service.js';
+import Settings from '../models/Settings.js';
+import { parseFechaLocal, resolverZonaHoraria, getInicioDelDiaHoy } from '../utils/dateTime.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 
@@ -28,20 +30,24 @@ export const getAvailability = async (req, res) => {
       return res.status(400).json({ error: 'profesionalId inválido' });
     }
 
-    // Parsear fecha
-    const fechaDate = new Date(fecha);
+    // Obtener zona horaria del negocio desde Settings para parsear la fecha correctamente
+    const settings = await Settings.getGlobal();
+    const tz = resolverZonaHoraria(settings);
+
+    // Parsear "YYYY-MM-DD" como medianoche en la TZ del negocio
+    // (new Date("YYYY-MM-DD") crea UTC midnight, lo que produce el día incorrecto en TZ < UTC)
+    const fechaDate = parseFechaLocal(fecha, tz);
     if (Number.isNaN(fechaDate.getTime())) {
       return res.status(400).json({ error: 'Formato de fecha inválido' });
     }
 
-    // Verificar que la fecha no sea pasada
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
+    // Verificar que la fecha no sea pasada usando la TZ del negocio
+    const hoy = getInicioDelDiaHoy(tz);
     if (fechaDate < hoy) {
       return res.status(400).json({ error: 'No se puede consultar disponibilidad para fechas pasadas' });
     }
 
-    const disponibilidad = await getDisponibilidad(fechaDate, servicioId, profesionalId || null);
+    const disponibilidad = await getDisponibilidad(fechaDate, servicioId, profesionalId || null, settings);
     const slots = disponibilidad.slots || [];
 
     res.json({

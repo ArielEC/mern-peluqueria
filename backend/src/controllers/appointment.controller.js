@@ -11,6 +11,7 @@ import {
   construirMensajeRedondeoDuracion
 } from '../services/availability.service.js';
 import { createAppointmentSchema, updateAppointmentSchema, cancelAppointmentSchema } from '../validators/appointment.validator.js';
+import { diferenciaDiasCeil, diferenciaHoras } from '../utils/dateTime.js';
 
 const MAX_REINTENTOS_TRANSACCION = 3;
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
@@ -216,7 +217,7 @@ export const createAppointment = async (req, res) => {
     // Obtener settings para validar días máximos de reserva
     const settings = await Settings.getGlobal();
     const ahora = new Date();
-    const diasHastaReserva = Math.ceil((fechaInicio - ahora) / (1000 * 60 * 60 * 24));
+    const diasHastaReserva = diferenciaDiasCeil(ahora, fechaInicio);
     const ocupacionServicio = calcularOcupacionOperativa(servicio.duracion, settings?.duracionSlot);
     const politicaDuracion = construirPoliticaDuracion(ocupacionServicio);
     politicaDuracionContext = politicaDuracion;

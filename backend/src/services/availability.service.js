@@ -3,6 +3,12 @@ import Appointment from '../models/Appointment.js';
 import Blocker from '../models/Blocker.js';
 import Service from '../models/Service.js';
 import Settings from '../models/Settings.js';
+import {
+  resolverZonaHoraria,
+  getDiaSemana,
+  construirFechaEnTZ,
+  getMinutosDesdeMedianoche
+} from '../utils/dateTime.js';
 
 /**
  * Servicio de disponibilidad
@@ -28,13 +34,11 @@ const minutesToTime = (minutes) => {
 
 /**
  * Construye una fecha con hora/minuto exactos sobre una fecha base
+ * usando la zona horaria del negocio (evita desfases UTC/local).
+ * Se inyecta `tz` desde el contexto de llamada.
  */
-const construirFechaDesdeMinutos = (fechaBase, minutos) => {
-  const fecha = new Date(fechaBase);
-  const horas = Math.floor(minutos / 60);
-  const mins = minutos % 60;
-  fecha.setHours(horas, mins, 0, 0);
-  return fecha;
+const construirFechaDesdeMinutos = (fechaBase, minutos, tz) => {
+  return construirFechaEnTZ(fechaBase, minutos, tz);
 };
 
 /**
@@ -197,16 +201,17 @@ const tieneCita = (slotStart, slotEnd, appointments) => {
 
 /**
  * Obtiene la disponibilidad para una fecha y servicio específicos
- * @param {Date} fecha - Fecha para consultar disponibilidad
+ * @param {Date} fecha - Fecha para consultar disponibilidad (medianoche en TZ del negocio)
  * @param {String} servicioId - ID del servicio (para filtrar profesionales capaces y duración)
  * @param {String} profesionalId - (Opcional) ID de profesional específico
+ * @param {Object} settingsCtx - (Opcional) Settings ya cargado para evitar query extra
  * @returns {Object} Objeto con slots disponibles y política de duración aplicada
  */
-export const getDisponibilidad = async (fecha, servicioId, profesionalId = null) => {
+export const getDisponibilidad = async (fecha, servicioId, profesionalId = null, settingsCtx = null) => {
   // Obtener servicio y configuración global para conocer duración real y grid de agenda
   const [servicio, settings] = await Promise.all([
     Service.findById(servicioId),
-    Settings.getGlobal()
+    settingsCtx ? Promise.resolve(settingsCtx) : Settings.getGlobal()
   ]);
 
   if (!servicio || !servicio.activo) {
@@ -221,8 +226,11 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
     mensaje: construirMensajeRedondeoDuracion(duracionServicio, duracionSlot)
   };
 
-  // Determinar qué día de la semana es (0 = Domingo, 1 = Lunes, etc.)
-  const diaSemana = fecha.getDay();
+  // Zona horaria del negocio para todos los cálculos de fecha/hora
+  const tz = resolverZonaHoraria(settings);
+
+  // Determinar qué día de la semana es en la TZ del negocio (0 = Domingo, 1 = Lunes, etc.)
+  const diaSemana = getDiaSemana(fecha, tz);
 
   // Obtener profesionales que pueden realizar este servicio
   const profesionalesCapaces = (servicio.profesionalesCapaces || []).map((id) => id.toString());
@@ -285,8 +293,8 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
   }
 
   // Definir rango mínimo útil del día para reducir datos innecesarios en DB
-  const inicioConsulta = construirFechaDesdeMinutos(fecha, inicioMinimoAgenda);
-  const finConsulta = construirFechaDesdeMinutos(fecha, finMaximoAgenda);
+  const inicioConsulta = construirFechaDesdeMinutos(fecha, inicioMinimoAgenda, tz);
+  const finConsulta = construirFechaDesdeMinutos(fecha, finMaximoAgenda, tz);
 
   const profesionalesIds = profesionalesActivosDia.map((p) => p._id);
 
@@ -381,12 +389,9 @@ export const getDisponibilidad = async (fecha, servicioId, profesionalId = null)
         continue;
       }
 
-      // Crear fechas completas para el slot
-      const slotStartDate = new Date(fecha);
-      slotStartDate.setHours(Math.floor(slotInicio / 60), slotInicio % 60, 0, 0);
-      
-      const slotEndDateOperativo = new Date(fecha);
-      slotEndDateOperativo.setHours(Math.floor(slotFinOperativo / 60), slotFinOperativo % 60, 0, 0);
+      // Crear fechas completas para el slot en la TZ del negocio
+      const slotStartDate = construirFechaDesdeMinutos(fecha, slotInicio, tz);
+      const slotEndDateOperativo = construirFechaDesdeMinutos(fecha, slotFinOperativo, tz);
 
       // Verificar que no esté en el pasado
       if (slotStartDate <= ahora) {
@@ -452,6 +457,7 @@ export const verificarDisponibilidadSlot = async (
     return { disponible: false, razon: 'Profesional no encontrado o no activo' };
   }
 
+  const tz = resolverZonaHoraria(settings);
   const duracionSlot = resolverDuracionSlot(settings?.duracionSlot);
   const ocupacion = calcularOcupacionOperativa(duracion, duracionSlot);
   const mensajeOcupacion = construirMensajeRedondeoDuracion(ocupacion.duracionServicio, duracionSlot);
@@ -459,7 +465,8 @@ export const verificarDisponibilidadSlot = async (
     fechaHoraInicio.getTime() + ocupacion.duracionOperativa * 60000
   );
 
-  const diaSemana = fechaHoraInicio.getDay();
+  // Día de la semana en la TZ del negocio
+  const diaSemana = getDiaSemana(fechaHoraInicio, tz);
   const horarioDia = profesional.horarioSemanal[diaSemana];
 
   if (!horarioDia || !horarioDia.activo) {
@@ -470,8 +477,8 @@ export const verificarDisponibilidadSlot = async (
     };
   }
 
-  // Verificar que el slot esté dentro del horario laboral
-  const minutosInicio = fechaHoraInicio.getHours() * 60 + fechaHoraInicio.getMinutes();
+  // Verificar que el slot esté dentro del horario laboral (usando TZ del negocio)
+  const minutosInicio = getMinutosDesdeMedianoche(fechaHoraInicio, tz);
   const minutosFinAgenda = minutosInicio + ocupacion.duracionOperativa;
   const horarioInicio = timeToMinutes(horarioDia.inicio);
   const horarioFin = timeToMinutes(horarioDia.fin);
