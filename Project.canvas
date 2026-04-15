@@ -263,7 +263,7 @@
 			"y": 2020,
 			"width": 280,
 			"height": 160,
-			"color": "5"
+			"color": "4"
 		},
 		{
 			"id": "90bafc16",
@@ -273,7 +273,7 @@
 			"y": 2200,
 			"width": 280,
 			"height": 160,
-			"color": "1"
+			"color": "5"
 		},
 		{
 			"id": "legend",
