@@ -7,6 +7,8 @@ import {
   deleteService
 } from '../controllers/service.controller.js';
 import { authenticateToken, requireAdmin, optionalAuth } from '../middlewares/auth.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import { createServiceSchema, updateServiceSchema } from '../validators/service.validator.js';
 
 const router = express.Router();
 
@@ -17,10 +19,10 @@ router.get('/', optionalAuth, getAllServices);
 router.get('/:id', optionalAuth, getServiceById);
 
 // POST /api/services - Solo Admin
-router.post('/', authenticateToken, requireAdmin, createService);
+router.post('/', authenticateToken, requireAdmin, validate(createServiceSchema), createService);
 
 // PUT /api/services/:id - Solo Admin
-router.put('/:id', authenticateToken, requireAdmin, updateService);
+router.put('/:id', authenticateToken, requireAdmin, validate(updateServiceSchema), updateService);
 
 // DELETE /api/services/:id - Solo Admin (soft delete)
 router.delete('/:id', authenticateToken, requireAdmin, deleteService);

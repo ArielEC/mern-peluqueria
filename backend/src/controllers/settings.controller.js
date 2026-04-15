@@ -1,5 +1,4 @@
 import Settings from '../models/Settings.js';
-import { updateSettingsSchema } from '../validators/settings.validator.js';
 
 /**
  * GET /api/settings
@@ -32,16 +31,7 @@ export const updateSettings = async (req, res) => {
       return res.status(403).json({ error: 'Acceso denegado. Se requieren permisos de administrador.' });
     }
 
-    // Validar datos de entrada
-    const validationResult = updateSettingsSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: 'Datos inválidos', 
-        details: validationResult.error.errors 
-      });
-    }
-
-    const settings = await Settings.updateGlobal(validationResult.data);
+    const settings = await Settings.updateGlobal(req.validatedBody);
     res.json(settings);
   } catch (error) {
     console.error('Error al actualizar settings:', error);

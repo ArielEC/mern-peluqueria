@@ -1,5 +1,4 @@
 import Blocker from '../models/Blocker.js';
-import { createBlockerSchema, updateBlockerSchema } from '../validators/blocker.validator.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 const FECHA_SIMPLE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -114,20 +113,11 @@ export const getBlockerById = async (req, res) => {
  */
 export const createBlocker = async (req, res) => {
   try {
-    // Validar datos de entrada
-    const validationResult = createBlockerSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: 'Datos inválidos', 
-        details: validationResult.error.errors 
-      });
-    }
-
     const blockerData = {
-      ...validationResult.data,
+      ...req.validatedBody,
       creadoPor: req.user._id,
-      fechaHoraInicio: new Date(validationResult.data.fechaHoraInicio),
-      fechaHoraFin: new Date(validationResult.data.fechaHoraFin)
+      fechaHoraInicio: new Date(req.validatedBody.fechaHoraInicio),
+      fechaHoraFin: new Date(req.validatedBody.fechaHoraFin)
     };
 
     const blocker = new Blocker(blockerData);
@@ -155,17 +145,8 @@ export const updateBlocker = async (req, res) => {
       return res.status(400).json({ error: 'id inválido' });
     }
 
-    // Validar datos de entrada
-    const validationResult = updateBlockerSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: 'Datos inválidos', 
-        details: validationResult.error.errors 
-      });
-    }
-
     // Convertir fechas si están presentes
-    const updateData = { ...validationResult.data };
+    const updateData = { ...req.validatedBody };
     if (updateData.fechaHoraInicio) {
       updateData.fechaHoraInicio = new Date(updateData.fechaHoraInicio);
     }

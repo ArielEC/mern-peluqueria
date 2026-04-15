@@ -7,6 +7,8 @@ import {
   deleteProfessional
 } from '../controllers/professional.controller.js';
 import { authenticateToken, requireAdmin, optionalAuth } from '../middlewares/auth.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import { createProfessionalSchema, updateProfessionalSchema } from '../validators/professional.validator.js';
 
 const router = express.Router();
 
@@ -17,10 +19,10 @@ router.get('/', optionalAuth, getAllProfessionals);
 router.get('/:id', optionalAuth, getProfessionalById);
 
 // POST /api/professionals - Solo Admin
-router.post('/', authenticateToken, requireAdmin, createProfessional);
+router.post('/', authenticateToken, requireAdmin, validate(createProfessionalSchema), createProfessional);
 
 // PUT /api/professionals/:id - Solo Admin
-router.put('/:id', authenticateToken, requireAdmin, updateProfessional);
+router.put('/:id', authenticateToken, requireAdmin, validate(updateProfessionalSchema), updateProfessional);
 
 // DELETE /api/professionals/:id - Solo Admin (soft delete)
 router.delete('/:id', authenticateToken, requireAdmin, deleteProfessional);

@@ -1,5 +1,4 @@
 import Professional from '../models/Professional.js';
-import { createProfessionalSchema, updateProfessionalSchema } from '../validators/professional.validator.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 
@@ -60,16 +59,7 @@ export const getProfessionalById = async (req, res) => {
  */
 export const createProfessional = async (req, res) => {
   try {
-    // Validar datos de entrada
-    const validationResult = createProfessionalSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: 'Datos inválidos', 
-        details: validationResult.error.errors 
-      });
-    }
-
-    const professional = new Professional(validationResult.data);
+    const professional = new Professional(req.validatedBody);
     await professional.save();
     
     res.status(201).json(professional);
@@ -90,18 +80,9 @@ export const updateProfessional = async (req, res) => {
       return res.status(400).json({ error: 'id inválido' });
     }
 
-    // Validar datos de entrada
-    const validationResult = updateProfessionalSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: 'Datos inválidos', 
-        details: validationResult.error.errors 
-      });
-    }
-
     const professional = await Professional.findByIdAndUpdate(
       req.params.id,
-      { $set: validationResult.data },
+      { $set: req.validatedBody },
       { new: true, runValidators: true }
     );
 
