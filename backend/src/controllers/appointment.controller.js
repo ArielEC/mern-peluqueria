@@ -3,6 +3,7 @@ import Blocker from '../models/Blocker.js';
 import Professional from '../models/Professional.js';
 import Service from '../models/Service.js';
 import Settings from '../models/Settings.js';
+import User from '../models/User.js';
 import {
   verificarDisponibilidadSlot,
   encontrarProfesionalDisponible,
@@ -113,7 +114,8 @@ export const getAppointmentById = async (req, res) => {
 
 /**
  * POST /api/appointments
- * Crear nueva cita con asignación automática de profesional
+ * Crear nueva cita con asignación automática de profesional.
+ * Admin puede especificar clienteId para crear citas para terceros.
  */
 export const createAppointment = async (req, res) => {
   let politicaDuracionContext = null;
@@ -128,12 +130,39 @@ export const createAppointment = async (req, res) => {
       });
     }
 
-    const { servicioId, fechaHoraInicio, profesionalId, notasCliente, forceOverbook } = validationResult.data;
+    const { servicioId, fechaHoraInicio, clienteId, profesionalId, notasCliente, forceOverbook } = validationResult.data;
     const fechaInicio = new Date(fechaHoraInicio);
+    const esAdmin = req.user.role === 'admin';
 
     // Solo admin puede usar forceOverbook
-    if (forceOverbook && req.user.role !== 'admin') {
+    if (forceOverbook && !esAdmin) {
       return res.status(403).json({ error: 'Solo administradores pueden forzar overbooking' });
+    }
+
+    // Solo admin puede crear citas para un cliente tercero mediante clienteId
+    if (clienteId && !esAdmin) {
+      return res.status(403).json({ error: 'Solo administradores pueden especificar clienteId' });
+    }
+
+    let clienteReservaId = req.user._id;
+
+    if (clienteId) {
+      const clienteObjetivo = await User.findById(clienteId)
+        .select('_id role activo');
+
+      if (!clienteObjetivo) {
+        return res.status(404).json({ error: 'Cliente no encontrado' });
+      }
+
+      if (clienteObjetivo.role !== 'cliente') {
+        return res.status(400).json({ error: 'clienteId debe pertenecer a un usuario con rol cliente' });
+      }
+
+      if (!clienteObjetivo.activo) {
+        return res.status(400).json({ error: 'El cliente especificado está desactivado' });
+      }
+
+      clienteReservaId = clienteObjetivo._id;
     }
 
     // Obtener servicio
@@ -167,13 +196,23 @@ export const createAppointment = async (req, res) => {
     let profesionalAsignado = null;
 
     if (profesionalId) {
+      const profesionalObjetivo = await Professional.findById(profesionalId)
+        .select('_id activo horarioSemanal');
+
+      if (!profesionalObjetivo) {
+        return res.status(404).json({ error: 'Profesional no encontrado' });
+      }
+
+      if (!profesionalObjetivo.activo) {
+        return res.status(400).json({ error: 'Profesional no activo' });
+      }
       // Verificar disponibilidad del profesional especificado
       const disponibilidad = await verificarDisponibilidadSlot(
         profesionalId,
         fechaInicio,
         servicio.duracion,
         null,
-        { settings }
+        { settings, profesional: profesionalObjetivo }
       );
       
       if (!disponibilidad.disponible && !forceOverbook) {
@@ -207,7 +246,7 @@ export const createAppointment = async (req, res) => {
 
     // Crear la cita con control de concurrencia para evitar doble reserva
     const appointmentData = {
-      cliente: req.user._id,
+      cliente: clienteReservaId,
       profesional: profesionalAsignado,
       servicio: servicioId,
       fechaHoraInicio: fechaInicio,

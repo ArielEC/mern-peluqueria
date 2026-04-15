@@ -1,21 +1,15 @@
 import assert from 'node:assert/strict';
-import mongoose from 'mongoose';
 import Professional from '../models/Professional.js';
 import Service from '../models/Service.js';
 import Appointment from '../models/Appointment.js';
 import Settings from '../models/Settings.js';
+import Blocker from '../models/Blocker.js';
 import {
   calcularOcupacionOperativa,
   construirMensajeRedondeoDuracion,
   getDisponibilidad,
   verificarDisponibilidadSlot
 } from '../services/availability.service.js';
-
-const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
-
-if (!MONGO_URI) {
-  throw new Error('Define MONGO_URI o MONGODB_URI para ejecutar test:ab05');
-}
 
 const now = new Date();
 const fechaBase = new Date(now);
@@ -47,7 +41,7 @@ const crearHorarioSimple = () => {
   };
 };
 
-const crearProfesional = async (nombre) => {
+const crearProfesionalMock = (nombre, id) => {
   const dia = fechaBase.getDay();
   const horarioSemanal = crearHorarioSimple();
   horarioSemanal[dia] = {
@@ -56,21 +50,77 @@ const crearProfesional = async (nombre) => {
     fin: '13:00'
   };
 
-  return Professional.create({
+  return {
+    _id: id,
     nombre,
-    especialidad: 'General',
+    color: '#3B82F6',
     horarioSemanal,
     activo: true
-  });
+  };
 };
 
-const limpiarColecciones = async () => {
-  await Promise.all([
-    Appointment.deleteMany({}),
-    Service.deleteMany({}),
-    Professional.deleteMany({}),
-    Settings.deleteMany({ _id: 'global' })
-  ]);
+const crearQueryMock = (resultado) => ({
+  select() {
+    return this;
+  },
+  lean: async () => resultado
+});
+
+const originales = {
+  serviceFindById: Service.findById,
+  settingsGetGlobal: Settings.getGlobal,
+  professionalFind: Professional.find,
+  blockerFind: Blocker.find,
+  blockerHayBloqueo: Blocker.hayBloqueo,
+  appointmentFind: Appointment.find,
+  appointmentFindOne: Appointment.findOne
+};
+
+const restaurarMocks = () => {
+  Service.findById = originales.serviceFindById;
+  Settings.getGlobal = originales.settingsGetGlobal;
+  Professional.find = originales.professionalFind;
+  Blocker.find = originales.blockerFind;
+  Blocker.hayBloqueo = originales.blockerHayBloqueo;
+  Appointment.find = originales.appointmentFind;
+  Appointment.findOne = originales.appointmentFindOne;
+};
+
+const configurarEscenario = ({ duracionSlot, servicio, profesional, citasDia, citaSolapada }) => {
+  Service.findById = async (servicioId) => (
+    String(servicioId) === String(servicio._id) ? servicio : null
+  );
+
+  Settings.getGlobal = async () => ({ duracionSlot });
+
+  Professional.find = () => crearQueryMock([profesional]);
+
+  Blocker.find = () => crearQueryMock([]);
+
+  Appointment.find = () => crearQueryMock(citasDia);
+
+  Blocker.hayBloqueo = async () => false;
+
+  Appointment.findOne = async (filtros) => {
+    if (!citaSolapada) {
+      return null;
+    }
+
+    const queryEnd = filtros?.fechaHoraInicio?.$lt;
+    const expr = filtros?.$expr;
+    const gtExpression = Array.isArray(expr?.$gt) ? expr.$gt : null;
+    const queryStart = gtExpression ? gtExpression[1] : undefined;
+
+    if (!queryStart || !queryEnd) {
+      return citaSolapada;
+    }
+
+    const citaInicio = new Date(citaSolapada.fechaHoraInicio);
+    const citaFin = new Date(citaSolapada.fechaHoraFinOperativa || citaSolapada.fechaHoraFin);
+
+    const solapa = citaInicio < queryEnd && citaFin > queryStart;
+    return solapa ? citaSolapada : null;
+  };
 };
 
 const casoUnidad = () => {
@@ -102,32 +152,35 @@ const casoUnidad = () => {
 };
 
 const casoIntegracion = async (duracionSlot, etiqueta) => {
-  await Settings.updateGlobal({ duracionSlot });
-
-  const profesional = await crearProfesional(`Pro-${etiqueta}`);
-  const settings = await Settings.getGlobal();
-  const servicio = await Service.create({
+  const profesional = crearProfesionalMock(`Pro-${etiqueta}`, `prof-${etiqueta}`);
+  const servicio = {
+    _id: `serv-${etiqueta}`,
     nombre: `Servicio-${etiqueta}`,
     duracion: 50,
     precio: 25,
     profesionalesCapaces: [profesional._id],
     activo: true
-  });
+  };
 
   const fechaInicioReserva = construirFecha(10, 0);
   const fechaFinReal = new Date(fechaInicioReserva.getTime() + 50 * 60000);
   const fechaFinOperativa = new Date(fechaInicioReserva.getTime() + 60 * 60000);
 
-  await Appointment.create({
-    cliente: new mongoose.Types.ObjectId(),
+  const citaExistente = {
+    _id: `cita-${etiqueta}`,
     profesional: profesional._id,
-    servicio: servicio._id,
     fechaHoraInicio: fechaInicioReserva,
     fechaHoraFin: fechaFinReal,
     fechaHoraFinOperativa: fechaFinOperativa,
-    duracionOperativaMinutos: 60,
-    precioFinal: 25,
     estado: 'confirmada'
+  };
+
+  configurarEscenario({
+    duracionSlot,
+    servicio,
+    profesional,
+    citasDia: [citaExistente],
+    citaSolapada: citaExistente
   });
 
   const disponibilidad = await getDisponibilidad(fechaBase, servicio._id, profesional._id);
@@ -150,7 +203,7 @@ const casoIntegracion = async (duracionSlot, etiqueta) => {
     construirFecha(10, 30),
     50,
     null,
-    { settings, profesional }
+    { settings: { duracionSlot }, profesional }
   );
 
   assert.equal(validar1030.disponible, false, `[${etiqueta}] 10:30 debe ser indisponible`);
@@ -159,21 +212,16 @@ const casoIntegracion = async (duracionSlot, etiqueta) => {
 };
 
 const main = async () => {
-  await mongoose.connect(MONGO_URI);
-
   try {
     siguienteDiaLaboral();
-    await limpiarColecciones();
     casoUnidad();
 
     await casoIntegracion(15, '50-15');
-    await limpiarColecciones();
-
     await casoIntegracion(30, '50-30');
-    console.log('AB-05 OK: unidad e integración (50/15 y 50/30) validadas.');
+
+    console.log('AB-05 OK: unidad e integración lógica (sin DB real) validadas.');
   } finally {
-    await limpiarColecciones();
-    await mongoose.disconnect();
+    restaurarMocks();
   }
 };
 
