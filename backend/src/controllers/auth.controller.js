@@ -8,7 +8,7 @@ import { generateToken } from '../middlewares/auth.middleware.js';
  */
 export const register = async (req, res) => {
   try {
-    const { nombre, email, password, telefono } = req.body;
+    const { nombre, email, password, telefono } = req.validatedBody;
 
     // Verificar si el email ya está registrado
     const existingUser = await User.findOne({ email });
@@ -54,7 +54,7 @@ export const register = async (req, res) => {
  */
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.validatedBody;
 
     // Buscar usuario incluyendo el password (select: false por defecto)
     const user = await User.findOne({ email }).select('+password');
@@ -122,7 +122,7 @@ export const getProfile = async (req, res) => {
  */
 export const updateProfile = async (req, res) => {
   try {
-    const { nombre, telefono } = req.body;
+    const { nombre, telefono } = req.validatedBody;
     const userId = req.user._id;
 
     const user = await User.findById(userId);
@@ -158,7 +158,7 @@ export const updateProfile = async (req, res) => {
  */
 export const changePassword = async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
+    const { currentPassword, newPassword } = req.validatedBody;
     const userId = req.user._id;
 
     // Obtener usuario con password
