@@ -1,7 +1,6 @@
 import TechnicalNote from '../models/TechnicalNote.js';
 import User from '../models/User.js';
 import Professional from '../models/Professional.js';
-import { createTechnicalNoteSchema, updateTechnicalNoteSchema } from '../validators/technicalNote.validator.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 
@@ -107,43 +106,17 @@ export const getNoteById = async (req, res) => {
  */
 export const createNote = async (req, res) => {
   try {
-    const { clienteId } = req.body;
+    const { clienteId, ...restData } = req.validatedBody;
 
-    if (!clienteId) {
-      return res.status(400).json({ error: 'clienteId es requerido' });
-    }
-
-    if (!OBJECT_ID_REGEX.test(clienteId)) {
-      return res.status(400).json({ error: 'clienteId inválido' });
-    }
-    
     // Verificar que el cliente existe
     const cliente = await User.findById(clienteId);
     if (!cliente) {
       return res.status(404).json({ error: 'Cliente no encontrado' });
     }
 
-    // Validar datos de entrada
-    const validationResult = createTechnicalNoteSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: 'Datos inválidos', 
-        details: validationResult.error.errors 
-      });
-    }
-
-    const noteData = {
-      ...validationResult.data,
-      cliente: clienteId
-    };
-
-    delete noteData.clienteId;
+    const noteData = { ...restData, cliente: clienteId };
 
     if (noteData.creadaPor) {
-      if (!OBJECT_ID_REGEX.test(noteData.creadaPor)) {
-        return res.status(400).json({ error: 'creadaPor inválido' });
-      }
-
       // Verificamos que el profesional exista para mantener coherencia referencial.
       const profesionalExiste = await Professional.exists({ _id: noteData.creadaPor });
       if (!profesionalExiste) {
@@ -180,16 +153,7 @@ export const updateNote = async (req, res) => {
       return res.status(400).json({ error: 'id inválido' });
     }
     
-    // Validar datos de entrada
-    const validationResult = updateTechnicalNoteSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: 'Datos inválidos', 
-        details: validationResult.error.errors 
-      });
-    }
-
-    const updateData = validationResult.data;
+    const updateData = req.validatedBody;
 
     if (updateData.creadaPor) {
       const profesionalExiste = await Professional.exists({ _id: updateData.creadaPor });

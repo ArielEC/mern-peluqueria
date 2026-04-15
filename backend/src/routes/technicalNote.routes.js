@@ -7,6 +7,8 @@ import {
   deleteNote
 } from '../controllers/technicalNote.controller.js';
 import { authenticateToken, requireAdmin } from '../middlewares/auth.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import { createTechnicalNoteSchema, updateTechnicalNoteSchema } from '../validators/technicalNote.validator.js';
 
 const router = express.Router();
 
@@ -19,10 +21,10 @@ router.get('/', authenticateToken, requireAdmin, getNotesByClient);
 router.get('/:id', authenticateToken, requireAdmin, getNoteById);
 
 // POST /api/technical-notes
-router.post('/', authenticateToken, requireAdmin, createNote);
+router.post('/', authenticateToken, requireAdmin, validate(createTechnicalNoteSchema), createNote);
 
 // PUT /api/technical-notes/:id
-router.put('/:id', authenticateToken, requireAdmin, updateNote);
+router.put('/:id', authenticateToken, requireAdmin, validate(updateTechnicalNoteSchema), updateNote);
 
 // DELETE /api/technical-notes/:id
 router.delete('/:id', authenticateToken, requireAdmin, deleteNote);

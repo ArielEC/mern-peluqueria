@@ -1,5 +1,4 @@
 import Service from '../models/Service.js';
-import { createServiceSchema, updateServiceSchema } from '../validators/service.validator.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 
@@ -66,16 +65,7 @@ export const getServiceById = async (req, res) => {
  */
 export const createService = async (req, res) => {
   try {
-    // Validar datos de entrada
-    const validationResult = createServiceSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: 'Datos inválidos', 
-        details: validationResult.error.errors 
-      });
-    }
-
-    const service = new Service(validationResult.data);
+    const service = new Service(req.validatedBody);
     await service.save();
     
     // Poblar profesionales antes de devolver
@@ -99,18 +89,9 @@ export const updateService = async (req, res) => {
       return res.status(400).json({ error: 'id inválido' });
     }
 
-    // Validar datos de entrada
-    const validationResult = updateServiceSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: 'Datos inválidos', 
-        details: validationResult.error.errors 
-      });
-    }
-
     const service = await Service.findByIdAndUpdate(
       req.params.id,
-      { $set: validationResult.data },
+      { $set: req.validatedBody },
       { new: true, runValidators: true }
     ).populate('profesionalesCapaces', 'nombre especialidad color');
 

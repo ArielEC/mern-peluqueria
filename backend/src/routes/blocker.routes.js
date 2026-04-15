@@ -7,6 +7,8 @@ import {
   deleteBlocker
 } from '../controllers/blocker.controller.js';
 import { authenticateToken, requireAdmin } from '../middlewares/auth.middleware.js';
+import { validate } from '../middlewares/validate.middleware.js';
+import { createBlockerSchema, updateBlockerSchema } from '../validators/blocker.validator.js';
 
 const router = express.Router();
 
@@ -19,10 +21,10 @@ router.get('/', authenticateToken, requireAdmin, getAllBlockers);
 router.get('/:id', authenticateToken, requireAdmin, getBlockerById);
 
 // POST /api/blockers
-router.post('/', authenticateToken, requireAdmin, createBlocker);
+router.post('/', authenticateToken, requireAdmin, validate(createBlockerSchema), createBlocker);
 
 // PUT /api/blockers/:id
-router.put('/:id', authenticateToken, requireAdmin, updateBlocker);
+router.put('/:id', authenticateToken, requireAdmin, validate(updateBlockerSchema), updateBlocker);
 
 // DELETE /api/blockers/:id
 router.delete('/:id', authenticateToken, requireAdmin, deleteBlocker);

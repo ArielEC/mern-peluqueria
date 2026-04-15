@@ -10,7 +10,6 @@ import {
   calcularOcupacionOperativa,
   construirMensajeRedondeoDuracion
 } from '../services/availability.service.js';
-import { createAppointmentSchema, updateAppointmentSchema, cancelAppointmentSchema } from '../validators/appointment.validator.js';
 import { diferenciaDiasCeil, diferenciaHoras } from '../utils/dateTime.js';
 
 const MAX_REINTENTOS_TRANSACCION = 3;
@@ -164,16 +163,7 @@ export const createAppointment = async (req, res) => {
   let politicaDuracionContext = null;
 
   try {
-    // Validar datos
-    const validationResult = createAppointmentSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({
-        error: 'Datos inválidos',
-        details: validationResult.error.errors
-      });
-    }
-
-    const { servicioId, fechaHoraInicio, clienteId, profesionalId, notasCliente, forceOverbook } = validationResult.data;
+    const { servicioId, fechaHoraInicio, clienteId, profesionalId, notasCliente, forceOverbook } = req.validatedBody;
     const fechaInicio = new Date(fechaHoraInicio);
     const esAdmin = req.user.role === 'admin';
 
@@ -458,17 +448,9 @@ export const updateAppointment = async (req, res) => {
       return res.status(400).json({ error: 'id inválido' });
     }
 
-    const validationResult = updateAppointmentSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({
-        error: 'Datos inválidos',
-        details: validationResult.error.errors
-      });
-    }
-
     const appointment = await Appointment.findByIdAndUpdate(
       req.params.id,
-      { $set: validationResult.data },
+      { $set: req.validatedBody },
       { new: true, runValidators: true }
     )
       .populate('cliente', 'nombre email telefono')
@@ -494,14 +476,6 @@ export const cancelAppointment = async (req, res) => {
   try {
     if (!OBJECT_ID_REGEX.test(req.params.id)) {
       return res.status(400).json({ error: 'id inválido' });
-    }
-
-    const validationResult = cancelAppointmentSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({
-        error: 'Datos inválidos',
-        details: validationResult.error.errors
-      });
     }
 
     const appointment = await Appointment.findById(req.params.id);
@@ -543,7 +517,7 @@ export const cancelAppointment = async (req, res) => {
     // Cancelar la cita
     appointment.estado = 'cancelada';
     appointment.canceladaPor = esAdmin ? 'admin' : 'cliente';
-    appointment.motivoCancelacion = validationResult.data.motivoCancelacion || '';
+    appointment.motivoCancelacion = req.validatedBody.motivoCancelacion || '';
     
     await appointment.save();
 
