@@ -59,6 +59,13 @@ const settingsSchema = new mongoose.Schema({
     trim: true,
     maxlength: [1000, 'La política no puede exceder 1000 caracteres']
   },
+  // Zona horaria IANA del negocio (para cálculos de disponibilidad y fechas)
+  zonaHoraria: {
+    type: String,
+    default: 'Europe/Madrid',
+    trim: true,
+    maxlength: [60, 'La zona horaria no puede exceder 60 caracteres']
+  },
   // Configuración de notificaciones (placeholder para futuro)
   notificaciones: {
     emailConfirmacion: { type: Boolean, default: false },

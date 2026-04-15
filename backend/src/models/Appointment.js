@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { diferenciaHoras, esMismoDia } from '../utils/dateTime.js';
 
 const appointmentSchema = new mongoose.Schema({
   // Cliente que reserva la cita
@@ -115,10 +116,9 @@ appointmentSchema.virtual('esPasada').get(function() {
   return this.fechaHoraFin < new Date();
 });
 
-// Virtual para verificar si la cita es hoy
+// Virtual para verificar si la cita es hoy (comparación timezone-safe)
 appointmentSchema.virtual('esHoy').get(function() {
-  const hoy = new Date();
-  return this.fechaHoraInicio.toDateString() === hoy.toDateString();
+  return esMismoDia(this.fechaHoraInicio, new Date());
 });
 
 // Virtual para obtener la duración en minutos
@@ -139,10 +139,9 @@ appointmentSchema.virtual('duracionOperativaMinutosCalculada').get(function() {
 // Método para verificar si se puede cancelar (basado en horasMinimasCancelacion de Settings)
 appointmentSchema.methods.puedeCancelar = function(horasMinimas) {
   if (this.estado !== 'confirmada') return false;
-  
-  const ahora = new Date();
-  const horasHastaCita = (this.fechaHoraInicio - ahora) / (1000 * 60 * 60);
-  
+
+  const horasHastaCita = diferenciaHoras(new Date(), this.fechaHoraInicio);
+
   return horasHastaCita >= horasMinimas;
 };
 
