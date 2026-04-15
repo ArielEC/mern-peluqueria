@@ -15,5 +15,5 @@ export const updateSettingsSchema = z.object({
     emailConfirmacion: z.boolean().optional(),
     emailRecordatorio: z.boolean().optional(),
     horasAntesRecordatorio: z.number().min(1).optional()
-  }).optional().strict()
+  }).strict().optional()
 }).strict();

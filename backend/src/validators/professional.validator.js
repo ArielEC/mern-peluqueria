@@ -1,19 +1,22 @@
 import { z } from 'zod';
 
 // Esquema para horario de un día
-const horarioDiaSchema = z.object({
-  activo: z.boolean(),
-  inicio: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Formato de hora inválido (HH:MM)').optional(),
-  fin: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Formato de hora inválido (HH:MM)').optional(),
-  descansoInicio: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Formato de hora inválido (HH:MM)').optional(),
-  descansoFin: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Formato de hora inválido (HH:MM)').optional()
-}).refine(data => {
-  // Si está activo, debe tener inicio y fin
-  if (data.activo && (!data.inicio || !data.fin)) {
-    return false;
-  }
-  return true;
-}, { message: 'Si el día está activo, debe tener hora de inicio y fin' }).strict();
+const horarioDiaSchema = z
+  .object({
+    activo: z.boolean(),
+    inicio: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Formato de hora inválido (HH:MM)').optional(),
+    fin: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Formato de hora inválido (HH:MM)').optional(),
+    descansoInicio: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Formato de hora inválido (HH:MM)').optional(),
+    descansoFin: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Formato de hora inválido (HH:MM)').optional()
+  })
+  .strict()
+  .refine((data) => {
+    // Si está activo, debe tener inicio y fin
+    if (data.activo && (!data.inicio || !data.fin)) {
+      return false;
+    }
+    return true;
+  }, { message: 'Si el día está activo, debe tener hora de inicio y fin' });
 
 // Esquema para horario semanal
 const horarioSemanalSchema = z.object({
