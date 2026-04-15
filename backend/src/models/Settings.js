@@ -76,23 +76,35 @@ const settingsSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Método estático para obtener la configuración global (crea una por defecto si no existe)
+// Cache en memoria para evitar consultas repetidas a MongoDB.
+// Se reemplaza en cada llamada a updateGlobal e invalida con invalidateCache().
+let _settingsCache = null;
+
+// Obtener la configuración global. Sirve el cache si está disponible.
 settingsSchema.statics.getGlobal = async function() {
+  if (_settingsCache) return _settingsCache;
   let settings = await this.findById('global');
   if (!settings) {
     settings = await this.create({ _id: 'global' });
   }
+  _settingsCache = settings;
   return settings;
 };
 
-// Método estático para actualizar la configuración global
+// Actualizar la configuración global y refrescar el cache.
 settingsSchema.statics.updateGlobal = async function(updates) {
   const settings = await this.findByIdAndUpdate(
     'global',
     { $set: updates },
     { new: true, upsert: true, runValidators: true }
   );
+  _settingsCache = settings;
   return settings;
+};
+
+// Invalida el cache — útil en tests o ante cambios externos a la DB.
+settingsSchema.statics.invalidateCache = function() {
+  _settingsCache = null;
 };
 
 const Settings = mongoose.model('Settings', settingsSchema);
