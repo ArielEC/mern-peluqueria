@@ -1,5 +1,4 @@
 import { getDisponibilidad } from '../services/availability.service.js';
-import Settings from '../models/Settings.js';
 import { parseFechaLocal, resolverZonaHoraria, getInicioDelDiaHoy } from '../utils/dateTime.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
@@ -30,8 +29,8 @@ export const getAvailability = async (req, res) => {
       return res.status(400).json({ error: 'profesionalId inválido' });
     }
 
-    // Obtener zona horaria del negocio desde Settings para parsear la fecha correctamente
-    const settings = await Settings.getGlobal();
+    // Settings ya cargado por el middleware loadSettings
+    const settings = req.settings;
     const tz = resolverZonaHoraria(settings);
 
     // Parsear "YYYY-MM-DD" como medianoche en la TZ del negocio

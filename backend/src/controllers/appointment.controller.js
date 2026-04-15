@@ -2,7 +2,6 @@ import Appointment from '../models/Appointment.js';
 import Blocker from '../models/Blocker.js';
 import Professional from '../models/Professional.js';
 import Service from '../models/Service.js';
-import Settings from '../models/Settings.js';
 import User from '../models/User.js';
 import {
   verificarDisponibilidadSlot,
@@ -204,8 +203,8 @@ export const createAppointment = async (req, res) => {
       return res.status(404).json({ error: 'Servicio no encontrado o no activo' });
     }
 
-    // Obtener settings para validar días máximos de reserva
-    const settings = await Settings.getGlobal();
+    // Settings ya cargado por el middleware loadSettings
+    const settings = req.settings;
     const ahora = new Date();
     const diasHastaReserva = diferenciaDiasCeil(ahora, fechaInicio);
     const ocupacionServicio = calcularOcupacionOperativa(servicio.duracion, settings?.duracionSlot);
@@ -504,12 +503,11 @@ export const cancelAppointment = async (req, res) => {
 
     // Validar horasMinimasCancelacion (solo para clientes, admin puede cancelar siempre)
     if (!esAdmin) {
-      const settings = await Settings.getGlobal();
-      const puedeCancel = appointment.puedeCancelar(settings.horasMinimasCancelacion);
+      const puedeCancel = appointment.puedeCancelar(req.settings.horasMinimasCancelacion);
       
       if (!puedeCancel) {
-        return res.status(400).json({ 
-          error: `No se puede cancelar con menos de ${settings.horasMinimasCancelacion} horas de antelación` 
+        return res.status(400).json({
+          error: `No se puede cancelar con menos de ${req.settings.horasMinimasCancelacion} horas de antelación`
         });
       }
     }
