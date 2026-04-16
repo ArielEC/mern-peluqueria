@@ -16,7 +16,7 @@ const registerSchema = z
       .email('Introduce un email válido'),
     telefono: z
       .string()
-      .regex(/^\+?[0-9]{9,15}$/, 'Teléfono inválido (9-15 dígitos)')
+      .regex(/^\d{9,15}$/, 'Teléfono inválido (solo dígitos, 9-15 caracteres)')
       .optional()
       .or(z.literal('')),
     password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
