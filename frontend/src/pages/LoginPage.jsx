@@ -39,7 +39,7 @@ function IconInput({ icon: Icon, error, rightSlot, ...props }) {
     <div className="relative">
       <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       <input
-        className={`w-full pl-10 pr-${rightSlot ? '10' : '4'} py-3 bg-muted/50 border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`w-full pl-10 pr-${rightSlot ? '10' : '4'} py-3 bg-muted border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
           error ? 'border-destructive' : 'border-border/30'
         }`}
         {...props}
@@ -99,7 +99,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-muted/50 text-foreground min-h-screen flex items-center justify-center p-6">
+    <div className="bg-muted text-foreground min-h-screen flex items-center justify-center p-6">
       <main className="w-full max-w-md">
 
         {/* Brand */}

@@ -1,517 +1,66 @@
 {
-	"nodes": [
-		{
-			"id": "group-apibac",
-			"type": "group",
-			"x": 880,
-			"y": 0,
-			"width": 380,
-			"height": 2380,
-			"label": "API Backend"
-		},
-		{
-			"id": "group-setupi",
-			"type": "group",
-			"x": 0,
-			"y": 0,
-			"width": 380,
-			"height": 940,
-			"label": "Setup Inicial"
-		},
-		{
-			"id": "group-fronte",
-			"type": "group",
-			"x": 1320,
-			"y": 0,
-			"width": 380,
-			"height": 760,
-			"label": "Frontend Cliente"
-		},
-		{
-			"id": "group-basede",
-			"type": "group",
-			"x": 440,
-			"y": 0,
-			"width": 380,
-			"height": 700,
-			"label": "Base de Datos y Auth"
-		},
-		{
-			"id": "group-panela",
-			"type": "group",
-			"x": 1760,
-			"y": 0,
-			"width": 380,
-			"height": 700,
-			"label": "Panel Administracion"
-		},
-		{
-			"id": "e13cb034",
-			"type": "text",
-			"text": "## AB-03 Endpoints Citas y Overbooking\nGET /appointments (usuario o admin), POST /appointments (asignación automática), DELETE /appointments/:id (cancelar con validación horasMinimasCancelacion), flag forceOverbook para admin",
-			"x": 900,
-			"y": 400,
-			"width": 280,
-			"height": 274,
-			"color": "4"
-		},
-		{
-			"id": "5f7853fd",
-			"type": "text",
-			"text": "## FC-01 Layout Publico y Home\nComponentes Header, Footer, Layout. PÃ¡gina Home con info del local (consume GET /settings). DiseÃ±o mobile-first responsive.",
-			"x": 1340,
-			"y": 40,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "1e2b3725",
-			"type": "text",
-			"text": "## FC-02 Flujo de Autenticacion\nPÃ¡ginas LoginPage y RegisterPage con formularios validados (Zod). Guardar token en Zustand y localStorage. Componente ProtectedRoute.",
-			"x": 1340,
-			"y": 220,
-			"width": 280,
-			"height": 160,
-			"color": "5"
-		},
-		{
-			"id": "0634300a",
-			"type": "text",
-			"text": "## FC-03 Wizard de Reservas\nComponente BookingWizard: Paso 1 (selector servicios), Paso 2 (calendario + slots disponibles consumiendo GET /availability), Paso 3 (confirmar y crear cita). Stepper visual.",
-			"x": 1340,
-			"y": 400,
-			"width": 280,
-			"height": 160,
-			"color": "6"
-		},
-		{
-			"id": "58255517",
-			"type": "text",
-			"text": "## FC-04 Panel Mis Citas\nPÃ¡gina MyAppointments: lista de citas del usuario logueado con estado, fecha y servicio. BotÃ³n cancelar (solo si faltan > horasMinimasCancelacion).",
-			"x": 1340,
-			"y": 580,
-			"width": 280,
-			"height": 160,
-			"color": "6"
-		},
-		{
-			"id": "d8ea2880",
-			"type": "text",
-			"text": "## PA-01 Layout Admin y Dashboard\nLayout con Sidebar (navegaciÃ³n), Header. ProtecciÃ³n de rutas (solo rol ADMIN). Dashboard con resumen: citas de hoy, prÃ³ximas 7 dÃ­as, estadÃ­sticas bÃ¡sicas.",
-			"x": 1780,
-			"y": 40,
-			"width": 280,
-			"height": 160,
-			"color": "6"
-		},
-		{
-			"id": "0cc7dae6",
-			"type": "text",
-			"text": "## PA-02 Calendario Visual Admin\nIntegraciÃ³n de @fullcalendar/react con vista dÃ­a/semana. Cada profesional como recurso (columna). Slots de 15min. Crear cita manual con overbooking opcional.",
-			"x": 1780,
-			"y": 220,
-			"width": 280,
-			"height": 160,
-			"color": "6"
-		},
-		{
-			"id": "638973ce",
-			"type": "text",
-			"text": "## PA-03 Gestion Visual Entidades\nPÃ¡ginas con DataTable de Shadcn: ServicesPage (CRUD servicios con profesionalesCapaces), ProfessionalsPage (CRUD con horarios por dÃ­a), BlockersPage (vacaciones/cierres), ClientsPage (lista clientes + ficha con TechnicalNotes), SettingsPage (config local).",
-			"x": 1780,
-			"y": 400,
-			"width": 280,
-			"height": 160,
-			"color": "6"
-		},
-		{
-			"id": "44233c0d",
-			"type": "text",
-			"text": "## AB-02 Algoritmo Disponibilidad\nServicio availability.service.js: genera slots de 15min, filtra por horario del profesional, bloqueos activos y citas existentes. Devuelve array de {hora, profesionalId}",
-			"x": 900,
-			"y": 220,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "bebe0cff",
-			"type": "text",
-			"text": "## BDD-01 Modelos Mongoose\nCrear esquemas: User, Professional (con horarios por dí­a), Service (con profesionalesCapaces), Appointment, Settings, Blocker, TechnicalNote. Validaciones con Zod.",
-			"x": 460,
-			"y": 40,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "8e30ee88",
-			"type": "text",
-			"text": "## BDD-02 Rutas Autenticacion y Middleware\nEndpoints POST /auth/register y /auth/login con JWT 30 dÃ­as. Middlewares: auth.middleware.js (verificar token), admin.middleware.js (verificar rol ADMIN), rateLimiter.middleware.js",
-			"x": 460,
-			"y": 220,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "ec41214d",
-			"type": "text",
-			"text": "## AB-04 Slots configurables y redondeo\nHacer que la duracion real de servicios sea independiente del grid de slots. Usar duracionSlot de Settings (default 15), calcular ocupacion con Math.ceil(duracionServicio/duracionSlot) y mantener transparencia de duracion al cliente.",
-			"x": 900,
-			"y": 760,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "8b1f4473",
-			"type": "text",
-			"text": "## AB-05 Validar duraciones no divisibles\nAsegurar consistencia cuando duracionServicio no sea multiplo de duracionSlot: politica de redondeo operativo hacia arriba en disponibilidad y asignacion, pruebas de casos 50/15 y 50/30 y mensajes claros en API.",
-			"x": 900,
-			"y": 940,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "49e4b511",
-			"type": "text",
-			"text": "## AB-06 Citas admin para terceros\nPermitir que admin cree citas para un cliente especifico mediante clienteId en POST /appointments, manteniendo comportamiento actual para clientes autenticados y validando permisos/consistencia.",
-			"x": 900,
-			"y": 1234,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "4f7d5221",
-			"type": "text",
-			"text": "## AB-07 Optimizar query disponibilidad\nReducir carga de DB en getDisponibilidad filtrando citas/bloqueos por profesionales relevantes y refinando rangos de tiempo para evitar traer datos innecesarios.",
-			"x": 900,
-			"y": 1480,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "0b67b03f",
-			"type": "text",
-			"text": "## AB-01 Endpoints CRUD Admin\nRutas protegidas para: GET/PUT /settings, CRUD /professionals, CRUD /services, CRUD /blockers, CRUD /technical-notes/:clienteId",
-			"x": 900,
-			"y": 40,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "097de31a",
-			"type": "text",
-			"text": "## SI-01 Inicializar backend Node/Express\nCrear estructura de carpetas, package.json con dependencias (express, mongoose, cors, dotenv, bcryptjs, jsonwebtoken, zod, express-rate-limit)",
-			"x": 20,
-			"y": 40,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "308febfe",
-			"type": "text",
-			"text": "## SI-02 Configurar MongoDB\nConexión con Mongoose, archivo de configuración db.js, variables de entorno en .env",
-			"x": 20,
-			"y": 220,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "c2f6e9a9",
-			"type": "text",
-			"text": "## SI-03 Inicializar frontend Vite+React\nCrear proyecto con Vite, instalar react-router-dom, axios, date-fns",
-			"x": 20,
-			"y": 400,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "a4c53602",
-			"type": "text",
-			"text": "## SI-04 Configurar Tailwind + Shadcn\nSetup de Tailwind CSS y componentes base de Shadcn UI (Button, Card, Input, Form, Table, Calendar)",
-			"x": 20,
-			"y": 580,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "48e39f24",
-			"type": "text",
-			"text": "## SI-05 Configurar Zustand + React Query\nSetup de @tanstack/react-query para cache de API y zustand para estado global (auth, UI)",
-			"x": 20,
-			"y": 760,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "legend",
-			"type": "text",
-			"text": "## Legend\n🔴 **Red** = To Do (ready)\n⬜ **Gray** = Blocked\n🟠 **Orange** = Doing\n🔵 **Cyan** = Ready to review\n🟢 **Green** = Done\n🟣 **Purple** = Proposed by agent",
-			"x": -540,
-			"y": -310,
-			"width": 380,
-			"height": 230,
-			"color": "0"
-		},
-		{
-			"id": "canvas-warnings",
-			"type": "text",
-			"text": "## Warnings\n✓ None",
-			"x": -540,
-			"y": -530,
-			"width": 380,
-			"height": 200,
-			"color": "3"
-		},
-		{
-			"id": "canvas-errors",
-			"type": "text",
-			"text": "## Errors\n✓ None",
-			"x": -540,
-			"y": -750,
-			"width": 380,
-			"height": 200,
-			"color": "1"
-		},
-		{
-			"id": "58781610",
-			"type": "text",
-			"text": "## AB-08 Estandarizar fechas y zona horaria\nEstandarizar manejo de fechas para evitar desfases por timezone (UTC/local) con una libreria como dayjs o luxon en disponibilidad, creacion y cancelacion de citas.",
-			"x": 900,
-			"y": 1774,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "df6d6a35",
-			"type": "text",
-			"text": "## AB-09 Middleware generico de validacion\nCrear middleware validate(schema) reutilizable para controladores de API (appointments/services/professionals/blockers/technical-notes/settings) y eliminar repeticion de safeParse en controladores.",
-			"x": 900,
-			"y": 2020,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		},
-		{
-			"id": "90bafc16",
-			"type": "text",
-			"text": "## AB-10 Centralizar y cachear Settings\nReducir llamadas repetidas a Settings.getGlobal con estrategia de acceso centralizada (middleware/servicio) y cache ligero con invalidacion al actualizar configuracion global.",
-			"x": 900,
-			"y": 2200,
-			"width": 280,
-			"height": 160,
-			"color": "4"
-		}
+	"nodes":[
+		{"id":"group-apibac","type":"group","x":880,"y":0,"width":380,"height":2380,"label":"API Backend"},
+		{"id":"group-setupi","type":"group","x":0,"y":0,"width":380,"height":940,"label":"Setup Inicial"},
+		{"id":"group-fronte","type":"group","x":1320,"y":0,"width":380,"height":760,"label":"Frontend Cliente"},
+		{"id":"group-basede","type":"group","x":440,"y":0,"width":380,"height":700,"label":"Base de Datos y Auth"},
+		{"id":"group-panela","type":"group","x":1760,"y":0,"width":380,"height":700,"label":"Panel Administracion"},
+		{"id":"e13cb034","type":"text","text":"## AB-03 Endpoints Citas y Overbooking\nGET /appointments (usuario o admin), POST /appointments (asignación automática), DELETE /appointments/:id (cancelar con validación horasMinimasCancelacion), flag forceOverbook para admin","x":900,"y":400,"width":280,"height":274,"color":"4"},
+		{"id":"5f7853fd","type":"text","text":"## FC-01 Layout Publico y Home\nComponentes Header, Footer, Layout. PÃ¡gina Home con info del local (consume GET /settings). DiseÃ±o mobile-first responsive.","x":1340,"y":40,"width":280,"height":160,"color":"4"},
+		{"id":"1e2b3725","type":"text","text":"## FC-02 Flujo de Autenticacion\nPÃ¡ginas LoginPage y RegisterPage con formularios validados (Zod). Guardar token en Zustand y localStorage. Componente ProtectedRoute.","x":1340,"y":220,"width":280,"height":160,"color":"4"},
+		{"id":"0634300a","type":"text","text":"## FC-03 Wizard de Reservas\nComponente BookingWizard: Paso 1 (selector servicios), Paso 2 (calendario + slots disponibles consumiendo GET /availability), Paso 3 (confirmar y crear cita). Stepper visual.","x":1340,"y":400,"width":280,"height":160,"color":"6"},
+		{"id":"58255517","type":"text","text":"## FC-04 Panel Mis Citas\nPÃ¡gina MyAppointments: lista de citas del usuario logueado con estado, fecha y servicio. BotÃ³n cancelar (solo si faltan > horasMinimasCancelacion).","x":1340,"y":580,"width":280,"height":160,"color":"6"},
+		{"id":"d8ea2880","type":"text","text":"## PA-01 Layout Admin y Dashboard\nLayout con Sidebar (navegaciÃ³n), Header. ProtecciÃ³n de rutas (solo rol ADMIN). Dashboard con resumen: citas de hoy, prÃ³ximas 7 dÃ­as, estadÃ­sticas bÃ¡sicas.","x":1780,"y":40,"width":280,"height":160,"color":"6"},
+		{"id":"0cc7dae6","type":"text","text":"## PA-02 Calendario Visual Admin\nIntegraciÃ³n de @fullcalendar/react con vista dÃ­a/semana. Cada profesional como recurso (columna). Slots de 15min. Crear cita manual con overbooking opcional.","x":1780,"y":220,"width":280,"height":160,"color":"6"},
+		{"id":"638973ce","type":"text","text":"## PA-03 Gestion Visual Entidades\nPÃ¡ginas con DataTable de Shadcn: ServicesPage (CRUD servicios con profesionalesCapaces), ProfessionalsPage (CRUD con horarios por dÃ­a), BlockersPage (vacaciones/cierres), ClientsPage (lista clientes + ficha con TechnicalNotes), SettingsPage (config local).","x":1780,"y":400,"width":280,"height":160,"color":"6"},
+		{"id":"44233c0d","type":"text","text":"## AB-02 Algoritmo Disponibilidad\nServicio availability.service.js: genera slots de 15min, filtra por horario del profesional, bloqueos activos y citas existentes. Devuelve array de {hora, profesionalId}","x":900,"y":220,"width":280,"height":160,"color":"4"},
+		{"id":"bebe0cff","type":"text","text":"## BDD-01 Modelos Mongoose\nCrear esquemas: User, Professional (con horarios por dí­a), Service (con profesionalesCapaces), Appointment, Settings, Blocker, TechnicalNote. Validaciones con Zod.","x":460,"y":40,"width":280,"height":160,"color":"4"},
+		{"id":"8e30ee88","type":"text","text":"## BDD-02 Rutas Autenticacion y Middleware\nEndpoints POST /auth/register y /auth/login con JWT 30 dÃ­as. Middlewares: auth.middleware.js (verificar token), admin.middleware.js (verificar rol ADMIN), rateLimiter.middleware.js","x":460,"y":220,"width":280,"height":160,"color":"4"},
+		{"id":"ec41214d","type":"text","text":"## AB-04 Slots configurables y redondeo\nHacer que la duracion real de servicios sea independiente del grid de slots. Usar duracionSlot de Settings (default 15), calcular ocupacion con Math.ceil(duracionServicio/duracionSlot) y mantener transparencia de duracion al cliente.","x":900,"y":760,"width":280,"height":160,"color":"4"},
+		{"id":"8b1f4473","type":"text","text":"## AB-05 Validar duraciones no divisibles\nAsegurar consistencia cuando duracionServicio no sea multiplo de duracionSlot: politica de redondeo operativo hacia arriba en disponibilidad y asignacion, pruebas de casos 50/15 y 50/30 y mensajes claros en API.","x":900,"y":940,"width":280,"height":160,"color":"4"},
+		{"id":"49e4b511","type":"text","text":"## AB-06 Citas admin para terceros\nPermitir que admin cree citas para un cliente especifico mediante clienteId en POST /appointments, manteniendo comportamiento actual para clientes autenticados y validando permisos/consistencia.","x":900,"y":1234,"width":280,"height":160,"color":"4"},
+		{"id":"4f7d5221","type":"text","text":"## AB-07 Optimizar query disponibilidad\nReducir carga de DB en getDisponibilidad filtrando citas/bloqueos por profesionales relevantes y refinando rangos de tiempo para evitar traer datos innecesarios.","x":900,"y":1480,"width":280,"height":160,"color":"4"},
+		{"id":"0b67b03f","type":"text","text":"## AB-01 Endpoints CRUD Admin\nRutas protegidas para: GET/PUT /settings, CRUD /professionals, CRUD /services, CRUD /blockers, CRUD /technical-notes/:clienteId","x":900,"y":40,"width":280,"height":160,"color":"4"},
+		{"id":"097de31a","type":"text","text":"## SI-01 Inicializar backend Node/Express\nCrear estructura de carpetas, package.json con dependencias (express, mongoose, cors, dotenv, bcryptjs, jsonwebtoken, zod, express-rate-limit)","x":20,"y":40,"width":280,"height":160,"color":"4"},
+		{"id":"308febfe","type":"text","text":"## SI-02 Configurar MongoDB\nConexión con Mongoose, archivo de configuración db.js, variables de entorno en .env","x":20,"y":220,"width":280,"height":160,"color":"4"},
+		{"id":"c2f6e9a9","type":"text","text":"## SI-03 Inicializar frontend Vite+React\nCrear proyecto con Vite, instalar react-router-dom, axios, date-fns","x":20,"y":400,"width":280,"height":160,"color":"4"},
+		{"id":"a4c53602","type":"text","text":"## SI-04 Configurar Tailwind + Shadcn\nSetup de Tailwind CSS y componentes base de Shadcn UI (Button, Card, Input, Form, Table, Calendar)","x":20,"y":580,"width":280,"height":160,"color":"4"},
+		{"id":"48e39f24","type":"text","text":"## SI-05 Configurar Zustand + React Query\nSetup de @tanstack/react-query para cache de API y zustand para estado global (auth, UI)","x":20,"y":760,"width":280,"height":160,"color":"4"},
+		{"id":"legend","type":"text","text":"## Legend\n🔴 **Red** = To Do (ready)\n⬜ **Gray** = Blocked\n🟠 **Orange** = Doing\n🔵 **Cyan** = Ready to review\n🟢 **Green** = Done\n🟣 **Purple** = Proposed by agent","x":-540,"y":-310,"width":380,"height":230,"color":"0"},
+		{"id":"canvas-warnings","type":"text","text":"## Warnings\n✓ None","x":-540,"y":-530,"width":380,"height":200,"color":"3"},
+		{"id":"canvas-errors","type":"text","text":"## Errors\n✓ None","x":-540,"y":-750,"width":380,"height":200,"color":"1"},
+		{"id":"58781610","type":"text","text":"## AB-08 Estandarizar fechas y zona horaria\nEstandarizar manejo de fechas para evitar desfases por timezone (UTC/local) con una libreria como dayjs o luxon en disponibilidad, creacion y cancelacion de citas.","x":900,"y":1774,"width":280,"height":160,"color":"4"},
+		{"id":"df6d6a35","type":"text","text":"## AB-09 Middleware generico de validacion\nCrear middleware validate(schema) reutilizable para controladores de API (appointments/services/professionals/blockers/technical-notes/settings) y eliminar repeticion de safeParse en controladores.","x":900,"y":2020,"width":280,"height":160,"color":"4"},
+		{"id":"90bafc16","type":"text","text":"## AB-10 Centralizar y cachear Settings\nReducir llamadas repetidas a Settings.getGlobal con estrategia de acceso centralizada (middleware/servicio) y cache ligero con invalidacion al actualizar configuracion global.","x":900,"y":2200,"width":280,"height":160,"color":"4"}
 	],
-	"edges": [
-		{
-			"id": "edge-001",
-			"fromNode": "097de31a",
-			"fromSide": "bottom",
-			"toNode": "308febfe",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-002",
-			"fromNode": "c2f6e9a9",
-			"fromSide": "bottom",
-			"toNode": "a4c53602",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-003",
-			"fromNode": "c2f6e9a9",
-			"fromSide": "bottom",
-			"toNode": "48e39f24",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-004",
-			"fromNode": "308febfe",
-			"fromSide": "right",
-			"toNode": "bebe0cff",
-			"toSide": "left"
-		},
-		{
-			"id": "edge-005",
-			"fromNode": "bebe0cff",
-			"fromSide": "bottom",
-			"toNode": "8e30ee88",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-006",
-			"fromNode": "8e30ee88",
-			"fromSide": "right",
-			"toNode": "0b67b03f",
-			"toSide": "left"
-		},
-		{
-			"id": "edge-007",
-			"fromNode": "bebe0cff",
-			"fromSide": "bottom",
-			"toNode": "44233c0d",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-008",
-			"fromNode": "44233c0d",
-			"fromSide": "bottom",
-			"toNode": "e13cb034",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-009",
-			"fromNode": "8e30ee88",
-			"fromSide": "bottom",
-			"toNode": "e13cb034",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-010",
-			"fromNode": "a4c53602",
-			"fromSide": "right",
-			"toNode": "5f7853fd",
-			"toSide": "left"
-		},
-		{
-			"id": "edge-011",
-			"fromNode": "48e39f24",
-			"fromSide": "right",
-			"toNode": "5f7853fd",
-			"toSide": "left"
-		},
-		{
-			"id": "edge-012",
-			"fromNode": "5f7853fd",
-			"fromSide": "bottom",
-			"toNode": "1e2b3725",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-013",
-			"fromNode": "8e30ee88",
-			"fromSide": "right",
-			"toNode": "1e2b3725",
-			"toSide": "left"
-		},
-		{
-			"id": "edge-014",
-			"fromNode": "1e2b3725",
-			"fromSide": "bottom",
-			"toNode": "0634300a",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-015",
-			"fromNode": "e13cb034",
-			"fromSide": "right",
-			"toNode": "0634300a",
-			"toSide": "left"
-		},
-		{
-			"id": "edge-016",
-			"fromNode": "0634300a",
-			"fromSide": "bottom",
-			"toNode": "58255517",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-017",
-			"fromNode": "1e2b3725",
-			"fromSide": "right",
-			"toNode": "d8ea2880",
-			"toSide": "left"
-		},
-		{
-			"id": "edge-018",
-			"fromNode": "0b67b03f",
-			"fromSide": "right",
-			"toNode": "d8ea2880",
-			"toSide": "left"
-		},
-		{
-			"id": "edge-019",
-			"fromNode": "d8ea2880",
-			"fromSide": "bottom",
-			"toNode": "0cc7dae6",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-020",
-			"fromNode": "e13cb034",
-			"fromSide": "right",
-			"toNode": "0cc7dae6",
-			"toSide": "left"
-		},
-		{
-			"id": "edge-021",
-			"fromNode": "d8ea2880",
-			"fromSide": "bottom",
-			"toNode": "638973ce",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-022",
-			"fromNode": "44233c0d",
-			"fromSide": "bottom",
-			"toNode": "ec41214d",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-023",
-			"fromNode": "ec41214d",
-			"fromSide": "bottom",
-			"toNode": "8b1f4473",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-024",
-			"fromNode": "e13cb034",
-			"fromSide": "bottom",
-			"toNode": "49e4b511",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-025",
-			"fromNode": "44233c0d",
-			"fromSide": "bottom",
-			"toNode": "4f7d5221",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-026",
-			"fromNode": "e13cb034",
-			"fromSide": "bottom",
-			"toNode": "58781610",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-027",
-			"fromNode": "0b67b03f",
-			"fromSide": "bottom",
-			"toNode": "df6d6a35",
-			"toSide": "top"
-		},
-		{
-			"id": "edge-028",
-			"fromNode": "0b67b03f",
-			"fromSide": "bottom",
-			"toNode": "90bafc16",
-			"toSide": "top"
-		}
+	"edges":[
+		{"id":"edge-001","fromNode":"097de31a","fromSide":"bottom","toNode":"308febfe","toSide":"top"},
+		{"id":"edge-002","fromNode":"c2f6e9a9","fromSide":"bottom","toNode":"a4c53602","toSide":"top"},
+		{"id":"edge-003","fromNode":"c2f6e9a9","fromSide":"bottom","toNode":"48e39f24","toSide":"top"},
+		{"id":"edge-004","fromNode":"308febfe","fromSide":"right","toNode":"bebe0cff","toSide":"left"},
+		{"id":"edge-005","fromNode":"bebe0cff","fromSide":"bottom","toNode":"8e30ee88","toSide":"top"},
+		{"id":"edge-006","fromNode":"8e30ee88","fromSide":"right","toNode":"0b67b03f","toSide":"left"},
+		{"id":"edge-007","fromNode":"bebe0cff","fromSide":"bottom","toNode":"44233c0d","toSide":"top"},
+		{"id":"edge-008","fromNode":"44233c0d","fromSide":"bottom","toNode":"e13cb034","toSide":"top"},
+		{"id":"edge-009","fromNode":"8e30ee88","fromSide":"bottom","toNode":"e13cb034","toSide":"top"},
+		{"id":"edge-010","fromNode":"a4c53602","fromSide":"right","toNode":"5f7853fd","toSide":"left"},
+		{"id":"edge-011","fromNode":"48e39f24","fromSide":"right","toNode":"5f7853fd","toSide":"left"},
+		{"id":"edge-012","fromNode":"5f7853fd","fromSide":"bottom","toNode":"1e2b3725","toSide":"top"},
+		{"id":"edge-013","fromNode":"8e30ee88","fromSide":"right","toNode":"1e2b3725","toSide":"left"},
+		{"id":"edge-014","fromNode":"1e2b3725","fromSide":"bottom","toNode":"0634300a","toSide":"top"},
+		{"id":"edge-015","fromNode":"e13cb034","fromSide":"right","toNode":"0634300a","toSide":"left"},
+		{"id":"edge-016","fromNode":"0634300a","fromSide":"bottom","toNode":"58255517","toSide":"top"},
+		{"id":"edge-017","fromNode":"1e2b3725","fromSide":"right","toNode":"d8ea2880","toSide":"left"},
+		{"id":"edge-018","fromNode":"0b67b03f","fromSide":"right","toNode":"d8ea2880","toSide":"left"},
+		{"id":"edge-019","fromNode":"d8ea2880","fromSide":"bottom","toNode":"0cc7dae6","toSide":"top"},
+		{"id":"edge-020","fromNode":"e13cb034","fromSide":"right","toNode":"0cc7dae6","toSide":"left"},
+		{"id":"edge-021","fromNode":"d8ea2880","fromSide":"bottom","toNode":"638973ce","toSide":"top"},
+		{"id":"edge-022","fromNode":"44233c0d","fromSide":"bottom","toNode":"ec41214d","toSide":"top"},
+		{"id":"edge-023","fromNode":"ec41214d","fromSide":"bottom","toNode":"8b1f4473","toSide":"top"},
+		{"id":"edge-024","fromNode":"e13cb034","fromSide":"bottom","toNode":"49e4b511","toSide":"top"},
+		{"id":"edge-025","fromNode":"44233c0d","fromSide":"bottom","toNode":"4f7d5221","toSide":"top"},
+		{"id":"edge-026","fromNode":"e13cb034","fromSide":"bottom","toNode":"58781610","toSide":"top"},
+		{"id":"edge-027","fromNode":"0b67b03f","fromSide":"bottom","toNode":"df6d6a35","toSide":"top"},
+		{"id":"edge-028","fromNode":"0b67b03f","fromSide":"bottom","toNode":"90bafc16","toSide":"top"}
 	]
 }

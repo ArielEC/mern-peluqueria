@@ -26,9 +26,9 @@
   --color-popover-foreground: hsl(240 10% 3.9%);
   --color-primary: hsl(262 83% 58%);
   --color-primary-foreground: hsl(0 0% 100%);
-  --color-secondary: hsl(240 4.8% 95.9%);
+  --color-secondary: hsl(240 60% 97%);
   --color-secondary-foreground: hsl(240 5.9% 10%);
-  --color-muted: hsl(240 4.8% 95.9%);
+  --color-muted: hsl(240 60% 97%);
   --color-muted-foreground: hsl(240 3.8% 46.1%);
   --color-accent: hsl(240 4.8% 95.9%);
   --color-accent-foreground: hsl(240 5.9% 10%);
