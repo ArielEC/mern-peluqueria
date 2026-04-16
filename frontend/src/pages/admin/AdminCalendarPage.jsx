@@ -26,10 +26,14 @@ function buildEvents(appointments) {
     return {
       id: appt._id,
       resourceId: appt.profesional?._id,
-      title: appt.cliente?.nombre || appt.nombreTercero || 'Cliente',
+      // El título incluye nombre del cliente y servicio — FullCalendar los muestra en el evento
+      title: [
+        appt.cliente?.nombre || appt.nombreTercero || 'Cliente',
+        appt.servicio?.nombre,
+      ].filter(Boolean).join(' · '),
       start: appt.fechaHoraInicio,
       end: appt.fechaHoraFin || appt.fechaHoraInicio,
-      backgroundColor: profColor + '20',
+      backgroundColor: profColor + '22',
       borderColor: profColor,
       textColor: '#131b2e',
       extendedProps: { appointment: appt },
@@ -211,8 +215,8 @@ export default function AdminCalendarPage() {
         </div>
       </div>
 
-      {/* Calendar container */}
-      <div className="flex-1 bg-white rounded-xl border border-[#cbc3d7]/20 overflow-hidden relative">
+      {/* Calendar container — overflow-x-auto para que en vista semana con muchos recursos se pueda hacer scroll */}
+      <div className="flex-1 bg-white rounded-xl border border-[#cbc3d7]/20 overflow-auto relative">
         {isLoading && (
           <div className="absolute inset-0 bg-white/70 z-30 flex items-center justify-center">
             <span className="material-symbols-outlined animate-spin text-[#6b38d4] text-3xl">refresh</span>

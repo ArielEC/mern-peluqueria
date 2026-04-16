@@ -2,45 +2,76 @@ import { Link } from 'react-router-dom';
 import { Scissors } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 
-const footerLinks = [
-  { label: 'Contacto', to: '/#contacto' },
-  { label: 'Política de privacidad', to: '/privacidad' },
-  { label: 'Condiciones de uso', to: '/condiciones' },
-  { label: 'Política de reservas', to: '/politica-reservas' },
-];
-
 export default function Footer() {
   const { data: settings } = useSettings();
 
   const businessName = settings?.nombreNegocio || 'Peluquería';
+  const telefono = settings?.telefono;
+  const email = settings?.email;
+  const direccion = settings?.direccion;
 
   return (
     <footer className="w-full border-t border-primary/5 bg-background">
-      <div className="flex flex-col md:flex-row justify-between items-center py-10 px-6 md:px-8 w-full max-w-7xl mx-auto gap-6">
+      <div className="max-w-7xl mx-auto px-6 md:px-8 py-10">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-8">
 
-        {/* Brand */}
-        <div>
-          <div className="flex items-center gap-2 text-sm font-bold text-foreground mb-1">
-            <Scissors className="h-4 w-4 text-primary" />
-            {businessName}
+          {/* Brand */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+              <Scissors className="h-4 w-4 text-primary shrink-0" />
+              {businessName}
+            </div>
+            {direccion && (
+              <p className="text-xs text-muted-foreground">{direccion}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} {businessName}. Todos los derechos reservados.
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} {businessName}. Todos los derechos reservados.
-          </p>
-        </div>
 
-        {/* Links */}
-        <nav className="flex flex-wrap gap-6 justify-center">
-          {footerLinks.map(({ label, to }) => (
-            <Link
-              key={to}
-              to={to}
-              className="text-xs text-muted-foreground hover:underline underline-offset-4 opacity-80 hover:opacity-100 transition-opacity"
-            >
-              {label}
+          {/* Contacto */}
+          {(telefono || email) && (
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2">
+                Contacto
+              </p>
+              {telefono && (
+                <a
+                  href={`tel:${telefono}`}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[14px]">phone</span>
+                  {telefono}
+                </a>
+              )}
+              {email && (
+                <a
+                  href={`mailto:${email}`}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[14px]">mail</span>
+                  {email}
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Nav */}
+          <nav className="flex flex-col gap-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2">
+              Accesos
+            </p>
+            <Link to="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+              Inicio
             </Link>
-          ))}
-        </nav>
+            <Link to="/book" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+              Reservar cita
+            </Link>
+            <Link to="/login" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+              Acceder
+            </Link>
+          </nav>
+        </div>
       </div>
     </footer>
   );

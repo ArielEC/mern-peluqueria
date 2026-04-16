@@ -8,6 +8,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import BookingPage from '@/pages/BookingPage';
 import BookingConfirmedPage from '@/pages/BookingConfirmedPage';
 import MyAppointmentsPage from '@/pages/MyAppointmentsPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
 import AdminCalendarPage from '@/pages/admin/AdminCalendarPage';
 import ServicesPage from '@/pages/admin/ServicesPage';
@@ -38,7 +39,7 @@ function App() {
         <Route path="/booking/confirmed" element={<BookingConfirmedPage />} />
       </Route>
 
-      {/* Rutas protegidas (admin) — PA-01 */}
+      {/* Rutas protegidas (admin) */}
       <Route element={<ProtectedRoute adminOnly />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminDashboardPage />} />
@@ -50,6 +51,9 @@ function App() {
           <Route path="/admin/ajustes" element={<SettingsPage />} />
         </Route>
       </Route>
+
+      {/* 404 — catch-all */}
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

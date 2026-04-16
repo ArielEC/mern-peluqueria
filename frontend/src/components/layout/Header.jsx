@@ -15,6 +15,7 @@ const authLinks = [
   { to: '/appointments', label: 'Mis citas' },
 ];
 
+
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { data: settings } = useSettings();
@@ -72,6 +73,15 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-3">
           {isAuthenticated ? (
             <>
+              {user?.role === 'admin' && (
+                <Link
+                  to="/admin"
+                  className="text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
+                  Panel Admin
+                </Link>
+              )}
               <span className="text-sm text-muted-foreground">
                 {user?.nombre || user?.email}
               </span>
@@ -120,12 +130,23 @@ export default function Header() {
           </nav>
           <div className="mt-4 flex flex-col gap-2">
             {isAuthenticated ? (
-              <Button
-                variant="outline"
-                onClick={() => { logout(); setMenuOpen(false); }}
-              >
-                Cerrar sesión
-              </Button>
+              <>
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMenuOpen(false)}
+                    className="block rounded-md px-3 py-2 text-sm font-bold text-primary bg-primary/10 text-center"
+                  >
+                    Panel Admin
+                  </Link>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => { logout(); setMenuOpen(false); }}
+                >
+                  Cerrar sesión
+                </Button>
+              </>
             ) : (
               <Button asChild onClick={() => setMenuOpen(false)}>
                 <Link to="/login">Login</Link>
