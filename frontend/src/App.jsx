@@ -4,6 +4,8 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
+import BookingPage from '@/pages/BookingPage';
+import BookingConfirmedPage from '@/pages/BookingConfirmedPage';
 
 function App() {
   return (
@@ -17,12 +19,14 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Rutas protegidas (cliente) — se completarán en FC-03 y FC-04 */}
+      {/* Rutas protegidas (cliente) */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
-          {/* /book → FC-03 */}
+          <Route path="/book" element={<BookingPage />} />
           {/* /appointments → FC-04 */}
         </Route>
+        {/* Confirmación — layout propio (pantalla enfocada) */}
+        <Route path="/booking/confirmed" element={<BookingConfirmedPage />} />
       </Route>
 
       {/* Rutas protegidas (admin) — se completarán en PA-01 */}
