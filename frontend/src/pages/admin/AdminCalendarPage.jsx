@@ -26,13 +26,13 @@ function buildEvents(appointments) {
     return {
       id: appt._id,
       resourceId: appt.profesional?._id,
-      // El título incluye nombre del cliente y servicio — FullCalendar los muestra en el evento
       title: [
         appt.cliente?.nombre || appt.nombreTercero || 'Cliente',
         appt.servicio?.nombre,
       ].filter(Boolean).join(' · '),
       start: appt.fechaHoraInicio,
-      end: appt.fechaHoraFin || appt.fechaHoraInicio,
+      // Usar fechaHoraFinOperativa (duración real redondeada al grid) para mostrar el bloque correcto
+      end: appt.fechaHoraFinOperativa || appt.fechaHoraFin || appt.fechaHoraInicio,
       backgroundColor: profColor + '22',
       borderColor: profColor,
       textColor: '#131b2e',
@@ -108,8 +108,8 @@ export default function AdminCalendarPage() {
     ? `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), "d MMM", { locale: es })} — ${format(endOfWeek(currentDate, { weekStartsOn: 1 }), "d MMM yyyy", { locale: es })}`
     : format(currentDate, "EEEE, d 'de' MMMM yyyy", { locale: es });
 
-  /* Navegación */
-  function navigate(direction) {
+  /* Navegación — renombrado a goTo para no oscurecer el nombre 'navigate' de React Router */
+  function goTo(direction) {
     const cal = calendarRef.current?.getApi();
     if (!cal) return;
     direction === 'prev' ? cal.prev() : cal.next();
@@ -156,7 +156,7 @@ export default function AdminCalendarPage() {
           <h2 className="text-xl font-bold text-[#131b2e] capitalize">{headerLabel}</h2>
           <div className="flex items-center bg-[#f2f3ff] rounded-lg p-1 gap-0.5">
             <button
-              onClick={() => navigate('prev')}
+              onClick={() => goTo('prev')}
               className="px-2 py-1.5 rounded-md hover:bg-white transition-colors text-[#494454]"
               aria-label="Anterior"
             >
@@ -169,7 +169,7 @@ export default function AdminCalendarPage() {
               Hoy
             </button>
             <button
-              onClick={() => navigate('next')}
+              onClick={() => goTo('next')}
               className="px-2 py-1.5 rounded-md hover:bg-white transition-colors text-[#494454]"
               aria-label="Siguiente"
             >

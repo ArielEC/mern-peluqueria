@@ -7,6 +7,19 @@ import connectDB from './config/db.js';
 // Cargar variables de entorno
 dotenv.config();
 
+// ─── Validaciones de entorno en startup (SEC-4, DEUDA-6) ───────────────────
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  console.error('FATAL: JWT_SECRET no definido o demasiado corto (mínimo 32 caracteres). Abortando.');
+  process.exit(1);
+}
+
+const isProd = process.env.NODE_ENV === 'production';
+if (isProd && !process.env.FRONTEND_URL) {
+  console.error('FATAL: FRONTEND_URL no definido en producción. Abortando.');
+  process.exit(1);
+}
+// ───────────────────────────────────────────────────────────────────────────
+
 // Conectar a MongoDB
 connectDB();
 
@@ -22,12 +35,23 @@ const limiter = rateLimit({
   message: { error: 'Demasiadas solicitudes, intenta de nuevo más tarde' }
 });
 
+// ─── Cabeceras de seguridad HTTP (DEUDA-2 — sin dependencia externa) ────────
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-XSS-Protection', '0'); // Delegado a CSP en browsers modernos
+  res.removeHeader('X-Powered-By');
+  next();
+});
+// ───────────────────────────────────────────────────────────────────────────
+
 // Middlewares globales
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10kb' })); // DEUDA-1: límite explícito de payload
 app.use(limiter);
 
 // Ruta de salud
@@ -55,11 +79,13 @@ app.use('/api/blockers', blockerRoutes);
 app.use('/api/technical-notes', technicalNoteRoutes);
 app.use('/api/availability', availabilityRoutes);
 
-// Manejo de errores global
+// Manejo de errores global (SEC-2: no exponer err.message en 5xx de producción)
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(err.status || 500).json({
-    error: err.message || 'Error interno del servidor'
+  const status = err.status || 500;
+  const exposeMessage = !isProd || status < 500;
+  res.status(status).json({
+    error: exposeMessage ? (err.message || 'Error interno del servidor') : 'Error interno del servidor'
   });
 });
 

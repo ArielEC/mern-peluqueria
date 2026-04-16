@@ -1,19 +1,27 @@
 import { useQuery } from '@tanstack/react-query';
+import { format, addDays } from 'date-fns';
 import api from '@/lib/api';
 
 /**
- * Citas de hoy — el backend filtra por `desde`/`hasta` sobre fechaHoraInicio
+ * Formatea una fecha local como "YYYY-MM-DD".
+ * Enviar strings de fecha (sin hora) al backend es preferible a ISO datetimes locales,
+ * porque el backend los interpreta en la TZ del negocio correctamente.
+ */
+function toDateStr(date) {
+  return format(date, 'yyyy-MM-dd');
+}
+
+/**
+ * Citas de hoy — el backend interpreta `desde`/`hasta` como inicio/fin del día
+ * en la zona horaria del negocio.
  */
 export function useAdminTodayAppointments() {
   return useQuery({
     queryKey: ['admin', 'appointments', 'today'],
     queryFn: async () => {
-      const now = new Date();
-      const desde = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
-      const hasta = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
-      const { data } = await api.get('/appointments', { params: { desde, hasta } });
+      const today = toDateStr(new Date());
+      const { data } = await api.get('/appointments', { params: { desde: today, hasta: today } });
       const list = Array.isArray(data) ? data : data.appointments ?? [];
-      // Ordenar ascendente por hora para la tabla
       return list.sort((a, b) => new Date(a.fechaHoraInicio) - new Date(b.fechaHoraInicio));
     },
     staleTime: 60 * 1000,
@@ -21,16 +29,16 @@ export function useAdminTodayAppointments() {
 }
 
 /**
- * Citas de los próximos 7 días (desde hoy inclusive)
+ * Citas de los próximos 7 días (hoy inclusive).
+ * Envía strings de fecha para que el backend aplique la TZ del negocio.
  */
 export function useAdminWeekAppointments() {
   return useQuery({
     queryKey: ['admin', 'appointments', 'week'],
     queryFn: async () => {
-      const now = new Date();
-      const desde = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 6, 23, 59, 59);
-      const hasta = end.toISOString();
+      const today = new Date();
+      const desde = toDateStr(today);
+      const hasta = toDateStr(addDays(today, 6));
       const { data } = await api.get('/appointments', { params: { desde, hasta } });
       return Array.isArray(data) ? data : data.appointments ?? [];
     },

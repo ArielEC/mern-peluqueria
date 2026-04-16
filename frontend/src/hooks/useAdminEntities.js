@@ -142,9 +142,12 @@ export function useAdminClients(search = '') {
   return useQuery({
     queryKey: clientsAdminKeys.list(search),
     queryFn: async () => {
-      const params = {};
+      const params = { limit: 50 };
       if (search) params.search = search;
       const { data } = await api.get('/auth/clients', { params });
+      // El backend devuelve { clients, total, page, limit, totalPages }
+      if (data && Array.isArray(data.clients)) return data.clients;
+      // Compatibilidad con respuesta legacy (array directo)
       return Array.isArray(data) ? data : [];
     },
     staleTime: 30 * 1000,

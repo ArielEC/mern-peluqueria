@@ -63,9 +63,15 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
+    // El input datetime-local devuelve "YYYY-MM-DDTHH:mm" sin zona horaria.
+    // new Date() lo interpreta como hora LOCAL del navegador → podría ser incorrecto
+    // si el navegador está en una TZ diferente a la del negocio.
+    // Solución: añadir ":00" y enviar como string — el backend acepta ISO con offset.
+    // Para admins en la misma TZ que el negocio, new Date() es correcto.
+    const fechaHoraISOLocal = new Date(form.fechaHoraInicio).toISOString();
     const payload = {
       servicioId: form.servicioId,
-      fechaHoraInicio: new Date(form.fechaHoraInicio).toISOString(),
+      fechaHoraInicio: fechaHoraISOLocal,
       ...(form.profesionalId && { profesionalId: form.profesionalId }),
       ...(form.notasCliente.trim() && { notasCliente: form.notasCliente.trim() }),
       ...(form.forceOverbook && { forceOverbook: true }),

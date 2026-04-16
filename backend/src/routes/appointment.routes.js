@@ -14,7 +14,8 @@ import { createAppointmentSchema, updateAppointmentSchema, cancelAppointmentSche
 const router = express.Router();
 
 // GET /api/appointments - Usuario autenticado (cliente ve sus citas, admin ve todas)
-router.get('/', authenticateToken, requireClienteOrAdmin, getAppointments);
+// loadSettings necesario para parsear filtros desde/hasta en la TZ del negocio
+router.get('/', authenticateToken, requireClienteOrAdmin, loadSettings, getAppointments);
 
 // GET /api/appointments/:id - Usuario autenticado (dueño o admin)
 router.get('/:id', authenticateToken, requireClienteOrAdmin, getAppointmentById);

@@ -21,20 +21,19 @@ function getInitials(name = '') {
     .toUpperCase();
 }
 
+// Estados válidos del modelo backend: confirmada | completada | cancelada | no_presentado
 const STATUS_STYLES = {
-  pendiente: 'bg-[#eaedff] text-[#494454]',
-  confirmada: 'bg-[#e9ddff] text-[#4e3b7c]',
-  'en-curso': 'bg-[#ffdcbb] text-[#673d00]',
-  completada: 'bg-[#e9ddff] text-[#544183]',
-  cancelada: 'bg-[#ffdad6] text-[#93000a]',
+  confirmada:    'bg-[#e9ddff] text-[#4e3b7c]',
+  completada:    'bg-[#e9ddff] text-[#544183]',
+  cancelada:     'bg-[#ffdad6] text-[#93000a]',
+  no_presentado: 'bg-[#eaedff] text-[#494454]',
 };
 
 const STATUS_LABELS = {
-  pendiente: 'Pendiente',
-  confirmada: 'Confirmada',
-  'en-curso': 'En curso',
-  completada: 'Completada',
-  cancelada: 'Cancelada',
+  confirmada:    'Confirmada',
+  completada:    'Completada',
+  cancelada:     'Cancelada',
+  no_presentado: 'No presentado',
 };
 
 /* ── KPI card ── */
@@ -60,7 +59,7 @@ function AppointmentRow({ appt }) {
   const clientName = appt.cliente?.nombre || appt.nombreTercero || 'Cliente';
   const profName = appt.profesional?.nombre || '—';
   const serviceName = appt.servicio?.nombre || '—';
-  const status = appt.estado || 'pendiente';
+  const status = appt.estado || 'confirmada';
 
   return (
     <tr className="hover:bg-[#f2f3ff]/40 transition-colors">
@@ -92,7 +91,8 @@ export default function AdminDashboardPage() {
   const { data: todayAppts = [], isLoading: loadingToday } = useAdminTodayAppointments();
   const { data: weekAppts = [], isLoading: loadingWeek } = useAdminWeekAppointments();
 
-  const pendingCount = todayAppts.filter((a) => a.estado === 'pendiente').length;
+  // 'confirmada' es el único estado "activo pendiente" en el modelo (no existe 'pendiente')
+  const pendingCount = todayAppts.filter((a) => a.estado === 'confirmada').length;
 
   return (
     <div className="flex flex-col gap-8 max-w-7xl">
@@ -120,9 +120,9 @@ export default function AdminDashboardPage() {
         />
         <KpiCard
           icon="pending_actions"
-          label="Pendientes hoy"
+          label="Confirmadas hoy"
           value={loadingToday ? '…' : pendingCount}
-          badge={pendingCount > 0 ? 'Atención' : null}
+          badge={pendingCount > 0 ? 'Activas' : null}
           iconColor="text-[#665396]"
           iconBg="bg-[#665396]/10"
         />

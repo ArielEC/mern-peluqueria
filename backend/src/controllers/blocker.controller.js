@@ -1,20 +1,7 @@
 import Blocker from '../models/Blocker.js';
+import { parsearFiltroFecha, resolverZonaHoraria } from '../utils/dateTime.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
-const FECHA_SIMPLE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-
-const parsearFechaFiltro = (value, finDelDia = false) => {
-  if (typeof value !== 'string') return null;
-
-  const trimmed = value.trim();
-  const esFechaSimple = FECHA_SIMPLE_REGEX.test(trimmed);
-  const fecha = esFechaSimple
-    ? new Date(`${trimmed}T${finDelDia ? '23:59:59.999' : '00:00:00.000'}`)
-    : new Date(trimmed);
-
-  if (Number.isNaN(fecha.getTime())) return null;
-  return fecha;
-};
 
 /**
  * GET /api/blockers
@@ -46,9 +33,11 @@ export const getAllBlockers = async (req, res) => {
     }
     
     // Filtrar por rango de fechas con intersección de intervalos
+    // Usa TZ del negocio para interpretar fechas simples "YYYY-MM-DD" correctamente
     if (desde || hasta) {
-      const desdeDate = desde ? parsearFechaFiltro(desde, false) : null;
-      const hastaDate = hasta ? parsearFechaFiltro(hasta, true) : null;
+      const tz = resolverZonaHoraria(req.settings);
+      const desdeDate = desde ? parsearFiltroFecha(desde, false, tz) : null;
+      const hastaDate = hasta ? parsearFiltroFecha(hasta, true, tz) : null;
 
       if (desde && !desdeDate) {
         return res.status(400).json({ error: 'Parámetro desde inválido' });

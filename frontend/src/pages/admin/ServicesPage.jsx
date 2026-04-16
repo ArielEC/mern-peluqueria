@@ -5,8 +5,8 @@ import {
 } from '@/components/admin/AdminTable';
 import {
   useAdminServices, useAdminCreateService, useAdminUpdateService, useAdminDeleteService,
+  useAdminProfessionals,
 } from '@/hooks/useAdminEntities';
-import { useAdminProfessionals } from '@/hooks/useAdminEntities';
 
 const EMPTY_FORM = { nombre: '', descripcion: '', duracion: 30, precio: 0, categoria: '', profesionalesCapaces: [], activo: true };
 

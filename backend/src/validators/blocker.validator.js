@@ -33,4 +33,9 @@ export const updateBlockerSchema = z.object({
   fechaHoraFin: z.string().datetime().or(z.date()).optional(),
   tipo: z.enum(['vacaciones', 'festivo', 'personal', 'mantenimiento', 'otro']).optional(),
   esRecurrente: z.boolean().optional()
-}).strict();
+}).strict().refine((data) => {
+  if (data.fechaHoraInicio && data.fechaHoraFin) {
+    return new Date(data.fechaHoraFin) > new Date(data.fechaHoraInicio);
+  }
+  return true;
+}, { message: 'La fecha de fin debe ser posterior a la fecha de inicio' });

@@ -11,7 +11,17 @@ export const updateSettingsSchema = z.object({
   duracionSlot: z.enum(['15', '30']).transform(Number).optional().or(z.number().refine(v => v === 15 || v === 30)),
   mensajeBienvenida: z.string().max(500).optional(),
   politicaCancelacion: z.string().max(1000).optional(),
-  zonaHoraria: z.string().max(60, 'La zona horaria no puede exceder 60 caracteres').optional(),
+  zonaHoraria: z.string()
+    .max(60, 'La zona horaria no puede exceder 60 caracteres')
+    .refine((tz) => {
+      try {
+        Intl.DateTimeFormat('es-ES', { timeZone: tz });
+        return true;
+      } catch {
+        return false;
+      }
+    }, 'zonaHoraria debe ser una zona IANA válida (ej: Europe/Madrid)')
+    .optional(),
   notificaciones: z.object({
     emailConfirmacion: z.boolean().optional(),
     emailRecordatorio: z.boolean().optional(),

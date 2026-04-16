@@ -9,24 +9,11 @@ import {
   calcularOcupacionOperativa,
   construirMensajeRedondeoDuracion
 } from '../services/availability.service.js';
-import { diferenciaDiasCeil, diferenciaHoras } from '../utils/dateTime.js';
+import { diferenciaDiasCeil, parsearFiltroFecha, resolverZonaHoraria } from '../utils/dateTime.js';
 
 const MAX_REINTENTOS_TRANSACCION = 3;
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 const ESTADOS_CITA_VALIDOS = new Set(['confirmada', 'completada', 'cancelada', 'no_presentado']);
-
-const parsearFechaFiltro = (value) => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const fecha = new Date(value);
-  if (Number.isNaN(fecha.getTime())) {
-    return null;
-  }
-
-  return fecha;
-};
 
 const construirPoliticaDuracion = (ocupacion) => ({
   ...ocupacion,
@@ -90,8 +77,10 @@ export const getAppointments = async (req, res) => {
       filter.estado = estado;
     }
     if (desde || hasta) {
-      const desdeDate = desde ? parsearFechaFiltro(desde) : null;
-      const hastaDate = hasta ? parsearFechaFiltro(hasta) : null;
+      // Usar TZ del negocio para interpretar fechas simples "YYYY-MM-DD" correctamente
+      const tz = resolverZonaHoraria(req.settings);
+      const desdeDate = desde ? parsearFiltroFecha(desde, false, tz) : null;
+      const hastaDate = hasta ? parsearFiltroFecha(hasta, true, tz) : null;
 
       if (desde && !desdeDate) {
         return res.status(400).json({ error: 'Parámetro desde inválido' });
@@ -206,19 +195,21 @@ export const createAppointment = async (req, res) => {
     // Settings ya cargado por el middleware loadSettings
     const settings = req.settings;
     const ahora = new Date();
+
+    // Validar rango temporal: primero pasado, luego máximo de días (BUG-3)
+    if (fechaInicio <= ahora) {
+      return res.status(400).json({ error: 'No se puede reservar en el pasado' });
+    }
+
     const diasHastaReserva = diferenciaDiasCeil(ahora, fechaInicio);
     const ocupacionServicio = calcularOcupacionOperativa(servicio.duracion, settings?.duracionSlot);
     const politicaDuracion = construirPoliticaDuracion(ocupacionServicio);
     politicaDuracionContext = politicaDuracion;
-    
-    if (diasHastaReserva > settings.diasMaximosReserva) {
-      return res.status(400).json({ 
-        error: `No se puede reservar con más de ${settings.diasMaximosReserva} días de antelación` 
-      });
-    }
 
-    if (fechaInicio <= ahora) {
-      return res.status(400).json({ error: 'No se puede reservar en el pasado' });
+    if (diasHastaReserva > settings.diasMaximosReserva) {
+      return res.status(400).json({
+        error: `No se puede reservar con más de ${settings.diasMaximosReserva} días de antelación`
+      });
     }
 
     // Calcular fecha fin

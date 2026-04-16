@@ -8,8 +8,8 @@ import {
 import {
   useAdminBlockers, useAdminCreateBlocker,
   useAdminUpdateBlocker, useAdminDeleteBlocker,
+  useAdminProfessionals,
 } from '@/hooks/useAdminEntities';
-import { useAdminProfessionals } from '@/hooks/useAdminEntities';
 
 const TIPOS = [
   { value: 'vacaciones', label: 'Vacaciones' },

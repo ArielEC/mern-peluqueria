@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import {
   register,
   login,
@@ -18,15 +19,24 @@ import {
 
 const router = Router();
 
+// Rate limiter específico para endpoints de autenticación (más estricto que el global)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  limit: 15,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos de acceso. Intenta de nuevo en 15 minutos.' }
+});
+
 // ============================================
 // Rutas públicas (sin autenticación)
 // ============================================
 
 // POST /api/auth/register
-router.post('/register', validate(registerSchema), register);
+router.post('/register', authLimiter, validate(registerSchema), register);
 
 // POST /api/auth/login
-router.post('/login', validate(loginSchema), login);
+router.post('/login', authLimiter, validate(loginSchema), login);
 
 // ============================================
 // Rutas protegidas (requieren autenticación)

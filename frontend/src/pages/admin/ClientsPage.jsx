@@ -273,7 +273,7 @@ export default function ClientsPage() {
         title="Clientes"
         subtitle="Consulta la base de clientes y sus notas técnicas"
         searchValue={search}
-        onSearch={handleSearch}
+        onSearch={setSearch}
         searchPlaceholder="Buscar por nombre, email o teléfono..."
       />
 

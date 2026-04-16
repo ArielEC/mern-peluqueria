@@ -15,15 +15,33 @@ export const listClients = async (req, res) => {
       filter.activo = activo === 'true';
     }
     if (search) {
-      const regex = new RegExp(search.trim(), 'i');
+      // Escapar metacaracteres antes de crear el RegExp para evitar ReDoS
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'i');
       filter.$or = [{ nombre: regex }, { email: regex }, { telefono: regex }];
     }
 
-    const clients = await User.find(filter)
-      .select('nombre email telefono activo createdAt')
-      .sort({ createdAt: -1 });
+    // Paginación básica para evitar respuestas sin límite
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+    const skip = (page - 1) * limit;
 
-    res.json(clients);
+    const [clients, total] = await Promise.all([
+      User.find(filter)
+        .select('nombre email telefono activo createdAt')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(filter)
+    ]);
+
+    res.json({
+      clients,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
   } catch (error) {
     console.error('Error al listar clientes:', error);
     res.status(500).json({ error: 'Error al listar clientes.' });
@@ -208,7 +226,9 @@ export const changePassword = async (req, res) => {
     }
 
     // Actualizar contraseña (se hasheará automáticamente por el middleware pre-save)
+    // Registrar fecha de cambio para invalidar tokens anteriores (SEC-3)
     user.password = newPassword;
+    user.passwordChangedAt = new Date();
     await user.save();
 
     // Notificación placeholder

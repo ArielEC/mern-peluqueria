@@ -33,11 +33,40 @@ function formatPrice(price) {
   }).format(price);
 }
 
-function buildFechaHoraInicio(date, hora) {
-  const [h, m] = hora.split(':').map(Number);
-  const d = new Date(date);
-  d.setHours(h, m, 0, 0);
-  return d.toISOString();
+/**
+ * Obtiene el offset UTC de una zona horaria IANA para una fecha dada.
+ * Devuelve string tipo "+02:00" o "-05:00".
+ */
+function getIANAOffset(tz, date) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      timeZoneName: 'longOffset',
+    }).formatToParts(date);
+    const tzName = parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+    // tzName es "GMT+2", "GMT-05:00", "GMT+0", etc.
+    const raw = tzName.replace('GMT', '') || '+00:00';
+    const match = raw.match(/^([+-])(\d{1,2})(?::(\d{2}))?$/);
+    if (!match) return '+00:00';
+    const h = match[2].padStart(2, '0');
+    const m = match[3] ?? '00';
+    return `${match[1]}${h}:${m}`;
+  } catch {
+    return '+00:00';
+  }
+}
+
+/**
+ * Construye una fecha ISO correcta para el backend combinando una fecha local
+ * (YYYY-MM-DD) y la hora del slot (HH:MM) en la zona horaria del negocio.
+ * Evita el bug de setHours() que usa la TZ del navegador en lugar de la del negocio.
+ */
+function buildFechaHoraInicio(dateStr, hora, businessTz = 'Europe/Madrid') {
+  // Aproximación de la fecha para obtener el offset correcto (DST-aware)
+  const approx = new Date(`${dateStr}T${hora}:00.000Z`);
+  const offset = getIANAOffset(businessTz, approx);
+  // Construir ISO con el offset explícito de la TZ del negocio
+  return `${dateStr}T${hora}:00.000${offset}`;
 }
 
 // ─── Stepper ──────────────────────────────────────────────────────────────────
@@ -620,7 +649,7 @@ function Step3({ selectedService, selectedDate, selectedSlot, notes, onNotesChan
 
               {error && (
                 <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3 font-medium">
-                  {error?.response?.data?.message || 'Error al crear la cita. Inténtalo de nuevo.'}
+                  {error?.response?.data?.error || error?.response?.data?.message || 'Error al crear la cita. Inténtalo de nuevo.'}
                 </p>
               )}
 
@@ -681,7 +710,9 @@ export default function BookingPage() {
   async function handleConfirm() {
     if (!selectedService || !selectedDate || !selectedSlot) return;
 
-    const fechaHoraInicio = buildFechaHoraInicio(selectedDate, selectedSlot.hora);
+    const businessTz = settings?.zonaHoraria || 'Europe/Madrid';
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const fechaHoraInicio = buildFechaHoraInicio(dateStr, selectedSlot.hora, businessTz);
     const payload = {
       servicioId: selectedService._id,
       fechaHoraInicio,

@@ -35,7 +35,8 @@ function canCancelAppointment(appointment, horasMinimas = 24) {
   const inicio = new Date(appointment.fechaHoraInicio);
   const ahora = new Date();
   const horasRestantes = (inicio - ahora) / (1000 * 60 * 60);
-  return horasRestantes > horasMinimas;
+  // Usar >= para alinear con el backend (puedeCancelar usa >=)
+  return horasRestantes >= horasMinimas;
 }
 
 function isUpcoming(appointment) {
@@ -159,8 +160,8 @@ function HistoryRow({ appointment }) {
     <div className="bg-muted/50 rounded-xl p-4 md:p-5 flex flex-col md:flex-row gap-3 items-start md:items-center hover:bg-muted/80 transition-colors">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <Icon className={`h-4 w-4 shrink-0 ${cfg.cls.replace('bg-', '').replace(/\/\d+/, '').trim()}`} strokeWidth={2} style={{ color: undefined }} />
-          <span className={`text-[10px] font-black uppercase tracking-widest ${cfg.cls.split(' ').find(c => c.startsWith('text-'))}`}>
+          <Icon className={`h-4 w-4 shrink-0 ${cfg.cls.split(' ').find(c => c.startsWith('text-')) ?? ''}`} strokeWidth={2} />
+          <span className={`text-[10px] font-black uppercase tracking-widest ${cfg.cls.split(' ').find(c => c.startsWith('text-')) ?? ''}`}>
             {cfg.label}
           </span>
         </div>

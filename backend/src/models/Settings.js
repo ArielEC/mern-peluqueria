@@ -81,14 +81,17 @@ const settingsSchema = new mongoose.Schema({
 let _settingsCache = null;
 
 // Obtener la configuración global. Sirve el cache si está disponible.
+// Usa findOneAndUpdate atómico (upsert) para eliminar race condition en arranque.
+// Devuelve un POJO congelado para evitar mutaciones accidentales del cache compartido.
 settingsSchema.statics.getGlobal = async function() {
   if (_settingsCache) return _settingsCache;
-  let settings = await this.findById('global');
-  if (!settings) {
-    settings = await this.create({ _id: 'global' });
-  }
-  _settingsCache = settings;
-  return settings;
+  const settings = await this.findOneAndUpdate(
+    { _id: 'global' },
+    { $setOnInsert: { _id: 'global' } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  ).lean();
+  _settingsCache = Object.freeze(settings);
+  return _settingsCache;
 };
 
 // Actualizar la configuración global y refrescar el cache.
@@ -97,8 +100,8 @@ settingsSchema.statics.updateGlobal = async function(updates) {
     'global',
     { $set: updates },
     { new: true, upsert: true, runValidators: true }
-  );
-  _settingsCache = settings;
+  ).lean();
+  _settingsCache = Object.freeze(settings);
   return settings;
 };
 

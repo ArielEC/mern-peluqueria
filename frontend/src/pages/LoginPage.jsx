@@ -39,7 +39,7 @@ function IconInput({ icon: Icon, error, rightSlot, ...props }) {
     <div className="relative">
       <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       <input
-        className={`w-full pl-10 pr-${rightSlot ? '10' : '4'} py-3 bg-muted border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`w-full pl-10 ${rightSlot ? 'pr-10' : 'pr-4'} py-3 bg-muted border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
           error ? 'border-destructive' : 'border-border/30'
         }`}
         {...props}
@@ -162,7 +162,8 @@ export default function LoginPage() {
             {/* API error */}
             {loginMutation.isError && (
               <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3 font-medium">
-                {loginMutation.error?.response?.data?.message ||
+                {loginMutation.error?.response?.data?.error ||
+                  loginMutation.error?.response?.data?.message ||
                   'Credenciales incorrectas. Inténtalo de nuevo.'}
               </p>
             )}

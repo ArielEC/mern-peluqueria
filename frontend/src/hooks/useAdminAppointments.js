@@ -28,9 +28,8 @@ export function useAdminCreateAppointment() {
       return data;
     },
     onSuccess: () => {
+      // adminApptKeys.all === ['admin', 'appointments'] — una sola invalidación cubre todo
       queryClient.invalidateQueries({ queryKey: adminApptKeys.all });
-      // También invalida el dashboard
-      queryClient.invalidateQueries({ queryKey: ['admin', 'appointments'] });
     },
   });
 }
