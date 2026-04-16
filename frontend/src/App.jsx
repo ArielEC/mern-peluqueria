@@ -9,6 +9,7 @@ import BookingPage from '@/pages/BookingPage';
 import BookingConfirmedPage from '@/pages/BookingConfirmedPage';
 import MyAppointmentsPage from '@/pages/MyAppointmentsPage';
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
+import AdminCalendarPage from '@/pages/admin/AdminCalendarPage';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
       <Route element={<ProtectedRoute adminOnly />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin/calendario" element={<AdminCalendarPage />} />
         </Route>
       </Route>
     </Routes>

@@ -17,6 +17,61 @@
   }
 }
 
+/* ── FullCalendar violet-slate overrides ── */
+.fc {
+  font-family: 'Inter', sans-serif;
+  --fc-border-color: rgba(203, 195, 215, 0.2);
+  --fc-today-bg-color: rgba(107, 56, 212, 0.04);
+  --fc-now-indicator-color: #ba1a1a;
+  --fc-event-border-color: transparent;
+  --fc-page-bg-color: #ffffff;
+  --fc-neutral-bg-color: #f2f3ff;
+  --fc-list-event-hover-bg-color: #f2f3ff;
+}
+
+.fc .fc-timegrid-slot {
+  height: 1.75rem;
+}
+
+.fc .fc-timegrid-slot-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #494454;
+}
+
+.fc .fc-col-header-cell {
+  background: #f2f3ff;
+  border-bottom: 1px solid rgba(203, 195, 215, 0.3);
+}
+
+.fc .fc-event {
+  border-left-width: 3px !important;
+  border-radius: 0.375rem;
+  padding: 2px 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fc .fc-event-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc .fc-scrollgrid {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.fc .fc-resource-timeline-divider {
+  background: rgba(203, 195, 215, 0.2);
+}
+
+.fc-direction-ltr .fc-timegrid-col-events {
+  margin: 0 2px;
+}
+
 @theme {
   --color-background: hsl(0 0% 100%);
   --color-foreground: hsl(240 10% 3.9%);

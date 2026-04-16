@@ -2,17 +2,19 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 
 /**
- * Citas de hoy (admin ve todas las citas; filtramos por fecha en cliente)
+ * Citas de hoy — el backend filtra por `desde`/`hasta` sobre fechaHoraInicio
  */
 export function useAdminTodayAppointments() {
   return useQuery({
     queryKey: ['admin', 'appointments', 'today'],
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-      const { data } = await api.get('/appointments', {
-        params: { fecha: today },
-      });
-      return Array.isArray(data) ? data : data.appointments ?? [];
+      const now = new Date();
+      const desde = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
+      const hasta = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
+      const { data } = await api.get('/appointments', { params: { desde, hasta } });
+      const list = Array.isArray(data) ? data : data.appointments ?? [];
+      // Ordenar ascendente por hora para la tabla
+      return list.sort((a, b) => new Date(a.fechaHoraInicio) - new Date(b.fechaHoraInicio));
     },
     staleTime: 60 * 1000,
   });
@@ -25,15 +27,11 @@ export function useAdminWeekAppointments() {
   return useQuery({
     queryKey: ['admin', 'appointments', 'week'],
     queryFn: async () => {
-      const today = new Date();
-      const fechaInicio = today.toISOString().split('T')[0];
-      const end = new Date(today);
-      end.setDate(end.getDate() + 6);
-      const fechaFin = end.toISOString().split('T')[0];
-
-      const { data } = await api.get('/appointments', {
-        params: { fechaInicio, fechaFin },
-      });
+      const now = new Date();
+      const desde = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 6, 23, 59, 59);
+      const hasta = end.toISOString();
+      const { data } = await api.get('/appointments', { params: { desde, hasta } });
       return Array.isArray(data) ? data : data.appointments ?? [];
     },
     staleTime: 60 * 1000,

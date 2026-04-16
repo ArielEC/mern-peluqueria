@@ -7,6 +7,7 @@ function formatHour(isoString) {
   return new Date(isoString).toLocaleTimeString('es-ES', {
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
 }
 
@@ -62,7 +63,7 @@ function AppointmentRow({ appt }) {
 
   return (
     <tr className="hover:bg-[#f2f3ff]/40 transition-colors">
-      <td className="px-6 py-4 font-medium text-[#131b2e] tabular-nums">{formatHour(appt.fechaHora)}</td>
+      <td className="px-6 py-4 font-medium text-[#131b2e] tabular-nums">{formatHour(appt.fechaHoraInicio)}</td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-[#e2e7ff] flex items-center justify-center text-xs font-bold text-[#6b38d4] shrink-0">
