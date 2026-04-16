@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
+import AdminLayout from '@/components/admin/AdminLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
@@ -7,6 +8,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import BookingPage from '@/pages/BookingPage';
 import BookingConfirmedPage from '@/pages/BookingConfirmedPage';
 import MyAppointmentsPage from '@/pages/MyAppointmentsPage';
+import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
 
 function App() {
   return (
@@ -30,9 +32,11 @@ function App() {
         <Route path="/booking/confirmed" element={<BookingConfirmedPage />} />
       </Route>
 
-      {/* Rutas protegidas (admin) — se completarán en PA-01 */}
+      {/* Rutas protegidas (admin) — PA-01 */}
       <Route element={<ProtectedRoute adminOnly />}>
-        {/* /admin/* → PA-01 */}
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboardPage />} />
+        </Route>
       </Route>
     </Routes>
   );
