@@ -213,6 +213,7 @@ export default function BlockersPage() {
       />
 
       <BlockerModal
+        key={modal?._id || 'new'}
         open={modal !== null}
         onClose={() => setModal(null)}
         initial={modal !== 'new' ? modal : undefined}

@@ -227,7 +227,12 @@ export default function ProfessionalsPage() {
         emptyText="No hay profesionales. Crea el primero."
       />
 
-      <ProfModal open={modal !== null} onClose={() => setModal(null)} initial={modal !== 'new' ? modal : undefined} />
+      <ProfModal
+        key={modal?._id || 'new'}
+        open={modal !== null}
+        onClose={() => setModal(null)}
+        initial={modal !== 'new' ? modal : undefined}
+      />
 
       <ConfirmDeleteModal
         open={Boolean(deleteTarget)}

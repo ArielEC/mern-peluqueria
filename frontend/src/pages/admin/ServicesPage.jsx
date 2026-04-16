@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   AdminPageHeader, AdminTable, ActionButtons, StatusToggle,
   ConfirmDeleteModal, AdminModal, FormField, inputCls, selectCls, textareaCls,
@@ -18,8 +18,12 @@ function ServiceModal({ open, onClose, initial, professionals }) {
   const [form, setForm] = useState(initial ?? EMPTY_FORM);
   const [errors, setErrors] = useState({});
 
-  // Sync when initial changes
-  useState(() => { setForm(initial ?? EMPTY_FORM); setErrors({}); });
+  // Sincroniza el form cuando se abre con un ítem diferente
+  useEffect(() => {
+    setForm(initial ?? EMPTY_FORM);
+    setErrors({});
+  }, [initial]);
+
   if (!open) return null;
 
   function set(k, v) { setForm((f) => ({ ...f, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })); }

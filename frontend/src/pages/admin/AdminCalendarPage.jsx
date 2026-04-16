@@ -1,9 +1,8 @@
 import { useRef, useState, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import resourceTimeGridPlugin from '@fullcalendar/resource-timegrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { format, startOfWeek, endOfWeek, startOfDay, endOfDay, addDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useAdminAppointmentsRange } from '@/hooks/useAdminAppointments';
@@ -11,16 +10,13 @@ import NewAppointmentModal from '@/components/admin/NewAppointmentModal';
 import AppointmentDetailModal from '@/components/admin/AppointmentDetailModal';
 
 /* ── helpers ── */
-function isoDay(date) {
-  return format(date, 'yyyy-MM-dd');
-}
-
 function buildResources(professionals) {
   return professionals.map((p) => ({
     id: p._id,
     title: p.nombre,
+    // especialidad y resourceColor van a extendedProps automáticamente (no son campos estándar de FC)
     especialidad: p.especialidad || '',
-    color: p.color || '#6b38d4',
+    resourceColor: p.color || '#6b38d4',
   }));
 }
 
@@ -54,7 +50,7 @@ function ResourceHeader({ resource }) {
     <div className="flex items-center gap-2 px-2 py-2">
       <div
         className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0"
-        style={{ backgroundColor: resource.extendedProps?.color || '#6b38d4' }}
+        style={{ backgroundColor: resource.extendedProps?.resourceColor || '#6b38d4' }}
       >
         {initials}
       </div>
@@ -83,19 +79,19 @@ function LegendChip({ color, label }) {
 /* ── Page ── */
 export default function AdminCalendarPage() {
   const calendarRef = useRef(null);
-  const [view, setView] = useState('resourceTimeGridDay');
+  const [view, setView] = useState('resourceTimeGridDay'); // 'resourceTimeGridDay' | 'resourceTimeGridWeek'
   const [currentDate, setCurrentDate] = useState(new Date());
   const [newModal, setNewModal] = useState(null); // { date, profesionalId? }
   const [detailAppt, setDetailAppt] = useState(null);
 
   /* Rango de fechas para cargar citas */
-  const rangeStart = view === 'resourceTimeGridDay'
-    ? startOfDay(currentDate).toISOString()
-    : startOfWeek(currentDate, { weekStartsOn: 1 }).toISOString();
-
-  const rangeEnd = view === 'resourceTimeGridDay'
-    ? endOfDay(currentDate).toISOString()
-    : endOfWeek(currentDate, { weekStartsOn: 1 }).toISOString();
+  const isWeekView = view === 'resourceTimeGridWeek';
+  const rangeStart = isWeekView
+    ? startOfWeek(currentDate, { weekStartsOn: 1 }).toISOString()
+    : startOfDay(currentDate).toISOString();
+  const rangeEnd = isWeekView
+    ? endOfWeek(currentDate, { weekStartsOn: 1 }).toISOString()
+    : endOfDay(currentDate).toISOString();
 
   const { data: professionals = [], isLoading: loadingProfs } = useProfessionals();
   const { data: appointments = [], isLoading: loadingAppts } = useAdminAppointmentsRange(rangeStart, rangeEnd);
@@ -104,9 +100,9 @@ export default function AdminCalendarPage() {
   const events = buildEvents(appointments);
 
   /* Header label */
-  const headerLabel = view === 'resourceTimeGridDay'
-    ? format(currentDate, "EEEE, d 'de' MMMM yyyy", { locale: es })
-    : `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), "d MMM", { locale: es })} — ${format(endOfWeek(currentDate, { weekStartsOn: 1 }), "d MMM yyyy", { locale: es })}`;
+  const headerLabel = isWeekView
+    ? `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), "d MMM", { locale: es })} — ${format(endOfWeek(currentDate, { weekStartsOn: 1 }), "d MMM yyyy", { locale: es })}`
+    : format(currentDate, "EEEE, d 'de' MMMM yyyy", { locale: es });
 
   /* Navegación */
   function navigate(direction) {
@@ -193,9 +189,9 @@ export default function AdminCalendarPage() {
               Día
             </button>
             <button
-              onClick={() => switchView('timeGridWeek')}
+              onClick={() => switchView('resourceTimeGridWeek')}
               className={`px-4 py-1.5 text-[0.8rem] font-bold rounded-md transition-all ${
-                view === 'timeGridWeek'
+                view === 'resourceTimeGridWeek'
                   ? 'bg-white text-[#6b38d4] shadow-sm'
                   : 'text-[#494454] hover:text-[#131b2e]'
               }`}
@@ -225,7 +221,7 @@ export default function AdminCalendarPage() {
 
         <FullCalendar
           ref={calendarRef}
-          plugins={[resourceTimeGridPlugin, timeGridPlugin, interactionPlugin]}
+          plugins={[resourceTimeGridPlugin, interactionPlugin]}
           initialView={view}
           resources={resources}
           events={events}

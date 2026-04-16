@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useAdminTodayAppointments, useAdminWeekAppointments } from '@/hooks/useAdminDashboard';
 import useAuthStore from '@/stores/authStore';
 
@@ -207,9 +208,9 @@ export default function AdminDashboardPage() {
                 { label: 'Gestionar Profesionales', to: '/admin/profesionales', icon: 'badge' },
                 { label: 'Ver Clientes', to: '/admin/clientes', icon: 'group' },
               ].map(({ label, to, icon }) => (
-                <a
+                <Link
                   key={to}
-                  href={to}
+                  to={to}
                   className="w-full flex items-center justify-between p-3 rounded-lg bg-[#f2f3ff] hover:bg-[#e2e7ff] transition-colors group"
                 >
                   <div className="flex items-center gap-2">
@@ -219,7 +220,7 @@ export default function AdminDashboardPage() {
                   <span className="material-symbols-outlined text-[18px] text-[#6b38d4] group-hover:translate-x-1 transition-transform">
                     chevron_right
                   </span>
-                </a>
+                </Link>
               ))}
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AdminPageHeader, AdminTable, ConfirmDeleteModal, AdminModal, FormField, inputCls, selectCls, textareaCls } from '@/components/admin/AdminTable';
@@ -181,6 +181,7 @@ function ClientDetail({ client, onClose }) {
       </div>
 
       <NoteModal
+        key={noteModal?._id || 'new'}
         open={noteModal !== null}
         onClose={() => setNoteModal(null)}
         initial={noteModal !== 'new' ? noteModal : undefined}
@@ -204,13 +205,14 @@ export default function ClientsPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
+  const timerRef = useRef(null);
 
-  // Simple debounce
-  function handleSearch(v) {
-    setSearch(v);
-    clearTimeout(window._clientSearchTimer);
-    window._clientSearchTimer = setTimeout(() => setDebouncedSearch(v), 300);
-  }
+  // Debounce limpio con useEffect
+  useEffect(() => {
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timerRef.current);
+  }, [search]);
 
   const { data: clients = [], isLoading } = useAdminClients(debouncedSearch);
 
