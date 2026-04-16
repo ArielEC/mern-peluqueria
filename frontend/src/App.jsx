@@ -10,6 +10,11 @@ import BookingConfirmedPage from '@/pages/BookingConfirmedPage';
 import MyAppointmentsPage from '@/pages/MyAppointmentsPage';
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
 import AdminCalendarPage from '@/pages/admin/AdminCalendarPage';
+import ServicesPage from '@/pages/admin/ServicesPage';
+import ProfessionalsPage from '@/pages/admin/ProfessionalsPage';
+import BlockersPage from '@/pages/admin/BlockersPage';
+import ClientsPage from '@/pages/admin/ClientsPage';
+import SettingsPage from '@/pages/admin/SettingsPage';
 
 function App() {
   return (
@@ -38,6 +43,11 @@ function App() {
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/calendario" element={<AdminCalendarPage />} />
+          <Route path="/admin/servicios" element={<ServicesPage />} />
+          <Route path="/admin/profesionales" element={<ProfessionalsPage />} />
+          <Route path="/admin/bloqueos" element={<BlockersPage />} />
+          <Route path="/admin/clientes" element={<ClientsPage />} />
+          <Route path="/admin/ajustes" element={<SettingsPage />} />
         </Route>
       </Route>
     </Routes>

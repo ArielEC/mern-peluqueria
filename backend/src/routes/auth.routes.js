@@ -4,9 +4,10 @@ import {
   login,
   getProfile,
   updateProfile,
-  changePassword
+  changePassword,
+  listClients
 } from '../controllers/auth.controller.js';
-import { authenticateToken } from '../middlewares/auth.middleware.js';
+import { authenticateToken, requireAdmin } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import {
   registerSchema,
@@ -39,5 +40,8 @@ router.put('/me', authenticateToken, validate(updateProfileSchema), updateProfil
 
 // PUT /api/auth/change-password
 router.put('/change-password', authenticateToken, validate(changePasswordSchema), changePassword);
+
+// GET /api/auth/clients — Solo Admin
+router.get('/clients', authenticateToken, requireAdmin, listClients);
 
 export default router;

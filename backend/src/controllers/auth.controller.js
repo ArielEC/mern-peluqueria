@@ -2,6 +2,35 @@ import User from '../models/User.js';
 import { generateToken } from '../middlewares/auth.middleware.js';
 
 /**
+ * GET /api/auth/clients
+ * Lista todos los clientes (solo admin).
+ * Query params: search (nombre/email), activo (true/false)
+ */
+export const listClients = async (req, res) => {
+  try {
+    const { search, activo } = req.query;
+    const filter = { role: 'cliente' };
+
+    if (activo !== undefined) {
+      filter.activo = activo === 'true';
+    }
+    if (search) {
+      const regex = new RegExp(search.trim(), 'i');
+      filter.$or = [{ nombre: regex }, { email: regex }, { telefono: regex }];
+    }
+
+    const clients = await User.find(filter)
+      .select('nombre email telefono activo createdAt')
+      .sort({ createdAt: -1 });
+
+    res.json(clients);
+  } catch (error) {
+    console.error('Error al listar clientes:', error);
+    res.status(500).json({ error: 'Error al listar clientes.' });
+  }
+};
+
+/**
  * POST /api/auth/register
  * Registra un nuevo cliente en el sistema.
  * Solo se pueden registrar clientes por esta vía (el admin se crea por seed).
