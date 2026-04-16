@@ -9,7 +9,8 @@ const objectIdSchema = z
 // Validador para crear cita
 export const createAppointmentSchema = z.object({
   servicioId: objectIdSchema,
-  fechaHoraInicio: z.string().datetime({ message: 'Fecha y hora inválida' }).or(z.date()),
+  // offset: true permite "2026-04-17T10:00:00+02:00" además de "...Z"
+  fechaHoraInicio: z.string().datetime({ message: 'Fecha y hora inválida', offset: true }).or(z.date()),
   clienteId: objectIdSchema.optional(), // Solo admin puede usar esto
   profesionalId: objectIdSchema.optional(), // Opcional - asignación automática si no se especifica
   notasCliente: z.string().max(500, 'Las notas no pueden exceder 500 caracteres').optional(),

@@ -12,8 +12,8 @@ export const createBlockerSchema = z
     profesional: objectIdSchema.optional().nullable(), // ObjectId o null para bloqueo global
     titulo: z.string().min(1, 'El título es obligatorio').max(100, 'El título no puede exceder 100 caracteres'),
     descripcion: z.string().max(500, 'La descripción no puede exceder 500 caracteres').optional(),
-    fechaHoraInicio: z.string().datetime({ message: 'Fecha de inicio inválida' }).or(z.date()),
-    fechaHoraFin: z.string().datetime({ message: 'Fecha de fin inválida' }).or(z.date()),
+    fechaHoraInicio: z.string().datetime({ message: 'Fecha de inicio inválida', offset: true }).or(z.date()),
+    fechaHoraFin: z.string().datetime({ message: 'Fecha de fin inválida', offset: true }).or(z.date()),
     tipo: z.enum(['vacaciones', 'festivo', 'personal', 'mantenimiento', 'otro']).optional(),
     esRecurrente: z.boolean().optional()
   })
@@ -29,8 +29,8 @@ export const updateBlockerSchema = z.object({
   profesional: objectIdSchema.optional().nullable(),
   titulo: z.string().min(1).max(100).optional(),
   descripcion: z.string().max(500).optional(),
-  fechaHoraInicio: z.string().datetime().or(z.date()).optional(),
-  fechaHoraFin: z.string().datetime().or(z.date()).optional(),
+  fechaHoraInicio: z.string().datetime({ offset: true }).or(z.date()).optional(),
+  fechaHoraFin: z.string().datetime({ offset: true }).or(z.date()).optional(),
   tipo: z.enum(['vacaciones', 'festivo', 'personal', 'mantenimiento', 'otro']).optional(),
   esRecurrente: z.boolean().optional()
 }).strict().refine((data) => {
