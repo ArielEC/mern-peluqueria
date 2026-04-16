@@ -6,6 +6,7 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import BookingPage from '@/pages/BookingPage';
 import BookingConfirmedPage from '@/pages/BookingConfirmedPage';
+import MyAppointmentsPage from '@/pages/MyAppointmentsPage';
 
 function App() {
   return (
@@ -23,7 +24,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/book" element={<BookingPage />} />
-          {/* /appointments → FC-04 */}
+          <Route path="/appointments" element={<MyAppointmentsPage />} />
         </Route>
         {/* Confirmación — layout propio (pantalla enfocada) */}
         <Route path="/booking/confirmed" element={<BookingConfirmedPage />} />

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 
 export const appointmentsKeys = {
@@ -20,8 +20,24 @@ export const useAppointments = (params = {}) => {
     queryKey: appointmentsKeys.list(params),
     queryFn: async () => {
       const { data } = await api.get('/appointments', { params });
-      return data;
+      // La API devuelve un array directamente
+      return Array.isArray(data) ? data : data.appointments ?? [];
     },
     staleTime: 30 * 1000,
+  });
+};
+
+export const useCancelAppointment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, motivoCancelacion }) => {
+      const { data } = await api.delete(`/appointments/${id}`, {
+        data: { motivoCancelacion },
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: appointmentsKeys.all });
+    },
   });
 };
