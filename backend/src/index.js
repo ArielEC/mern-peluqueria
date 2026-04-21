@@ -29,7 +29,7 @@ const PORT = process.env.PORT || 5000;
 // Rate limiter global
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  limit: 100, // máximo 100 requests por IP
+  limit: 500, // máximo 500 requests por IP
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Demasiadas solicitudes, intenta de nuevo más tarde' }
@@ -42,13 +42,27 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('X-XSS-Protection', '0'); // Delegado a CSP en browsers modernos
   res.removeHeader('X-Powered-By');
+  // Forzar charset UTF-8 en todas las respuestas JSON
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
   next();
 });
 // ───────────────────────────────────────────────────────────────────────────
 
 // Middlewares globales
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    const allowed = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const allowedList = allowed.split(',').map(s => s.trim());
+    // Permitir requests sin origin (curl, Postman, etc.) y orígenes permitidos
+    if (!origin || allowedList.includes(origin)) {
+      callback(null, true);
+    } else if (!isProd && origin?.startsWith('http://localhost:')) {
+      // En desarrollo, permitir cualquier puerto de localhost
+      callback(null, true);
+    } else {
+      callback(new Error('No permitido por CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '10kb' })); // DEUDA-1: límite explícito de payload

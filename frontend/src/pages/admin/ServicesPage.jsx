@@ -15,12 +15,25 @@ function ServiceModal({ open, onClose, initial, professionals }) {
   const updateMut = useAdminUpdateService();
   const isEdit = Boolean(initial?._id);
 
-  const [form, setForm] = useState(initial ?? EMPTY_FORM);
+  function buildForm(data) {
+    if (!data) return EMPTY_FORM;
+    return {
+      nombre: data.nombre || '',
+      descripcion: data.descripcion || '',
+      duracion: data.duracion ?? 30,
+      precio: data.precio ?? 0,
+      categoria: data.categoria || '',
+      profesionalesCapaces: (data.profesionalesCapaces || []).map((p) => typeof p === 'object' ? p._id : p),
+      activo: data.activo !== false,
+    };
+  }
+
+  const [form, setForm] = useState(buildForm(initial));
   const [errors, setErrors] = useState({});
 
   // Sincroniza el form cuando se abre con un ítem diferente
   useEffect(() => {
-    setForm(initial ?? EMPTY_FORM);
+    setForm(buildForm(initial));
     setErrors({});
   }, [initial]);
 

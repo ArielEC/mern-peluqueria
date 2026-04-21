@@ -115,8 +115,8 @@ export default function AdminDashboardPage() {
         />
         <KpiCard
           icon="calendar_today"
-          label="Próximos 7 días"
-          value={loadingWeek ? '…' : weekAppts.length}
+          label="Confirmadas (7 días)"
+          value={loadingWeek ? '…' : weekAppts.filter((a) => a.estado === 'confirmada').length}
         />
         <KpiCard
           icon="pending_actions"

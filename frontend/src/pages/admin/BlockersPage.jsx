@@ -38,7 +38,10 @@ const EMPTY_FORM = {
 
 function toDatetimeLocal(iso) {
   if (!iso) return '';
-  return new Date(iso).toISOString().slice(0, 16);
+  // Formatear en hora local del navegador (no UTC)
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function BlockerModal({ open, onClose, initial, professionals }) {
@@ -119,13 +122,36 @@ function BlockerModal({ open, onClose, initial, professionals }) {
             </select>
           </FormField>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="Inicio" error={errors.fechaHoraInicio} required>
-            <input type="datetime-local" className={inputCls} value={form.fechaHoraInicio} onChange={(e) => set('fechaHoraInicio', e.target.value)} />
-          </FormField>
-          <FormField label="Fin" error={errors.fechaHoraFin} required>
-            <input type="datetime-local" className={inputCls} value={form.fechaHoraFin} onChange={(e) => set('fechaHoraFin', e.target.value)} />
-          </FormField>
+        <div className="space-y-3">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-[#494454]">Periodo del bloqueo</p>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Fecha inicio" error={errors.fechaHoraInicio} required>
+              <input type="date" className={inputCls} value={form.fechaHoraInicio?.split('T')[0] || ''} onChange={(e) => {
+                const time = form.fechaHoraInicio?.split('T')[1] || '09:00';
+                set('fechaHoraInicio', `${e.target.value}T${time}`);
+              }} />
+            </FormField>
+            <FormField label="Hora inicio" required>
+              <input type="time" className={inputCls} value={form.fechaHoraInicio?.split('T')[1] || ''} onChange={(e) => {
+                const date = form.fechaHoraInicio?.split('T')[0] || '';
+                set('fechaHoraInicio', `${date}T${e.target.value}`);
+              }} />
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Fecha fin" error={errors.fechaHoraFin} required>
+              <input type="date" className={inputCls} value={form.fechaHoraFin?.split('T')[0] || ''} onChange={(e) => {
+                const time = form.fechaHoraFin?.split('T')[1] || '18:00';
+                set('fechaHoraFin', `${e.target.value}T${time}`);
+              }} />
+            </FormField>
+            <FormField label="Hora fin" required>
+              <input type="time" className={inputCls} value={form.fechaHoraFin?.split('T')[1] || ''} onChange={(e) => {
+                const date = form.fechaHoraFin?.split('T')[0] || '';
+                set('fechaHoraFin', `${date}T${e.target.value}`);
+              }} />
+            </FormField>
+          </div>
         </div>
         <FormField label="Descripción (opcional)">
           <textarea className={textareaCls} rows={2} value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)} placeholder="Detalles adicionales…" />

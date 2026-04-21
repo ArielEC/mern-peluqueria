@@ -35,7 +35,10 @@ export function useAdminUpdateService() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...body }) => { const { data } = await api.put(`/services/${id}`, body); return data; },
-    onSuccess: () => qc.invalidateQueries({ queryKey: servicesAdminKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: servicesAdminKeys.all });
+      qc.invalidateQueries({ queryKey: ['services'] }); // invalida caché del cliente
+    },
   });
 }
 
@@ -43,7 +46,10 @@ export function useAdminDeleteService() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id) => { const { data } = await api.delete(`/services/${id}`); return data; },
-    onSuccess: () => qc.invalidateQueries({ queryKey: servicesAdminKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: servicesAdminKeys.all });
+      qc.invalidateQueries({ queryKey: ['services'] }); // invalida caché del cliente
+    },
   });
 }
 
@@ -179,6 +185,7 @@ export function useAdminUpdateSettings() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: settingsAdminKeys.all });
       qc.invalidateQueries({ queryKey: ['settings'] }); // invalida también el hook público
+      qc.invalidateQueries({ queryKey: ['availability'] }); // refrescar slots con nueva duración
     },
   });
 }

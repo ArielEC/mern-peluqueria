@@ -73,11 +73,12 @@ export default function SettingsPage() {
   function handleSubmit(e) {
     e.preventDefault();
     setApiError('');
+    const { zonaHoraria, ...rest } = form;
     const payload = {
-      ...form,
-      horasMinimasCancelacion: Number(form.horasMinimasCancelacion),
-      diasMaximosReserva: Number(form.diasMaximosReserva),
-      duracionSlot: Number(form.duracionSlot),
+      ...rest,
+      horasMinimasCancelacion: Number(rest.horasMinimasCancelacion),
+      diasMaximosReserva: Number(rest.diasMaximosReserva),
+      duracionSlot: Number(rest.duracionSlot),
     };
     updateMut.mutate(payload, {
       onSuccess: () => { setSaved(true); setTimeout(() => setSaved(false), 3000); },
@@ -121,13 +122,11 @@ export default function SettingsPage() {
           <input className={inputCls} value={form.direccion} onChange={(e) => set('direccion', e.target.value)} placeholder="Calle Mayor 1, 28001 Madrid" />
         </FormField>
         <FormField label="Zona horaria">
-          <select className={selectCls} value={form.zonaHoraria} onChange={(e) => set('zonaHoraria', e.target.value)}>
-            <option value="Europe/Madrid">Europe/Madrid (CET/CEST)</option>
-            <option value="Europe/London">Europe/London (GMT/BST)</option>
-            <option value="America/New_York">America/New_York (EST/EDT)</option>
-            <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
-            <option value="UTC">UTC</option>
-          </select>
+          <div className="flex items-center gap-3">
+            <input className={inputCls + " bg-[#eaedff]/60 cursor-not-allowed"} value={form.zonaHoraria} readOnly disabled />
+            <span className="material-symbols-outlined text-[16px] text-[#494454] shrink-0" title="La zona horaria se establece al crear la peluquería y no se puede cambiar">lock</span>
+          </div>
+          <p className="text-[0.75rem] text-[#494454] mt-1">La zona horaria se fija al crear el negocio y no puede modificarse.</p>
         </FormField>
       </Section>
 

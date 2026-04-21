@@ -21,24 +21,27 @@ function buildResources(professionals) {
 }
 
 function buildEvents(appointments) {
-  return appointments.map((appt) => {
-    const profColor = appt.profesional?.color || '#6b38d4';
-    return {
-      id: appt._id,
-      resourceId: appt.profesional?._id,
-      title: [
-        appt.cliente?.nombre || appt.nombreTercero || 'Cliente',
-        appt.servicio?.nombre,
-      ].filter(Boolean).join(' · '),
-      start: appt.fechaHoraInicio,
-      // Usar fechaHoraFinOperativa (duración real redondeada al grid) para mostrar el bloque correcto
-      end: appt.fechaHoraFinOperativa || appt.fechaHoraFin || appt.fechaHoraInicio,
-      backgroundColor: profColor + '22',
-      borderColor: profColor,
-      textColor: '#131b2e',
-      extendedProps: { appointment: appt },
-    };
-  });
+  // Excluir citas canceladas del calendario
+  return appointments
+    .filter((appt) => appt.estado !== 'cancelada')
+    .map((appt) => {
+      const profColor = appt.profesional?.color || '#6b38d4';
+      return {
+        id: appt._id,
+        resourceId: appt.profesional?._id,
+        title: [
+          appt.cliente?.nombre || appt.nombreTercero || 'Cliente',
+          appt.servicio?.nombre,
+        ].filter(Boolean).join(' · '),
+        start: appt.fechaHoraInicio,
+        // Usar fechaHoraFinOperativa (duración real redondeada al grid) para mostrar el bloque correcto
+        end: appt.fechaHoraFinOperativa || appt.fechaHoraFin || appt.fechaHoraInicio,
+        backgroundColor: profColor + '22',
+        borderColor: profColor,
+        textColor: '#131b2e',
+        extendedProps: { appointment: appt },
+      };
+    });
 }
 
 /* ── Custom resource header (columna por profesional) ── */

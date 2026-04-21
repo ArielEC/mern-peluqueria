@@ -13,6 +13,7 @@ import {
 import { useServices } from '@/hooks/useServices';
 import { useAvailability } from '@/hooks/useAvailability';
 import { useCreateAppointment } from '@/hooks/useAppointments';
+import { useProfessionals } from '@/hooks/useProfessionals';
 import { useSettings } from '@/hooks/useSettings';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -125,7 +126,7 @@ function Stepper({ currentStep }) {
 
 const DIAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
-function MiniCalendar({ selected, onSelect, maxDays = 30 }) {
+function MiniCalendar({ selected, onSelect, maxDays = 30, nonWorkingDays = [] }) {
   const [viewDate, setViewDate] = useState(startOfMonth(new Date()));
 
   const today = startOfDay(new Date());
@@ -187,7 +188,9 @@ function MiniCalendar({ selected, onSelect, maxDays = 30 }) {
         {days.map((day) => {
           const isPast = isBefore(day, today);
           const isTooFar = isBefore(maxDate, day);
-          const disabled = isPast || isTooFar;
+          // getDay(): 0=domingo, 1=lunes, ..., 6=sábado
+          const isNonWorking = nonWorkingDays.includes(getDay(day));
+          const disabled = isPast || isTooFar || isNonWorking;
           const isSelected = selected && isSameDay(day, selected);
           const isCurrentDay = isToday(day);
 
@@ -390,21 +393,39 @@ function Step1({ selectedService, onSelect, onNext }) {
 
 // ─── Step 2 — Fecha y hora ────────────────────────────────────────────────────
 
-function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSelectSlot, onBack, onNext, maxDays }) {
+function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSelectSlot, onBack, onNext, maxDays, nonWorkingDays }) {
   const dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
   const { data: availData, isLoading: loadingSlots, isFetching } = useAvailability(
     dateStr,
     selectedService?._id
   );
+  const [filterProfesional, setFilterProfesional] = useState('');
 
-  const slots = availData?.slots ?? [];
+  const allSlots = availData?.slots ?? [];
+
+  // Profesionales únicos disponibles en los slots
+  const uniqueProfessionals = useMemo(() => {
+    const map = new Map();
+    allSlots.forEach((s) => {
+      if (!map.has(s.profesionalId)) {
+        map.set(s.profesionalId, { id: s.profesionalId, nombre: s.profesionalNombre, color: s.profesionalColor });
+      }
+    });
+    return [...map.values()];
+  }, [allSlots]);
+
+  // Filtrar slots por profesional seleccionado
+  const slots = useMemo(() => {
+    if (!filterProfesional) return allSlots;
+    return allSlots.filter((s) => s.profesionalId === filterProfesional);
+  }, [allSlots, filterProfesional]);
 
   const dateLabel = selectedDate
     ? format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })
     : null;
 
   return (
-    <div>
+    <div className="pb-28">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
         {/* Left: Calendar */}
@@ -414,7 +435,7 @@ function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSe
             <p className="text-muted-foreground text-sm font-medium mt-1">Elige el día de tu cita.</p>
           </div>
 
-          <MiniCalendar selected={selectedDate} onSelect={onSelectDate} maxDays={maxDays} />
+          <MiniCalendar selected={selectedDate} onSelect={onSelectDate} maxDays={maxDays} nonWorkingDays={nonWorkingDays} />
 
           {/* Currently selected */}
           {selectedDate && (
@@ -442,6 +463,39 @@ function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSe
                 : 'Selecciona primero una fecha en el calendario.'}
             </p>
           </div>
+
+          {/* Filtro por profesional */}
+          {selectedDate && uniqueProfessionals.length > 1 && (
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setFilterProfesional('')}
+                className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-colors ${
+                  !filterProfesional
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-primary/10 text-muted-foreground hover:bg-primary/20'
+                }`}
+              >
+                Todos
+              </button>
+              {uniqueProfessionals.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setFilterProfesional(p.id)}
+                  className={`px-4 py-2 rounded-full text-xs font-bold tracking-wide transition-colors flex items-center gap-2 ${
+                    filterProfesional === p.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-primary/10 text-muted-foreground hover:bg-primary/20'
+                  }`}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: filterProfesional === p.id ? 'rgba(255,255,255,0.8)' : p.color || '#6b38d4' }}
+                  />
+                  {p.nombre}
+                </button>
+              ))}
+            </div>
+          )}
 
           {!selectedDate ? (
             <div className="text-center py-16 text-muted-foreground border-2 border-dashed border-border/30 rounded-xl">
@@ -513,17 +567,22 @@ function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSe
               <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
               Volver a servicios
             </button>
-            <button
-              onClick={onNext}
-              disabled={!selectedSlot}
-              className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-black tracking-wide shadow-[0_8px_30px_rgba(107,56,212,0.3)] flex items-center gap-2 transition-all active:scale-95 group disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:brightness-110"
-            >
-              Confirmar cita
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </button>
           </div>
         </div>
       </div>
+
+      {/* Botón flotante de continuar */}
+      {selectedSlot && (
+        <div className="fixed bottom-8 right-8 z-50">
+          <button
+            onClick={onNext}
+            className="bg-primary text-primary-foreground px-8 py-4 rounded-xl font-black tracking-wide shadow-[0_8px_30px_rgba(107,56,212,0.3)] flex items-center gap-3 transition-all active:scale-95 group hover:brightness-110"
+          >
+            {selectedSlot.hora} — {selectedSlot.profesionalNombre} · Continuar
+            <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -692,6 +751,7 @@ function Step3({ selectedService, selectedDate, selectedSlot, notes, onNotesChan
 export default function BookingPage() {
   const navigate = useNavigate();
   const { data: settings } = useSettings();
+  const { data: professionals } = useProfessionals();
   const createAppointment = useCreateAppointment();
 
   const [step, setStep] = useState(1);
@@ -701,6 +761,18 @@ export default function BookingPage() {
   const [notes, setNotes] = useState('');
 
   const maxDays = settings?.diasMaximosReserva ?? 30;
+
+  // Calcular días no laborables (días donde NINGÚN profesional trabaja)
+  const nonWorkingDays = useMemo(() => {
+    if (!professionals || professionals.length === 0) return [];
+    const daysOfWeek = [0, 1, 2, 3, 4, 5, 6]; // 0=dom, 1=lun, ..., 6=sab
+    return daysOfWeek.filter((day) =>
+      professionals.every((prof) => {
+        const schedule = prof.horarioSemanal?.[day];
+        return !schedule || !schedule.activo;
+      })
+    );
+  }, [professionals]);
 
   function handleSelectDate(date) {
     setSelectedDate(date);
@@ -750,6 +822,7 @@ export default function BookingPage() {
             onBack={() => setStep(1)}
             onNext={() => setStep(3)}
             maxDays={maxDays}
+            nonWorkingDays={nonWorkingDays}
           />
         )}
 

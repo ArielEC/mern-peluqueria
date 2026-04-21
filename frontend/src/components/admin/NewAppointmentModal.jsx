@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useServices } from '@/hooks/useServices';
@@ -87,6 +87,15 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
 
   const selectedService = services.find((s) => s._id === form.servicioId);
 
+  // Filtrar profesionales capacitados para el servicio seleccionado
+  const filteredProfessionals = useMemo(() => {
+    if (!selectedService) return professionals;
+    const capaces = selectedService.profesionalesCapaces || [];
+    if (capaces.length === 0) return professionals; // sin restricción = todos
+    const capaceIds = capaces.map((p) => typeof p === 'object' ? p._id : p);
+    return professionals.filter((p) => capaceIds.includes(p._id));
+  }, [selectedService, professionals]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
@@ -97,12 +106,12 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
         {/* Header */}
         <div className="h-1 bg-[#6b38d4]" />
         <div className="p-6 border-b border-[#cbc3d7]/20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#6b38d4]/10 flex items-center justify-center text-[#6b38d4]">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[#6b38d4]/10 flex items-center justify-center text-[#6b38d4] shrink-0">
               <span className="material-symbols-outlined text-[20px]">event_add</span>
             </div>
-            <div>
-              <h2 className="font-bold text-[#131b2e]">Nueva Cita Manual</h2>
+            <div className="min-w-0">
+              <h2 className="font-bold text-[#131b2e] truncate">Nueva Cita Manual</h2>
               <p className="text-[0.75rem] text-[#494454]">Creación por administrador</p>
             </div>
           </div>
@@ -130,14 +139,14 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
           </Field>
 
           {/* Profesional */}
-          <Field label="Profesional (opcional — asignación automática si está vacío)">
+          <Field label="Profesional">
             <select
               value={form.profesionalId}
               onChange={(e) => set('profesionalId', e.target.value)}
               className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
             >
               <option value="">— Automático —</option>
-              {professionals.map((p) => (
+              {filteredProfessionals.map((p) => (
                 <option key={p._id} value={p._id}>{p.nombre}{p.especialidad ? ` · ${p.especialidad}` : ''}</option>
               ))}
             </select>

@@ -15,7 +15,7 @@ const loginSchema = z.object({
     .email('Introduce un email válido'),
   password: z
     .string()
-    .min(6, 'La contraseña debe tener al menos 6 caracteres'),
+    .min(1, 'La contraseña es obligatoria'),
 });
 
 // ─── Field component ─────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ export default function LoginPage() {
     const result = loginSchema.safeParse(fields);
     if (!result.success) {
       const errors = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         errors[err.path[0]] = err.message;
       });
       setFieldErrors(errors);

@@ -96,7 +96,7 @@ export default function RegisterPage() {
     const result = registerSchema.safeParse(fields);
     if (!result.success) {
       const errors = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         errors[err.path[0]] = err.message;
       });
       setFieldErrors(errors);
