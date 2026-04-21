@@ -4,7 +4,6 @@ import { Mail, Lock, ArrowRight, Eye, EyeOff, Scissors } from 'lucide-react';
 import { z } from 'zod';
 import { useLogin } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
-import useAuthStore from '@/stores/authStore';
 
 // ─── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -59,7 +58,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data: settings } = useSettings();
-  const { isAdmin } = useAuthStore();
   const loginMutation = useLogin();
 
   const [fields, setFields] = useState({ email: '', password: '' });
@@ -91,8 +89,9 @@ export default function LoginPage() {
     }
 
     loginMutation.mutate(result.data, {
-      onSuccess: () => {
-        const redirect = from || (isAdmin() ? '/admin' : '/book');
+      onSuccess: (data) => {
+        const userIsAdmin = data.user?.role === 'admin';
+        const redirect = from || (userIsAdmin ? '/admin' : '/book');
         navigate(redirect, { replace: true });
       },
     });

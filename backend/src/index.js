@@ -42,8 +42,14 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('X-XSS-Protection', '0'); // Delegado a CSP en browsers modernos
   res.removeHeader('X-Powered-By');
-  // Forzar charset UTF-8 en todas las respuestas JSON
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  // Charset UTF-8 se fuerza solo en respuestas JSON para evitar interferir con otros tipos.
+  // Express ya envía charset=utf-8 en res.json(), pero este hook lo asegura también
+  // cuando algún middleware cambia el Content-Type sin charset.
+  const originalJson = res.json.bind(res);
+  res.json = function(body) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return originalJson(body);
+  };
   next();
 });
 // ───────────────────────────────────────────────────────────────────────────

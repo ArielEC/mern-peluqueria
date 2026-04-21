@@ -153,10 +153,10 @@ export default function AdminCalendarPage() {
   return (
     <div className="flex flex-col gap-4 h-[calc(100vh-8rem)]">
       {/* Toolbar */}
-      <div className="flex items-center justify-between flex-wrap gap-4 shrink-0">
+      <div className="flex items-center justify-between flex-wrap gap-3 shrink-0">
         {/* Left: date nav */}
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-[#131b2e] capitalize">{headerLabel}</h2>
+        <div className="flex items-center gap-2 md:gap-4 flex-wrap min-w-0">
+          <h2 className="text-base md:text-xl font-bold text-[#131b2e] capitalize truncate">{headerLabel}</h2>
           <div className="flex items-center bg-[#f2f3ff] rounded-lg p-1 gap-0.5">
             <button
               onClick={() => goTo('prev')}
@@ -246,6 +246,8 @@ export default function AdminCalendarPage() {
           eventClick={handleEventClick}
           selectable={false}
           nowIndicator
+          /* Licencia GPL para proyecto open-source — elimina el warning de licencia inválida */
+          schedulerLicenseKey="GPL-My-Project-Is-Open-Source"
           /* Cabecera personalizada: usamos la nuestra */
           headerToolbar={false}
           /* Altura */

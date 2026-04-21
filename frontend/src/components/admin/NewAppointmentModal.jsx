@@ -1,8 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { useServices } from '@/hooks/useServices';
-import { useProfessionals } from '@/hooks/useProfessionals';
+import { useAdminServices, useAdminProfessionals, useAdminClients } from '@/hooks/useAdminEntities';
 import { useAdminCreateAppointment } from '@/hooks/useAdminAppointments';
 
 function Field({ label, error, children }) {
@@ -16,11 +14,14 @@ function Field({ label, error, children }) {
 }
 
 export default function NewAppointmentModal({ initialDate, initialProfesionalId, onClose, onSuccess }) {
-  const { data: servicesData } = useServices();
-  const { data: professionals = [] } = useProfessionals();
+  const { data: services = [] } = useAdminServices();
+  const { data: allProfessionals = [] } = useAdminProfessionals();
+  const [clientSearch, setClientSearch] = useState('');
+  const { data: clients = [] } = useAdminClients(clientSearch);
   const createMutation = useAdminCreateAppointment();
 
-  const services = servicesData?.services ?? servicesData ?? [];
+  // Solo mostrar profesionales activos en el select
+  const professionals = useMemo(() => allProfessionals.filter((p) => p.activo !== false), [allProfessionals]);
 
   // Formato datetime-local: "YYYY-MM-DDTHH:mm"
   const defaultDatetime = initialDate
@@ -30,6 +31,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
   const [form, setForm] = useState({
     servicioId: '',
     profesionalId: initialProfesionalId || '',
+    clienteId: '',
     fechaHoraInicio: defaultDatetime,
     notasCliente: '',
     forceOverbook: false,
@@ -51,6 +53,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
   function validate() {
     const errs = {};
     if (!form.servicioId) errs.servicioId = 'Selecciona un servicio';
+    if (!form.clienteId) errs.clienteId = 'Selecciona un cliente';
     if (!form.fechaHoraInicio) errs.fechaHoraInicio = 'Selecciona fecha y hora';
     else if (new Date(form.fechaHoraInicio) <= new Date()) {
       errs.fechaHoraInicio = 'La fecha debe ser futura';
@@ -63,15 +66,11 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    // El input datetime-local devuelve "YYYY-MM-DDTHH:mm" sin zona horaria.
-    // new Date() lo interpreta como hora LOCAL del navegador → podría ser incorrecto
-    // si el navegador está en una TZ diferente a la del negocio.
-    // Solución: añadir ":00" y enviar como string — el backend acepta ISO con offset.
-    // Para admins en la misma TZ que el negocio, new Date() es correcto.
     const fechaHoraISOLocal = new Date(form.fechaHoraInicio).toISOString();
     const payload = {
       servicioId: form.servicioId,
       fechaHoraInicio: fechaHoraISOLocal,
+      clienteId: form.clienteId,
       ...(form.profesionalId && { profesionalId: form.profesionalId }),
       ...(form.notasCliente.trim() && { notasCliente: form.notasCliente.trim() }),
       ...(form.forceOverbook && { forceOverbook: true }),
@@ -85,13 +84,15 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     });
   }
 
-  const selectedService = services.find((s) => s._id === form.servicioId);
+  // Solo servicios activos para el select
+  const activeServices = useMemo(() => services.filter((s) => s.activo !== false), [services]);
+  const selectedService = activeServices.find((s) => s._id === form.servicioId);
 
-  // Filtrar profesionales capacitados para el servicio seleccionado
+  // Filtrar profesionales capacitados y activos para el servicio seleccionado
   const filteredProfessionals = useMemo(() => {
     if (!selectedService) return professionals;
     const capaces = selectedService.profesionalesCapaces || [];
-    if (capaces.length === 0) return professionals; // sin restricción = todos
+    if (capaces.length === 0) return professionals;
     const capaceIds = capaces.map((p) => typeof p === 'object' ? p._id : p);
     return professionals.filter((p) => capaceIds.includes(p._id));
   }, [selectedService, professionals]);
@@ -101,11 +102,11 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
       {/* Backdrop */}
       <div className="absolute inset-0 bg-[#131b2e]/30 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Panel */}
-      <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden z-10">
+      {/* Panel — max-h to prevent overflow, flex layout for scroll */}
+      <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="h-1 bg-[#6b38d4]" />
-        <div className="p-6 border-b border-[#cbc3d7]/20 flex items-center justify-between">
+        <div className="h-1 bg-[#6b38d4] shrink-0" />
+        <div className="p-6 border-b border-[#cbc3d7]/20 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-[#6b38d4]/10 flex items-center justify-center text-[#6b38d4] shrink-0">
               <span className="material-symbols-outlined text-[20px]">event_add</span>
@@ -121,7 +122,30 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
+          {/* Cliente */}
+          <Field label="Cliente" error={errors.clienteId}>
+            <input
+              type="text"
+              value={clientSearch}
+              onChange={(e) => setClientSearch(e.target.value)}
+              placeholder="Buscar cliente por nombre o email..."
+              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2 text-[0.8rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4] placeholder:text-[#494454]/50 mb-1"
+            />
+            <select
+              value={form.clienteId}
+              onChange={(e) => set('clienteId', e.target.value)}
+              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
+            >
+              <option value="">— Selecciona un cliente —</option>
+              {clients.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.nombre} ({c.email})
+                </option>
+              ))}
+            </select>
+          </Field>
+
           {/* Servicio */}
           <Field label="Servicio" error={errors.servicioId}>
             <select
@@ -130,7 +154,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
               className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
             >
               <option value="">— Selecciona un servicio —</option>
-              {services.map((s) => (
+              {activeServices.map((s) => (
                 <option key={s._id} value={s._id}>
                   {s.nombre}{s.duracion ? ` (${s.duracion} min)` : ''}{s.precio != null ? ` — ${s.precio}€` : ''}
                 </option>
@@ -138,7 +162,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
             </select>
           </Field>
 
-          {/* Profesional */}
+          {/* Profesional — solo activos y capaces para el servicio */}
           <Field label="Profesional">
             <select
               value={form.profesionalId}
@@ -211,7 +235,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
         </form>
 
         {/* Footer */}
-        <div className="p-6 pt-0 flex gap-3">
+        <div className="p-6 pt-4 flex gap-3 shrink-0 border-t border-[#cbc3d7]/20">
           <button
             type="button"
             onClick={onClose}

@@ -108,7 +108,7 @@ export const updateService = async (req, res) => {
 
 /**
  * DELETE /api/services/:id
- * Eliminar un servicio (soft delete - desactivar)
+ * Eliminar un servicio de la base de datos permanentemente.
  * Acceso: Solo Admin
  */
 export const deleteService = async (req, res) => {
@@ -117,17 +117,13 @@ export const deleteService = async (req, res) => {
       return res.status(400).json({ error: 'id inválido' });
     }
 
-    const service = await Service.findByIdAndUpdate(
-      req.params.id,
-      { $set: { activo: false } },
-      { new: true }
-    );
+    const service = await Service.findByIdAndDelete(req.params.id);
 
     if (!service) {
       return res.status(404).json({ error: 'Servicio no encontrado' });
     }
 
-    res.json({ message: 'Servicio desactivado correctamente', service });
+    res.json({ message: 'Servicio eliminado correctamente', service });
   } catch (error) {
     console.error('Error al eliminar servicio:', error);
     res.status(500).json({ error: 'Error al eliminar el servicio' });

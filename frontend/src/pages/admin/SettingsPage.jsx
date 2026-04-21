@@ -73,12 +73,11 @@ export default function SettingsPage() {
   function handleSubmit(e) {
     e.preventDefault();
     setApiError('');
-    const { zonaHoraria, ...rest } = form;
     const payload = {
-      ...rest,
-      horasMinimasCancelacion: Number(rest.horasMinimasCancelacion),
-      diasMaximosReserva: Number(rest.diasMaximosReserva),
-      duracionSlot: Number(rest.duracionSlot),
+      ...form,
+      horasMinimasCancelacion: Number(form.horasMinimasCancelacion),
+      diasMaximosReserva: Number(form.diasMaximosReserva),
+      duracionSlot: Number(form.duracionSlot),
     };
     updateMut.mutate(payload, {
       onSuccess: () => { setSaved(true); setTimeout(() => setSaved(false), 3000); },

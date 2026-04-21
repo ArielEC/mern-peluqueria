@@ -28,11 +28,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Si el token expiró o es inválido, hacer logout
+    // Si el token expiró o es inválido, hacer logout.
+    // Excluir rutas de autenticación para no recargar la página al fallar login/registro.
     if (error.response?.status === 401) {
-      const { logout } = useAuthStore.getState();
-      logout();
-      window.location.href = '/login';
+      const requestUrl = error.config?.url || '';
+      const isAuthRoute = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+      if (!isAuthRoute) {
+        const { logout } = useAuthStore.getState();
+        logout();
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

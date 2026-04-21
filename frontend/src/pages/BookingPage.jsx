@@ -376,12 +376,12 @@ function Step1({ selectedService, onSelect, onNext }) {
         </div>
       </div>
 
-      {/* Floating CTA */}
-      <div className="fixed bottom-8 right-8 z-50">
+      {/* Floating CTA — centrado en móvil, derecha en desktop */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-8 z-50 w-[calc(100%-2rem)] md:w-auto max-w-lg">
         <button
           onClick={onNext}
           disabled={!selectedService}
-          className="bg-primary text-primary-foreground px-8 py-4 rounded-xl font-black tracking-wide shadow-[0_8px_30px_rgba(107,56,212,0.3)] flex items-center gap-3 transition-all active:scale-95 group disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:brightness-110"
+          className="w-full md:w-auto bg-primary text-primary-foreground px-8 py-4 rounded-xl font-black tracking-wide shadow-[0_8px_30px_rgba(107,56,212,0.3)] flex items-center justify-center gap-3 transition-all active:scale-95 group disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none hover:brightness-110"
         >
           {selectedService ? `${selectedService.nombre} — Continuar` : 'Selecciona un servicio'}
           <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -393,7 +393,7 @@ function Step1({ selectedService, onSelect, onNext }) {
 
 // ─── Step 2 — Fecha y hora ────────────────────────────────────────────────────
 
-function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSelectSlot, onBack, onNext, maxDays, nonWorkingDays }) {
+function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSelectSlot, onBack, onNext, maxDays, nonWorkingDays, businessTimezone }) {
   const dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
   const { data: availData, isLoading: loadingSlots, isFetching } = useAvailability(
     dateStr,
@@ -462,6 +462,12 @@ function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSe
                 ? 'Slots actualizados en tiempo real para la fecha seleccionada.'
                 : 'Selecciona primero una fecha en el calendario.'}
             </p>
+            {businessTimezone && (
+              <p className="text-xs text-muted-foreground/70 mt-1 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Horarios en zona horaria: {businessTimezone}
+              </p>
+            )}
           </div>
 
           {/* Filtro por profesional */}
@@ -571,12 +577,12 @@ function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSe
         </div>
       </div>
 
-      {/* Botón flotante de continuar */}
+      {/* Botón flotante de continuar — centrado en móvil */}
       {selectedSlot && (
-        <div className="fixed bottom-8 right-8 z-50">
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-8 z-50 w-[calc(100%-2rem)] md:w-auto max-w-lg">
           <button
             onClick={onNext}
-            className="bg-primary text-primary-foreground px-8 py-4 rounded-xl font-black tracking-wide shadow-[0_8px_30px_rgba(107,56,212,0.3)] flex items-center gap-3 transition-all active:scale-95 group hover:brightness-110"
+            className="w-full md:w-auto bg-primary text-primary-foreground px-8 py-4 rounded-xl font-black tracking-wide shadow-[0_8px_30px_rgba(107,56,212,0.3)] flex items-center justify-center gap-3 transition-all active:scale-95 group hover:brightness-110"
           >
             {selectedSlot.hora} — {selectedSlot.profesionalNombre} · Continuar
             <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -589,7 +595,7 @@ function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSe
 
 // ─── Step 3 — Confirmación ────────────────────────────────────────────────────
 
-function Step3({ selectedService, selectedDate, selectedSlot, notes, onNotesChange, onBack, onConfirm, isPending, error }) {
+function Step3({ selectedService, selectedDate, selectedSlot, notes, onNotesChange, onBack, onConfirm, isPending, error, businessTimezone }) {
   const dateLabel = selectedDate
     ? format(selectedDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })
     : '';
@@ -659,6 +665,11 @@ function Step3({ selectedService, selectedDate, selectedSlot, notes, onNotesChan
                     {selectedSlot?.hora} — {selectedSlot?.horaFinOperativa ?? selectedSlot?.horaFin}
                   </p>
                 </div>
+                {businessTimezone && (
+                  <p className="text-[10px] text-muted-foreground/70 ml-6">
+                    Zona horaria: {businessTimezone}
+                  </p>
+                )}
               </div>
 
               {/* Price */}
@@ -761,6 +772,7 @@ export default function BookingPage() {
   const [notes, setNotes] = useState('');
 
   const maxDays = settings?.diasMaximosReserva ?? 30;
+  const businessTimezone = settings?.zonaHoraria || 'Europe/Madrid';
 
   // Calcular días no laborables (días donde NINGÚN profesional trabaja)
   const nonWorkingDays = useMemo(() => {
@@ -823,6 +835,7 @@ export default function BookingPage() {
             onNext={() => setStep(3)}
             maxDays={maxDays}
             nonWorkingDays={nonWorkingDays}
+            businessTimezone={businessTimezone}
           />
         )}
 
@@ -837,6 +850,7 @@ export default function BookingPage() {
             onConfirm={handleConfirm}
             isPending={createAppointment.isPending}
             error={createAppointment.error}
+            businessTimezone={businessTimezone}
           />
         )}
       </div>
