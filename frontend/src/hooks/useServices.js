@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { getAutoSyncQueryOptions } from '@/lib/querySync';
 
 export const servicesKeys = {
   all: ['services'],
@@ -14,6 +15,8 @@ export const useServices = () => {
       const { data } = await api.get('/services', { params: { activo: 'true' } });
       return data;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30s — se invalida desde admin al activar/desactivar
+    refetchOnMount: 'always', // refetch al montar para reflejar cambios de admin
+    ...getAutoSyncQueryOptions(),
   });
 };

@@ -1,5 +1,6 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import useAuthStore from '@/stores/authStore';
+import { useLogout } from '@/hooks/useAuth';
 
 const NAV_ITEMS = [
   { to: '/admin', icon: 'dashboard', label: 'Dashboard', end: true },
@@ -11,8 +12,8 @@ const NAV_ITEMS = [
 ];
 
 export default function AdminSidebar({ mobileOpen = false, onClose }) {
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const logout = useLogout();
 
   const initials = user?.nombre
     ? user.nombre.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
@@ -20,7 +21,6 @@ export default function AdminSidebar({ mobileOpen = false, onClose }) {
 
   function handleLogout() {
     logout();
-    navigate('/login');
   }
 
   return (

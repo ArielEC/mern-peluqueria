@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { getAutoSyncQueryOptions, invalidateAndSyncGroups } from '@/lib/querySync';
 
 export const adminApptKeys = {
   all: ['admin', 'appointments'],
   range: (desde, hasta) => [...adminApptKeys.all, 'range', desde, hasta],
 };
 
-/** Citas en un rango de fechas ISO */
 export function useAdminAppointmentsRange(desde, hasta) {
   return useQuery({
     queryKey: adminApptKeys.range(desde, hasta),
@@ -16,41 +16,37 @@ export function useAdminAppointmentsRange(desde, hasta) {
     },
     enabled: Boolean(desde && hasta),
     staleTime: 30 * 1000,
+    ...getAutoSyncQueryOptions(),
   });
 }
 
-/** Crear cita manual (admin) */
 export function useAdminCreateAppointment() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (payload) => {
       const { data } = await api.post('/appointments', payload);
       return data;
     },
-    onSuccess: () => {
-      // adminApptKeys.all === ['admin', 'appointments'] — una sola invalidación cubre todo
-      queryClient.invalidateQueries({ queryKey: adminApptKeys.all });
-    },
+    onSuccess: () => invalidateAndSyncGroups(queryClient, 'appointments'),
   });
 }
 
-/** Actualizar estado de cita (admin) */
 export function useAdminUpdateAppointment() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ id, ...body }) => {
       const { data } = await api.put(`/appointments/${id}`, body);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminApptKeys.all });
-    },
+    onSuccess: () => invalidateAndSyncGroups(queryClient, 'appointments'),
   });
 }
 
-/** Cancelar cita (admin) */
 export function useAdminCancelAppointment() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ id, motivoCancelacion }) => {
       const { data } = await api.delete(`/appointments/${id}`, {
@@ -58,8 +54,6 @@ export function useAdminCancelAppointment() {
       });
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminApptKeys.all });
-    },
+    onSuccess: () => invalidateAndSyncGroups(queryClient, 'appointments'),
   });
 }

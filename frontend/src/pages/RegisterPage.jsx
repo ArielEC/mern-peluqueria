@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { createElement, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, Lock, ShieldCheck, ArrowRight, Eye, EyeOff, Scissors } from 'lucide-react';
 import { z } from 'zod';
@@ -43,12 +43,16 @@ function Field({ label, error, children }) {
   );
 }
 
-function IconInput({ icon: Icon, error, rightSlot, ...props }) {
+function IconInput({ icon, error, rightSlot, ...props }) {
+  const inputRightPadding = rightSlot ? 'pr-10' : 'pr-4';
+
   return (
     <div className="relative">
-      <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70 pointer-events-none" />
+      {createElement(icon, {
+        className: 'absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70 pointer-events-none',
+      })}
       <input
-        className={`block w-full pl-10 pr-${rightSlot ? '10' : '4'} py-3 bg-primary/10 border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`block w-full pl-10 ${inputRightPadding} py-3 bg-primary/10 border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
           error ? 'border-destructive' : 'border-border/30'
         }`}
         {...props}
@@ -103,11 +107,12 @@ export default function RegisterPage() {
       return;
     }
 
-    const { confirmPassword, ...payload } = result.data;
+    const payload = { ...result.data };
+    delete payload.confirmPassword;
     if (!payload.telefono) delete payload.telefono;
 
     registerMutation.mutate(payload, {
-      onSuccess: () => navigate('/book', { replace: true }),
+      onSuccess: () => navigate('/', { replace: true }),
     });
   }
 

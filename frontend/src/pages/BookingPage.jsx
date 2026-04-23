@@ -225,7 +225,7 @@ function Step1({ selectedService, onSelect, onNext }) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('Todos');
 
-  const services = servicesData?.services ?? servicesData ?? [];
+  const services = useMemo(() => servicesData?.services ?? servicesData ?? [], [servicesData]);
 
   const categories = useMemo(() => {
     const cats = ['Todos', ...new Set(services.map((s) => s.categoria).filter(Boolean))];
@@ -401,7 +401,7 @@ function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSe
   );
   const [filterProfesional, setFilterProfesional] = useState('');
 
-  const allSlots = availData?.slots ?? [];
+  const allSlots = useMemo(() => availData?.slots ?? [], [availData]);
 
   // Profesionales únicos disponibles en los slots
   const uniqueProfessionals = useMemo(() => {

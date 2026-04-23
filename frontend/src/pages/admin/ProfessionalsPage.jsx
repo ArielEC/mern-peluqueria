@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import {
   AdminPageHeader, AdminTable, ActionButtons, StatusToggle,
-  ConfirmDeleteModal, AdminModal, FormField, inputCls, selectCls,
+  ConfirmDeleteModal, AdminModal, FormField,
 } from '@/components/admin/AdminTable';
+import { inputCls } from '@/components/admin/adminFormStyles';
 import {
   useAdminProfessionals, useAdminCreateProfessional,
   useAdminUpdateProfessional, useAdminDeleteProfessional,

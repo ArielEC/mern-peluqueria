@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { useAdminUpdateAppointment, useAdminCancelAppointment } from '@/hooks/useAdminAppointments';
+import { useSettings } from '@/hooks/useSettings';
+import { formatTimeInTz, formatDateInTz } from '@/lib/utils';
 
 const STATUS_OPTIONS = [
   { value: 'confirmada', label: 'Confirmada', color: 'bg-[#e9ddff] text-[#4e3b7c]' },
@@ -18,6 +18,8 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
 
   const updateMutation = useAdminUpdateAppointment();
   const cancelMutation = useAdminCancelAppointment();
+  const { data: settings } = useSettings();
+  const businessTz = settings?.zonaHoraria || 'Europe/Madrid';
 
   if (!appointment) return null;
 
@@ -73,14 +75,15 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#494454] mb-0.5">Fecha</p>
                 <p className="text-[0.8rem] font-bold text-[#131b2e] capitalize">
-                  {format(inicio, "d MMM yyyy", { locale: es })}
+                  {formatDateInTz(inicio, businessTz)}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#494454] mb-0.5">Hora</p>
                 <p className="text-[0.8rem] font-bold text-[#131b2e]">
-                  {format(inicio, 'HH:mm')}{fin && ` — ${format(fin, 'HH:mm')}`}
+                  {formatTimeInTz(inicio, businessTz)}{fin && ` — ${formatTimeInTz(fin, businessTz)}`}
                 </p>
+                <p className="text-[0.6rem] text-[#494454]/60">{businessTz}</p>
               </div>
               {client && (
                 <div>

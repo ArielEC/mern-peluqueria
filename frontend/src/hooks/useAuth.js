@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import useAuthStore from '@/stores/authStore';
+import { invalidateAndSyncGroups } from '@/lib/querySync';
 
 // Keys para React Query
 export const authKeys = {
@@ -26,6 +27,7 @@ export const useLogin = () => {
 // Hook para registro
 export const useRegister = () => {
   const { setAuth } = useAuthStore();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (userData) => {
@@ -34,6 +36,7 @@ export const useRegister = () => {
     },
     onSuccess: (data) => {
       setAuth(data.user, data.token);
+      return invalidateAndSyncGroups(queryClient, 'clients');
     },
   });
 };
@@ -52,7 +55,7 @@ export const useMe = () => {
   });
 };
 
-// Hook para logout
+// Hook para logout — limpia estado, caché y redirige a /login sin `from` state
 export const useLogout = () => {
   const { logout } = useAuthStore();
   const queryClient = useQueryClient();
@@ -60,5 +63,8 @@ export const useLogout = () => {
   return () => {
     logout();
     queryClient.clear();
+    // Redirigir a login sin state.from para que el próximo login
+    // no vuelva a la ruta del rol anterior
+    window.location.replace('/login');
   };
 };

@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   AdminPageHeader, AdminTable, ActionButtons, StatusToggle,
-  ConfirmDeleteModal, AdminModal, FormField, inputCls, selectCls, textareaCls,
+  ConfirmDeleteModal, AdminModal, FormField,
 } from '@/components/admin/AdminTable';
+import { inputCls, textareaCls } from '@/components/admin/adminFormStyles';
 import {
   useAdminServices, useAdminCreateService, useAdminUpdateService, useAdminDeleteService,
   useAdminProfessionals,
@@ -10,36 +11,34 @@ import {
 
 const EMPTY_FORM = { nombre: '', descripcion: '', duracion: 30, precio: 0, categoria: '', profesionalesCapaces: [], activo: true };
 
+function buildForm(data) {
+  if (!data) return EMPTY_FORM;
+
+  return {
+    nombre: data.nombre || '',
+    descripcion: data.descripcion || '',
+    duracion: data.duracion ?? 30,
+    precio: data.precio ?? 0,
+    categoria: data.categoria || '',
+    profesionalesCapaces: (data.profesionalesCapaces || []).map((p) => typeof p === 'object' ? p._id : p),
+    activo: data.activo !== false,
+  };
+}
+
 function ServiceModal({ open, onClose, initial, professionals }) {
   const createMut = useAdminCreateService();
   const updateMut = useAdminUpdateService();
   const isEdit = Boolean(initial?._id);
 
-  function buildForm(data) {
-    if (!data) return EMPTY_FORM;
-    return {
-      nombre: data.nombre || '',
-      descripcion: data.descripcion || '',
-      duracion: data.duracion ?? 30,
-      precio: data.precio ?? 0,
-      categoria: data.categoria || '',
-      profesionalesCapaces: (data.profesionalesCapaces || []).map((p) => typeof p === 'object' ? p._id : p),
-      activo: data.activo !== false,
-    };
-  }
-
-  const [form, setForm] = useState(buildForm(initial));
+  const [form, setForm] = useState(() => buildForm(initial));
   const [errors, setErrors] = useState({});
-
-  // Sincroniza el form cuando se abre con un ítem diferente
-  useEffect(() => {
-    setForm(buildForm(initial));
-    setErrors({});
-  }, [initial]);
 
   if (!open) return null;
 
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })); }
+  function set(k, v) {
+    setForm((f) => ({ ...f, [k]: v }));
+    setErrors((e) => ({ ...e, [k]: undefined }));
+  }
 
   function toggleProf(id) {
     setForm((f) => ({
@@ -60,11 +59,19 @@ function ServiceModal({ open, onClose, initial, professionals }) {
 
   function handleSubmit() {
     const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
+    if (Object.keys(e).length) {
+      setErrors(e);
+      return;
+    }
+
     const payload = { ...form, duracion: Number(form.duracion), precio: Number(form.precio) };
     const mut = isEdit ? updateMut : createMut;
     const args = isEdit ? { id: initial._id, ...payload } : payload;
-    mut.mutate(args, { onSuccess: onClose, onError: (err) => setErrors({ api: err?.response?.data?.error || 'Error' }) });
+
+    mut.mutate(args, {
+      onSuccess: onClose,
+      onError: (err) => setErrors({ api: err?.response?.data?.error || 'Error' }),
+    });
   }
 
   const isPending = createMut.isPending || updateMut.isPending;
@@ -138,7 +145,7 @@ export default function ServicesPage() {
   const updateMut = useAdminUpdateService();
 
   const [search, setSearch] = useState('');
-  const [modal, setModal] = useState(null); // null | 'new' | service object
+  const [modal, setModal] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const filtered = useMemo(() => {
@@ -211,6 +218,7 @@ export default function ServicesPage() {
       />
 
       <ServiceModal
+        key={modal?._id ?? modal ?? 'closed'}
         open={modal !== null}
         onClose={() => setModal(null)}
         initial={modal !== 'new' ? modal : undefined}

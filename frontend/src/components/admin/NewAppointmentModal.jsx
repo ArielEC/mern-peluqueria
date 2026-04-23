@@ -1,7 +1,58 @@
 import { useState, useEffect, useMemo } from 'react';
-import { format } from 'date-fns';
 import { useAdminServices, useAdminProfessionals, useAdminClients } from '@/hooks/useAdminEntities';
 import { useAdminCreateAppointment } from '@/hooks/useAdminAppointments';
+import { useSettings } from '@/hooks/useSettings';
+
+/**
+ * Construye una ISO string en la zona horaria del negocio a partir de un datetime-local.
+ * Evita que el navegador interprete la hora en la TZ local del dispositivo.
+ */
+function getIANAOffset(tz, date) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      timeZoneName: 'longOffset',
+    }).formatToParts(date);
+    const tzName = parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+    const raw = tzName.replace('GMT', '') || '+00:00';
+    const match = raw.match(/^([+-])(\d{1,2})(?::(\d{2}))?$/);
+    if (!match) return '+00:00';
+    const h = match[2].padStart(2, '0');
+    const m = match[3] ?? '00';
+    return `${match[1]}${h}:${m}`;
+  } catch {
+    return '+00:00';
+  }
+}
+
+function buildFechaHoraAdmin(datetimeLocalStr, businessTz = 'Europe/Madrid') {
+  if (!datetimeLocalStr) return '';
+  // datetimeLocalStr es "YYYY-MM-DDTHH:mm"
+  const approx = new Date(datetimeLocalStr + ':00.000Z');
+  const offset = getIANAOffset(businessTz, approx);
+  return `${datetimeLocalStr}:00.000${offset}`;
+}
+
+function formatDatetimeLocalInTz(value, businessTz = 'Europe/Madrid') {
+  if (!value) return '';
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const parts = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: businessTz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+
+  const getPart = (type) => parts.find((part) => part.type === type)?.value ?? '';
+
+  return `${getPart('year')}-${getPart('month')}-${getPart('day')}T${getPart('hour')}:${getPart('minute')}`;
+}
 
 function Field({ label, error, children }) {
   return (
@@ -16,17 +67,40 @@ function Field({ label, error, children }) {
 export default function NewAppointmentModal({ initialDate, initialProfesionalId, onClose, onSuccess }) {
   const { data: services = [] } = useAdminServices();
   const { data: allProfessionals = [] } = useAdminProfessionals();
-  const [clientSearch, setClientSearch] = useState('');
-  const { data: clients = [] } = useAdminClients(clientSearch);
+  const { data: settings } = useSettings();
+  const businessTimezone = settings?.zonaHoraria || 'Europe/Madrid';
+
+  // Búsqueda de clientes: texto del input + debounce para la API
+  const [clientSearchInput, setClientSearchInput] = useState('');
+  const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const { data: clients = [], isFetching: clientsLoading } = useAdminClients(debouncedSearch);
   const createMutation = useAdminCreateAppointment();
+
+  // Debounce de 300ms para la búsqueda de clientes en la API
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(clientSearchInput), 300);
+    return () => clearTimeout(timer);
+  }, [clientSearchInput]);
+
+  // Filtrado local inmediato sobre los resultados ya cargados
+  const filteredClients = useMemo(() => {
+    if (!clientSearchInput.trim()) return clients;
+    const q = clientSearchInput.toLowerCase().trim();
+    return clients.filter(
+      (c) =>
+        (c.nombre && c.nombre.toLowerCase().includes(q)) ||
+        (c.email && c.email.toLowerCase().includes(q))
+    );
+  }, [clients, clientSearchInput]);
 
   // Solo mostrar profesionales activos en el select
   const professionals = useMemo(() => allProfessionals.filter((p) => p.activo !== false), [allProfessionals]);
 
-  // Formato datetime-local: "YYYY-MM-DDTHH:mm"
-  const defaultDatetime = initialDate
-    ? format(new Date(initialDate), "yyyy-MM-dd'T'HH:mm")
-    : '';
+  const defaultDatetime = useMemo(
+    () => formatDatetimeLocalInTz(initialDate, businessTimezone),
+    [initialDate, businessTimezone]
+  );
 
   const [form, setForm] = useState({
     servicioId: '',
@@ -38,13 +112,6 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
   });
   const [errors, setErrors] = useState({});
 
-  // Sync cuando se pasa initialProfesionalId desde el calendario
-  useEffect(() => {
-    if (initialProfesionalId) {
-      setForm((f) => ({ ...f, profesionalId: initialProfesionalId }));
-    }
-  }, [initialProfesionalId]);
-
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
     setErrors((e) => ({ ...e, [field]: undefined }));
@@ -55,7 +122,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     if (!form.servicioId) errs.servicioId = 'Selecciona un servicio';
     if (!form.clienteId) errs.clienteId = 'Selecciona un cliente';
     if (!form.fechaHoraInicio) errs.fechaHoraInicio = 'Selecciona fecha y hora';
-    else if (new Date(form.fechaHoraInicio) <= new Date()) {
+    else if (new Date(buildFechaHoraAdmin(form.fechaHoraInicio, businessTimezone)) <= new Date()) {
       errs.fechaHoraInicio = 'La fecha debe ser futura';
     }
     return errs;
@@ -66,10 +133,11 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    const fechaHoraISOLocal = new Date(form.fechaHoraInicio).toISOString();
+    // Construir ISO con la TZ del negocio (no la del navegador)
+    const fechaHoraISO = buildFechaHoraAdmin(form.fechaHoraInicio, businessTimezone);
     const payload = {
       servicioId: form.servicioId,
-      fechaHoraInicio: fechaHoraISOLocal,
+      fechaHoraInicio: fechaHoraISO,
       clienteId: form.clienteId,
       ...(form.profesionalId && { profesionalId: form.profesionalId }),
       ...(form.notasCliente.trim() && { notasCliente: form.notasCliente.trim() }),
@@ -102,14 +170,14 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
       {/* Backdrop */}
       <div className="absolute inset-0 bg-[#131b2e]/30 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Panel — max-h to prevent overflow, flex layout for scroll */}
-      <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]">
+      {/* Panel — max-h y overflow controlados para evitar desborde del logo/header */}
+      <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl z-10 flex flex-col max-h-[min(90vh,700px)] overflow-hidden">
         {/* Header */}
         <div className="h-1 bg-[#6b38d4] shrink-0" />
         <div className="p-6 border-b border-[#cbc3d7]/20 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-[#6b38d4]/10 flex items-center justify-center text-[#6b38d4] shrink-0">
-              <span className="material-symbols-outlined text-[20px]">event_add</span>
+            <div className="w-9 h-9 rounded-lg bg-[#6b38d4]/10 flex items-center justify-center text-[#6b38d4] shrink-0 overflow-hidden">
+              <span className="material-symbols-outlined text-[18px]">calendar_add_on</span>
             </div>
             <div className="min-w-0">
               <h2 className="font-bold text-[#131b2e] truncate">Nueva Cita Manual</h2>
@@ -121,29 +189,52 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
           </button>
         </div>
 
-        {/* Form */}
+        {/* Form — scrollable */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
-          {/* Cliente */}
+          {/* Cliente — combobox con buscador */}
           <Field label="Cliente" error={errors.clienteId}>
-            <input
-              type="text"
-              value={clientSearch}
-              onChange={(e) => setClientSearch(e.target.value)}
-              placeholder="Buscar cliente por nombre o email..."
-              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2 text-[0.8rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4] placeholder:text-[#494454]/50 mb-1"
-            />
-            <select
-              value={form.clienteId}
-              onChange={(e) => set('clienteId', e.target.value)}
-              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
-            >
-              <option value="">— Selecciona un cliente —</option>
-              {clients.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.nombre} ({c.email})
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <input
+                type="text"
+                value={isClientDropdownOpen ? clientSearchInput : (form.clienteId ? `${clients.find(c => c._id === form.clienteId)?.nombre || ''} (${clients.find(c => c._id === form.clienteId)?.email || ''})` : clientSearchInput)}
+                onChange={(e) => {
+                  setClientSearchInput(e.target.value);
+                  set('clienteId', '');
+                  setIsClientDropdownOpen(true);
+                }}
+                onFocus={() => setIsClientDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setIsClientDropdownOpen(false), 200)}
+                placeholder="Buscar cliente por nombre o email..."
+                className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4] placeholder:text-[#494454]/50"
+              />
+              {clientsLoading && clientSearchInput && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <span className="w-4 h-4 rounded-full border-2 border-[#6b38d4] border-t-transparent animate-spin block" />
+                </div>
+              )}
+              {isClientDropdownOpen && (
+                <div className="absolute top-full left-0 w-full mt-1 bg-white border border-[#cbc3d7]/40 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
+                  {filteredClients.length === 0 ? (
+                    <div className="px-3 py-3 text-[0.875rem] text-[#494454]/60 text-center">Sin resultados</div>
+                  ) : (
+                    filteredClients.map((c) => (
+                      <div
+                        key={c._id}
+                        onMouseDown={(e) => {
+                          e.preventDefault(); // Evita que onBlur gane la carrera
+                          set('clienteId', c._id);
+                          setClientSearchInput('');
+                          setIsClientDropdownOpen(false);
+                        }}
+                        className={`px-3 py-2.5 text-[0.875rem] cursor-pointer transition-colors border-b border-[#cbc3d7]/10 last:border-0 ${form.clienteId === c._id ? 'bg-[#6b38d4]/10 text-[#6b38d4] font-bold' : 'text-[#131b2e] hover:bg-[#f2f3ff]'}`}
+                      >
+                        {c.nombre} <span className="text-[0.75rem] opacity-60">({c.email})</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </Field>
 
           {/* Servicio */}
@@ -177,13 +268,16 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
           </Field>
 
           {/* Fecha y hora */}
-          <Field label="Fecha y Hora" error={errors.fechaHoraInicio}>
+          <Field label={`Fecha y Hora (${businessTimezone})`} error={errors.fechaHoraInicio}>
             <input
               type="datetime-local"
               value={form.fechaHoraInicio}
               onChange={(e) => set('fechaHoraInicio', e.target.value)}
               className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
             />
+            <p className="text-[0.65rem] text-[#494454]/60 mt-0.5">
+              La hora corresponde a la zona horaria de la peluquería ({businessTimezone})
+            </p>
           </Field>
 
           {/* Resumen servicio seleccionado */}
@@ -234,7 +328,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
           )}
         </form>
 
-        {/* Footer */}
+        {/* Footer — siempre visible */}
         <div className="p-6 pt-4 flex gap-3 shrink-0 border-t border-[#cbc3d7]/20">
           <button
             type="button"

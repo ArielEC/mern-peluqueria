@@ -1,8 +1,7 @@
 import { useLocation, Link, Navigate } from 'react-router-dom';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { CheckCircle, Calendar, Clock, ArrowRight, MapPin } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
+import { formatTimeInTz, formatFullDateInTz } from '@/lib/utils';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -37,6 +36,7 @@ export default function BookingConfirmedPage() {
 
   const businessName = settings?.nombreNegocio || 'Peluquería';
   const businessAddress = settings?.direccion || '';
+  const businessTz = settings?.zonaHoraria || 'Europe/Madrid';
 
   // Parse appointment data
   const servicioNombre = appointment.servicio?.nombre ?? 'Servicio';
@@ -60,10 +60,10 @@ export default function BookingConfirmedPage() {
     : null;
 
   const dateLabel = fechaInicio
-    ? format(fechaInicio, "EEEE, d 'de' MMMM", { locale: es })
+    ? formatFullDateInTz(fechaInicio, businessTz)
     : '';
-  const timeStart = fechaInicio ? format(fechaInicio, 'HH:mm') : '';
-  const timeEnd = fechaFin ? format(fechaFin, 'HH:mm') : '';
+  const timeStart = fechaInicio ? formatTimeInTz(fechaInicio, businessTz) : '';
+  const timeEnd = fechaFin ? formatTimeInTz(fechaFin, businessTz) : '';
 
   return (
     <div className="bg-muted text-foreground min-h-screen flex flex-col items-center justify-center p-6 sm:p-12">
@@ -151,6 +151,9 @@ export default function BookingConfirmedPage() {
                         {timeStart}{timeEnd ? ` — ${timeEnd}` : ''}
                       </p>
                     </div>
+                    <p className="text-[0.6rem] text-muted-foreground/60 mt-1 ml-8">
+                      Zona horaria: {businessTz}
+                    </p>
                   </div>
                 )}
 

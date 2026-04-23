@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAdminSettings, useAdminUpdateSettings } from '@/hooks/useAdminEntities';
-import { FormField, inputCls, selectCls, textareaCls } from '@/components/admin/AdminTable';
+import { FormField } from '@/components/admin/AdminTable';
+import { inputCls, selectCls, textareaCls } from '@/components/admin/adminFormStyles';
 
 function Section({ icon, title, children }) {
   return (
@@ -31,71 +32,54 @@ function SaveButton({ isPending, saved }) {
   );
 }
 
-export default function SettingsPage() {
-  const { data: settings, isLoading } = useAdminSettings();
+function buildSettingsForm(settings) {
+  return {
+    nombreNegocio: settings?.nombreNegocio || '',
+    telefono: settings?.telefono || '',
+    email: settings?.email || '',
+    direccion: settings?.direccion || '',
+    horasMinimasCancelacion: settings?.horasMinimasCancelacion ?? 24,
+    diasMaximosReserva: settings?.diasMaximosReserva ?? 30,
+    duracionSlot: settings?.duracionSlot ?? 15,
+    mensajeBienvenida: settings?.mensajeBienvenida || '',
+    politicaCancelacion: settings?.politicaCancelacion || '',
+    zonaHoraria: settings?.zonaHoraria || 'Europe/Madrid',
+  };
+}
+
+function SettingsForm({ settings }) {
   const updateMut = useAdminUpdateSettings();
   const [saved, setSaved] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [form, setForm] = useState(() => buildSettingsForm(settings));
 
-  const [form, setForm] = useState({
-    nombreNegocio: '',
-    telefono: '',
-    email: '',
-    direccion: '',
-    horasMinimasCancelacion: 24,
-    diasMaximosReserva: 30,
-    duracionSlot: 15,
-    mensajeBienvenida: '',
-    politicaCancelacion: '',
-    zonaHoraria: 'Europe/Madrid',
-  });
-
-  // Sincronizar cuando lleguen los settings de la API
-  useEffect(() => {
-    if (settings) {
-      setForm({
-        nombreNegocio: settings.nombreNegocio || '',
-        telefono: settings.telefono || '',
-        email: settings.email || '',
-        direccion: settings.direccion || '',
-        horasMinimasCancelacion: settings.horasMinimasCancelacion ?? 24,
-        diasMaximosReserva: settings.diasMaximosReserva ?? 30,
-        duracionSlot: settings.duracionSlot ?? 15,
-        mensajeBienvenida: settings.mensajeBienvenida || '',
-        politicaCancelacion: settings.politicaCancelacion || '',
-        zonaHoraria: settings.zonaHoraria || 'Europe/Madrid',
-      });
-    }
-  }, [settings]);
-
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); setSaved(false); }
+  function set(k, v) {
+    setForm((f) => ({ ...f, [k]: v }));
+    setSaved(false);
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
     setApiError('');
+
     const payload = {
       ...form,
       horasMinimasCancelacion: Number(form.horasMinimasCancelacion),
       diasMaximosReserva: Number(form.diasMaximosReserva),
       duracionSlot: Number(form.duracionSlot),
     };
+
     updateMut.mutate(payload, {
-      onSuccess: () => { setSaved(true); setTimeout(() => setSaved(false), 3000); },
+      onSuccess: () => {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      },
       onError: (err) => setApiError(err?.response?.data?.error || 'Error al guardar'),
     });
   }
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4 max-w-3xl">
-        {[1, 2, 3].map((i) => <div key={i} className="h-40 bg-[#f2f3ff] rounded-xl animate-pulse" />)}
-      </div>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-3xl">
-      {/* Page header */}
       <div className="flex items-end justify-between">
         <div>
           <h2 className="text-[2rem] font-extrabold tracking-tight text-[#131b2e]">Ajustes</h2>
@@ -104,7 +88,6 @@ export default function SettingsPage() {
         <SaveButton isPending={updateMut.isPending} saved={saved} />
       </div>
 
-      {/* Información del negocio */}
       <Section icon="storefront" title="Información del Negocio">
         <FormField label="Nombre del negocio">
           <input className={inputCls} value={form.nombreNegocio} onChange={(e) => set('nombreNegocio', e.target.value)} placeholder="The Precision Atelier" />
@@ -122,14 +105,13 @@ export default function SettingsPage() {
         </FormField>
         <FormField label="Zona horaria">
           <div className="flex items-center gap-3">
-            <input className={inputCls + " bg-[#eaedff]/60 cursor-not-allowed"} value={form.zonaHoraria} readOnly disabled />
+            <input className={`${inputCls} bg-[#eaedff]/60 cursor-not-allowed`} value={form.zonaHoraria} readOnly disabled />
             <span className="material-symbols-outlined text-[16px] text-[#494454] shrink-0" title="La zona horaria se establece al crear la peluquería y no se puede cambiar">lock</span>
           </div>
           <p className="text-[0.75rem] text-[#494454] mt-1">La zona horaria se fija al crear el negocio y no puede modificarse.</p>
         </FormField>
       </Section>
 
-      {/* Reservas */}
       <Section icon="event_available" title="Configuración de Reservas">
         <div className="grid grid-cols-3 gap-4">
           <FormField label="Horas mín. cancelación">
@@ -151,7 +133,6 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      {/* Textos */}
       <Section icon="message" title="Mensajes y Política">
         <FormField label="Mensaje de bienvenida">
           <textarea className={textareaCls} rows={3} value={form.mensajeBienvenida} onChange={(e) => set('mensajeBienvenida', e.target.value)} placeholder="Texto que verán los clientes al llegar a la página principal..." />
@@ -161,7 +142,6 @@ export default function SettingsPage() {
         </FormField>
       </Section>
 
-      {/* Error y botón final */}
       {apiError && (
         <div className="bg-[#ffdad6] text-[#93000a] rounded-xl px-5 py-4 text-[0.875rem] font-medium flex items-center gap-2">
           <span className="material-symbols-outlined text-[18px]">error</span>
@@ -174,4 +154,22 @@ export default function SettingsPage() {
       </div>
     </form>
   );
+}
+
+export default function SettingsPage() {
+  const { data: settings, isLoading } = useAdminSettings();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4 max-w-3xl">
+        {[1, 2, 3].map((i) => <div key={i} className="h-40 bg-[#f2f3ff] rounded-xl animate-pulse" />)}
+      </div>
+    );
+  }
+
+  if (!settings) {
+    return null;
+  }
+
+  return <SettingsForm key={settings.updatedAt || 'global-settings'} settings={settings} />;
 }

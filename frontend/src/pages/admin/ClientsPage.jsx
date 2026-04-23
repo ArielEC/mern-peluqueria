@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { AdminPageHeader, AdminTable, ConfirmDeleteModal, AdminModal, FormField, inputCls, selectCls, textareaCls } from '@/components/admin/AdminTable';
+import { AdminPageHeader, AdminTable, ConfirmDeleteModal, AdminModal, FormField } from '@/components/admin/AdminTable';
+import { inputCls, selectCls, textareaCls } from '@/components/admin/adminFormStyles';
 import { useAdminClients, useAdminTechnicalNotes, useAdminCreateNote, useAdminUpdateNote, useAdminDeleteNote } from '@/hooks/useAdminEntities';
 
 const CATEGORIAS = [

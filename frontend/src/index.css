@@ -79,6 +79,54 @@
   margin: 0 2px;
 }
 
+/* ── Calendar responsive: vista semana en móvil ── */
+@media (max-width: 768px) {
+  /* Reducir ancho mínimo de cada columna de recurso/día */
+  .fc .fc-timegrid-col {
+    min-width: 80px;
+  }
+
+  /* Cabeceras de días más compactas */
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.6rem;
+    padding: 4px 2px;
+    letter-spacing: -0.02em;
+  }
+
+  /* Resource header más compacto en móvil */
+  .fc .fc-datagrid-cell-cushion,
+  .fc .fc-resource-timeline-divider {
+    padding: 2px;
+  }
+
+  /* Slots más compactos */
+  .fc .fc-timegrid-slot {
+    height: 1.25rem;
+  }
+
+  .fc .fc-timegrid-slot-label {
+    font-size: 0.6rem;
+    padding: 0 2px;
+  }
+
+  /* Eventos más pequeños */
+  .fc .fc-event {
+    font-size: 0.6rem;
+    padding: 1px 2px;
+    border-left-width: 2px !important;
+  }
+
+  /* Separación clara entre columnas con borde visible */
+  .fc .fc-timegrid-col {
+    border-right: 1px solid rgba(203, 195, 215, 0.4) !important;
+  }
+
+  /* Indicador de "hoy" más visible */
+  .fc .fc-day-today {
+    background-color: rgba(107, 56, 212, 0.06) !important;
+  }
+}
+
 @theme {
   --color-background: hsl(0 0% 100%);
   --color-foreground: hsl(240 10% 3.9%);

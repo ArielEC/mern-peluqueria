@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import {
   Calendar, Clock, CalendarCheck, History,
   X, CheckCircle, XCircle, AlertCircle, Info, ArrowRight,
 } from 'lucide-react';
 import { useAppointments, useCancelAppointment } from '@/hooks/useAppointments';
 import { useSettings } from '@/hooks/useSettings';
+import { formatTimeInTz, formatDateInTz } from '@/lib/utils';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -80,7 +79,7 @@ function ProfAvatar({ nombre, color, size = 'lg' }) {
 
 // ─── Upcoming appointment card ────────────────────────────────────────────────
 
-function UpcomingCard({ appointment, horasMinimas, onCancel }) {
+function UpcomingCard({ appointment, horasMinimas, onCancel, businessTz }) {
   const prof = appointment.profesional;
   const serv = appointment.servicio;
   const inicio = new Date(appointment.fechaHoraInicio);
@@ -112,14 +111,14 @@ function UpcomingCard({ appointment, horasMinimas, onCancel }) {
         <div className="flex items-center md:justify-end gap-1.5 text-primary font-bold text-sm">
           <Calendar className="h-3.5 w-3.5 shrink-0" />
           <span className="capitalize">
-            {format(inicio, "d MMM yyyy", { locale: es })}
+            {formatDateInTz(inicio, businessTz)}
           </span>
         </div>
         <div className="flex items-center md:justify-end gap-1.5 text-muted-foreground text-sm">
           <Clock className="h-3.5 w-3.5 shrink-0" />
           <span>
-            {format(inicio, 'HH:mm')}
-            {fin && ` — ${format(fin, 'HH:mm')}`}
+            {formatTimeInTz(inicio, businessTz)}
+            {fin && ` — ${formatTimeInTz(fin, businessTz)}`}
           </span>
         </div>
         <p className="text-base font-black text-foreground mt-1">
@@ -149,7 +148,7 @@ function UpcomingCard({ appointment, horasMinimas, onCancel }) {
 
 // ─── History row ──────────────────────────────────────────────────────────────
 
-function HistoryRow({ appointment }) {
+function HistoryRow({ appointment, businessTz }) {
   const prof = appointment.profesional;
   const serv = appointment.servicio;
   const inicio = new Date(appointment.fechaHoraInicio);
@@ -167,7 +166,7 @@ function HistoryRow({ appointment }) {
         </div>
         <h4 className="font-bold text-foreground truncate">{serv?.nombre}</h4>
         <p className="text-xs text-muted-foreground">
-          {format(inicio, "d MMM yyyy", { locale: es })}
+          {formatDateInTz(inicio, businessTz)}
           {prof?.nombre && ` · ${prof.nombre}`}
         </p>
       </div>
@@ -191,12 +190,11 @@ function HistoryRow({ appointment }) {
 
 // ─── Cancel modal ─────────────────────────────────────────────────────────────
 
-function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending }) {
+function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending, businessTz }) {
   const [reason, setReason] = useState('');
 
   if (!appointment) return null;
 
-  const prof = appointment.profesional;
   const serv = appointment.servicio;
   const inicio = new Date(appointment.fechaHoraInicio);
   const fin = appointment.fechaHoraFin ? new Date(appointment.fechaHoraFin) : null;
@@ -249,7 +247,7 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending 
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">Fecha</span>
                   <span className="text-foreground text-sm font-medium capitalize">
-                    {format(inicio, "d 'de' MMMM yyyy", { locale: es })}
+                    {formatDateInTz(inicio, businessTz)}
                   </span>
                 </div>
               </div>
@@ -258,7 +256,7 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending 
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">Hora</span>
                   <span className="text-foreground text-sm font-medium">
-                    {format(inicio, 'HH:mm')}{fin && ` — ${format(fin, 'HH:mm')}`}
+                    {formatTimeInTz(inicio, businessTz)}{fin && ` — ${formatTimeInTz(fin, businessTz)}`}
                   </span>
                 </div>
               </div>
@@ -353,6 +351,7 @@ export default function MyAppointmentsPage() {
   const cancelMutation = useCancelAppointment();
 
   const horasMinimas = settings?.horasMinimasCancelacion ?? 24;
+  const businessTz = settings?.zonaHoraria || 'Europe/Madrid';
 
   // Partition appointments
   const upcomingList = appointments
@@ -382,6 +381,10 @@ export default function MyAppointmentsPage() {
           </h1>
           <p className="text-muted-foreground font-medium">
             Gestiona tus próximas visitas y consulta tu historial.
+          </p>
+          <p className="text-xs text-muted-foreground/60 mt-1 flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Horarios en zona horaria: {businessTz}
           </p>
         </div>
 
@@ -475,6 +478,7 @@ export default function MyAppointmentsPage() {
                         appointment={apt}
                         horasMinimas={horasMinimas}
                         onCancel={setCancelTarget}
+                        businessTz={businessTz}
                       />
                     ))}
                   </div>
@@ -488,7 +492,7 @@ export default function MyAppointmentsPage() {
                 ) : (
                   <div className="space-y-3">
                     {pastList.map((apt) => (
-                      <HistoryRow key={apt._id} appointment={apt} />
+                      <HistoryRow key={apt._id} appointment={apt} businessTz={businessTz} />
                     ))}
                   </div>
                 )}
@@ -505,6 +509,7 @@ export default function MyAppointmentsPage() {
         onClose={() => setCancelTarget(null)}
         onConfirm={handleConfirmCancel}
         isPending={cancelMutation.isPending}
+        businessTz={businessTz}
       />
     </div>
   );

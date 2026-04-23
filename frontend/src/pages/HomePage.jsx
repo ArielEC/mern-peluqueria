@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Clock, MapPin, Phone, Mail, ExternalLink } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
@@ -79,11 +80,11 @@ function ServiceCard({ service }) {
 
 // ─── Contact item ─────────────────────────────────────────────────────────────
 
-function ContactItem({ icon: Icon, label, children }) {
+function ContactItem({ icon, label, children }) {
   return (
     <div className="flex gap-4">
       <div className="bg-primary/10 p-3 rounded-lg flex items-center justify-center h-12 w-12 shrink-0">
-        <Icon className="h-5 w-5 text-primary" />
+        {createElement(icon, { className: 'h-5 w-5 text-primary' })}
       </div>
       <div>
         <h4 className="font-bold text-foreground text-sm">{label}</h4>

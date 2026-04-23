@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { createElement, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Scissors } from 'lucide-react';
 import { z } from 'zod';
 import { useLogin } from '@/hooks/useAuth';
@@ -33,12 +33,16 @@ function Field({ label, error, children }) {
   );
 }
 
-function IconInput({ icon: Icon, error, rightSlot, ...props }) {
+function IconInput({ icon, error, rightSlot, ...props }) {
+  const inputRightPadding = rightSlot ? 'pr-10' : 'pr-4';
+
   return (
     <div className="relative">
-      <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+      {createElement(icon, {
+        className: 'absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none',
+      })}
       <input
-        className={`w-full pl-10 ${rightSlot ? 'pr-10' : 'pr-4'} py-3 bg-muted border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`w-full pl-10 ${inputRightPadding} py-3 bg-muted border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
           error ? 'border-destructive' : 'border-border/30'
         }`}
         {...props}
@@ -56,7 +60,6 @@ function IconInput({ icon: Icon, error, rightSlot, ...props }) {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { data: settings } = useSettings();
   const loginMutation = useLogin();
 
@@ -65,8 +68,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const businessName = settings?.nombreNegocio || 'Peluquería';
-  const from = location.state?.from?.pathname;
-
   function handleChange(e) {
     const { name, value } = e.target;
     setFields((prev) => ({ ...prev, [name]: value }));
@@ -91,7 +92,9 @@ export default function LoginPage() {
     loginMutation.mutate(result.data, {
       onSuccess: (data) => {
         const userIsAdmin = data.user?.role === 'admin';
-        const redirect = from || (userIsAdmin ? '/admin' : '/book');
+        // Siempre redirigir según rol: admin → Dashboard, cliente → Home.
+        // Ignora la ruta anterior para evitar que se quede en la última ruta del rol previo.
+        const redirect = userIsAdmin ? '/admin' : '/';
         navigate(redirect, { replace: true });
       },
     });

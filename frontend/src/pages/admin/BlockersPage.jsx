@@ -3,8 +3,9 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   AdminPageHeader, AdminTable, ActionButtons,
-  ConfirmDeleteModal, AdminModal, FormField, inputCls, selectCls, textareaCls,
+  ConfirmDeleteModal, AdminModal, FormField,
 } from '@/components/admin/AdminTable';
+import { inputCls, selectCls, textareaCls } from '@/components/admin/adminFormStyles';
 import {
   useAdminBlockers, useAdminCreateBlocker,
   useAdminUpdateBlocker, useAdminDeleteBlocker,

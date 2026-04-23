@@ -1,11 +1,6 @@
-/**
- * Hooks CRUD para las entidades del panel de administración:
- * Servicios, Profesionales, Bloqueos, Clientes, Settings, Notas técnicas
- */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-
-// ─── SERVICIOS ────────────────────────────────────────────────────────────────
+import { getAutoSyncQueryOptions, invalidateAndSyncGroups } from '@/lib/querySync';
 
 const servicesAdminKeys = {
   all: ['admin', 'services'],
@@ -20,40 +15,45 @@ export function useAdminServices() {
       return Array.isArray(data) ? data : data.services ?? [];
     },
     staleTime: 60 * 1000,
+    ...getAutoSyncQueryOptions(),
   });
 }
 
 export function useAdminCreateService() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (body) => { const { data } = await api.post('/services', body); return data; },
-    onSuccess: () => qc.invalidateQueries({ queryKey: servicesAdminKeys.all }),
+    mutationFn: async (body) => {
+      const { data } = await api.post('/services', body);
+      return data;
+    },
+    onSuccess: () => invalidateAndSyncGroups(qc, 'services'),
   });
 }
 
 export function useAdminUpdateService() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async ({ id, ...body }) => { const { data } = await api.put(`/services/${id}`, body); return data; },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: servicesAdminKeys.all });
-      qc.invalidateQueries({ queryKey: ['services'] }); // invalida caché del cliente
+    mutationFn: async ({ id, ...body }) => {
+      const { data } = await api.put(`/services/${id}`, body);
+      return data;
     },
+    onSuccess: () => invalidateAndSyncGroups(qc, 'services'),
   });
 }
 
 export function useAdminDeleteService() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (id) => { const { data } = await api.delete(`/services/${id}`); return data; },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: servicesAdminKeys.all });
-      qc.invalidateQueries({ queryKey: ['services'] }); // invalida caché del cliente
+    mutationFn: async (id) => {
+      const { data } = await api.delete(`/services/${id}`);
+      return data;
     },
+    onSuccess: () => invalidateAndSyncGroups(qc, 'services'),
   });
 }
-
-// ─── PROFESIONALES ────────────────────────────────────────────────────────────
 
 const profAdminKeys = {
   all: ['admin', 'professionals'],
@@ -68,34 +68,45 @@ export function useAdminProfessionals() {
       return Array.isArray(data) ? data : data.professionals ?? [];
     },
     staleTime: 60 * 1000,
+    ...getAutoSyncQueryOptions(),
   });
 }
 
 export function useAdminCreateProfessional() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (body) => { const { data } = await api.post('/professionals', body); return data; },
-    onSuccess: () => qc.invalidateQueries({ queryKey: profAdminKeys.all }),
+    mutationFn: async (body) => {
+      const { data } = await api.post('/professionals', body);
+      return data;
+    },
+    onSuccess: () => invalidateAndSyncGroups(qc, 'professionals'),
   });
 }
 
 export function useAdminUpdateProfessional() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async ({ id, ...body }) => { const { data } = await api.put(`/professionals/${id}`, body); return data; },
-    onSuccess: () => qc.invalidateQueries({ queryKey: profAdminKeys.all }),
+    mutationFn: async ({ id, ...body }) => {
+      const { data } = await api.put(`/professionals/${id}`, body);
+      return data;
+    },
+    onSuccess: () => invalidateAndSyncGroups(qc, 'professionals'),
   });
 }
 
 export function useAdminDeleteProfessional() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (id) => { const { data } = await api.delete(`/professionals/${id}`); return data; },
-    onSuccess: () => qc.invalidateQueries({ queryKey: profAdminKeys.all }),
+    mutationFn: async (id) => {
+      const { data } = await api.delete(`/professionals/${id}`);
+      return data;
+    },
+    onSuccess: () => invalidateAndSyncGroups(qc, 'professionals'),
   });
 }
-
-// ─── BLOQUEOS ─────────────────────────────────────────────────────────────────
 
 const blockersAdminKeys = {
   all: ['admin', 'blockers'],
@@ -110,34 +121,45 @@ export function useAdminBlockers() {
       return Array.isArray(data) ? data : [];
     },
     staleTime: 60 * 1000,
+    ...getAutoSyncQueryOptions(),
   });
 }
 
 export function useAdminCreateBlocker() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (body) => { const { data } = await api.post('/blockers', body); return data; },
-    onSuccess: () => qc.invalidateQueries({ queryKey: blockersAdminKeys.all }),
+    mutationFn: async (body) => {
+      const { data } = await api.post('/blockers', body);
+      return data;
+    },
+    onSuccess: () => invalidateAndSyncGroups(qc, 'blockers'),
   });
 }
 
 export function useAdminUpdateBlocker() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async ({ id, ...body }) => { const { data } = await api.put(`/blockers/${id}`, body); return data; },
-    onSuccess: () => qc.invalidateQueries({ queryKey: blockersAdminKeys.all }),
+    mutationFn: async ({ id, ...body }) => {
+      const { data } = await api.put(`/blockers/${id}`, body);
+      return data;
+    },
+    onSuccess: () => invalidateAndSyncGroups(qc, 'blockers'),
   });
 }
 
 export function useAdminDeleteBlocker() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (id) => { const { data } = await api.delete(`/blockers/${id}`); return data; },
-    onSuccess: () => qc.invalidateQueries({ queryKey: blockersAdminKeys.all }),
+    mutationFn: async (id) => {
+      const { data } = await api.delete(`/blockers/${id}`);
+      return data;
+    },
+    onSuccess: () => invalidateAndSyncGroups(qc, 'blockers'),
   });
 }
-
-// ─── CLIENTES ─────────────────────────────────────────────────────────────────
 
 const clientsAdminKeys = {
   all: ['admin', 'clients'],
@@ -150,17 +172,19 @@ export function useAdminClients(search = '') {
     queryFn: async () => {
       const params = { limit: 50 };
       if (search) params.search = search;
+
       const { data } = await api.get('/auth/clients', { params });
-      // El backend devuelve { clients, total, page, limit, totalPages }
-      if (data && Array.isArray(data.clients)) return data.clients;
-      // Compatibilidad con respuesta legacy (array directo)
+
+      if (data && Array.isArray(data.clients)) {
+        return data.clients;
+      }
+
       return Array.isArray(data) ? data : [];
     },
     staleTime: 30 * 1000,
+    ...getAutoSyncQueryOptions(),
   });
 }
-
-// ─── SETTINGS ─────────────────────────────────────────────────────────────────
 
 const settingsAdminKeys = {
   all: ['admin', 'settings'],
@@ -175,22 +199,21 @@ export function useAdminSettings() {
       return data;
     },
     staleTime: 5 * 60 * 1000,
+    ...getAutoSyncQueryOptions(),
   });
 }
 
 export function useAdminUpdateSettings() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (body) => { const { data } = await api.put('/settings', body); return data; },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: settingsAdminKeys.all });
-      qc.invalidateQueries({ queryKey: ['settings'] }); // invalida también el hook público
-      qc.invalidateQueries({ queryKey: ['availability'] }); // refrescar slots con nueva duración
+    mutationFn: async (body) => {
+      const { data } = await api.put('/settings', body);
+      return data;
     },
+    onSuccess: () => invalidateAndSyncGroups(qc, 'settings'),
   });
 }
-
-// ─── NOTAS TÉCNICAS ───────────────────────────────────────────────────────────
 
 const notesAdminKeys = {
   all: ['admin', 'technical-notes'],
@@ -211,24 +234,36 @@ export function useAdminTechnicalNotes(clienteId) {
 
 export function useAdminCreateNote() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (body) => { const { data } = await api.post('/technical-notes', body); return data; },
+    mutationFn: async (body) => {
+      const { data } = await api.post('/technical-notes', body);
+      return data;
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: notesAdminKeys.all }),
   });
 }
 
 export function useAdminUpdateNote() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async ({ id, ...body }) => { const { data } = await api.put(`/technical-notes/${id}`, body); return data; },
+    mutationFn: async ({ id, ...body }) => {
+      const { data } = await api.put(`/technical-notes/${id}`, body);
+      return data;
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: notesAdminKeys.all }),
   });
 }
 
 export function useAdminDeleteNote() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (id) => { const { data } = await api.delete(`/technical-notes/${id}`); return data; },
+    mutationFn: async (id) => {
+      const { data } = await api.delete(`/technical-notes/${id}`);
+      return data;
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: notesAdminKeys.all }),
   });
 }

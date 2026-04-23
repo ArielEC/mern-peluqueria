@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { getAutoSyncQueryOptions } from '@/lib/querySync';
 
 export const professionalsKeys = {
   all: ['professionals'],
@@ -15,5 +16,6 @@ export function useProfessionals() {
       return list.filter((p) => p.activo !== false);
     },
     staleTime: 5 * 60 * 1000,
+    ...getAutoSyncQueryOptions(),
   });
 }
