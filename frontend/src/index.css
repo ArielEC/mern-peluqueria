@@ -79,6 +79,58 @@
   margin: 0 2px;
 }
 
+.fc .admin-calendar-week-event {
+  min-height: 58px;
+  padding: 0;
+}
+
+.fc .admin-calendar-week-event .fc-event-main {
+  height: 100%;
+}
+
+.admin-calendar-desktop-week .fc .fc-timegrid-slot {
+  height: 2.4rem;
+}
+
+.admin-calendar-desktop-week .fc .fc-timegrid-slot-label {
+  font-size: 0.78rem;
+}
+
+.admin-calendar-desktop-week .fc .fc-col-header-cell-cushion {
+  padding: 0;
+}
+
+.admin-calendar-desktop-week .fc .admin-calendar-week-event {
+  min-height: 76px;
+}
+
+.admin-calendar-desktop-week .fc .fc-event-main-frame,
+.admin-calendar-desktop-week .fc .fc-event-main {
+  height: 100%;
+}
+
+.admin-calendar-mobile-day .fc .fc-timegrid-slot {
+  height: 1.6rem;
+}
+
+.admin-calendar-mobile-day .fc .fc-timegrid-slot-label {
+  font-size: 0.72rem;
+}
+
+.admin-calendar-mobile-day .fc .fc-col-header-cell-cushion {
+  padding: 0;
+}
+
+.admin-calendar-mobile-day .fc .admin-calendar-mobile-day-event {
+  min-height: 64px;
+  padding: 0;
+}
+
+.admin-calendar-mobile-day .fc .fc-event-main-frame,
+.admin-calendar-mobile-day .fc .fc-event-main {
+  height: 100%;
+}
+
 /* ── Calendar responsive: vista semana en móvil ── */
 @media (max-width: 768px) {
   /* Reducir ancho mínimo de cada columna de recurso/día */
@@ -124,6 +176,39 @@
   /* Indicador de "hoy" más visible */
   .fc .fc-day-today {
     background-color: rgba(107, 56, 212, 0.06) !important;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-timegrid-axis,
+  .admin-calendar-mobile-week .fc .fc-timegrid-axis-frame {
+    width: 64px !important;
+    min-width: 64px !important;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-timegrid-col {
+    min-width: 104px;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-col-header-cell-cushion {
+    padding: 0;
+    font-size: 0.72rem;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-timegrid-slot {
+    height: 1.6rem;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-event {
+    min-height: 46px;
+    padding: 0;
+    border-left-width: 3px !important;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-event-main {
+    height: 100%;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-scrollgrid {
+    border-radius: 1rem;
   }
 }
 
