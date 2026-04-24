@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { diferenciaHoras, esMismoDia, TIMEZONE_DEFAULT } from '../utils/dateTime.js';
 
 const appointmentSchema = new mongoose.Schema({
   // Cliente que reserva la cita
@@ -28,6 +29,17 @@ const appointmentSchema = new mongoose.Schema({
   fechaHoraFin: {
     type: Date,
     required: [true, 'La fecha y hora de fin es obligatoria']
+  },
+  // Fecha y hora de fin operativa en agenda (duración redondeada al grid)
+  fechaHoraFinOperativa: {
+    type: Date,
+    default: null
+  },
+  // Duración operativa en minutos usada para bloquear agenda
+  duracionOperativaMinutos: {
+    type: Number,
+    min: [15, 'La duración operativa mínima es 15 minutos'],
+    default: null
   },
   // Estado de la cita
   estado: {
@@ -78,18 +90,38 @@ const appointmentSchema = new mongoose.Schema({
 appointmentSchema.index({ cliente: 1, fechaHoraInicio: -1 });
 appointmentSchema.index({ profesional: 1, fechaHoraInicio: 1 });
 appointmentSchema.index({ fechaHoraInicio: 1, fechaHoraFin: 1 });
+appointmentSchema.index({ fechaHoraInicio: 1, fechaHoraFinOperativa: 1 });
 appointmentSchema.index({ estado: 1 });
 appointmentSchema.index({ profesional: 1, estado: 1, fechaHoraInicio: 1 });
+appointmentSchema.index({ profesional: 1, estado: 1, fechaHoraInicio: 1, fechaHoraFinOperativa: 1 });
+
+// Backward compatibility para documentos anteriores a AB-05
+appointmentSchema.pre('validate', function(next) {
+  if (!this.fechaHoraFinOperativa) {
+    this.fechaHoraFinOperativa = this.fechaHoraFin;
+  }
+
+  if (!this.duracionOperativaMinutos && this.fechaHoraFinOperativa && this.fechaHoraInicio) {
+    this.duracionOperativaMinutos = Math.max(
+      15,
+      Math.round((this.fechaHoraFinOperativa - this.fechaHoraInicio) / (1000 * 60))
+    );
+  }
+
+  next();
+});
 
 // Virtual para verificar si la cita es pasada
 appointmentSchema.virtual('esPasada').get(function() {
   return this.fechaHoraFin < new Date();
 });
 
-// Virtual para verificar si la cita es hoy
+// Virtual para verificar si la cita es hoy.
+// NOTA: Usa TIMEZONE_DEFAULT ('Europe/Madrid') ya que los virtuals no tienen
+// acceso al contexto de Settings. Si el negocio cambia zonaHoraria, este virtual
+// puede no reflejar la medianoche local correcta. Evaluar en la capa de presentación.
 appointmentSchema.virtual('esHoy').get(function() {
-  const hoy = new Date();
-  return this.fechaHoraInicio.toDateString() === hoy.toDateString();
+  return esMismoDia(this.fechaHoraInicio, new Date(), TIMEZONE_DEFAULT);
 });
 
 // Virtual para obtener la duración en minutos
@@ -97,13 +129,22 @@ appointmentSchema.virtual('duracionMinutos').get(function() {
   return (this.fechaHoraFin - this.fechaHoraInicio) / (1000 * 60);
 });
 
+// Virtual para obtener la duración operativa (agenda)
+appointmentSchema.virtual('duracionOperativaMinutosCalculada').get(function() {
+  if (this.duracionOperativaMinutos) {
+    return this.duracionOperativaMinutos;
+  }
+
+  const finOperativa = this.fechaHoraFinOperativa || this.fechaHoraFin;
+  return (finOperativa - this.fechaHoraInicio) / (1000 * 60);
+});
+
 // Método para verificar si se puede cancelar (basado en horasMinimasCancelacion de Settings)
 appointmentSchema.methods.puedeCancelar = function(horasMinimas) {
   if (this.estado !== 'confirmada') return false;
-  
-  const ahora = new Date();
-  const horasHastaCita = (this.fechaHoraInicio - ahora) / (1000 * 60 * 60);
-  
+
+  const horasHastaCita = diferenciaHoras(new Date(), this.fechaHoraInicio);
+
   return horasHastaCita >= horasMinimas;
 };
 

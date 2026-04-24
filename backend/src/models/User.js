@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
   telefono: {
     type: String,
     trim: true,
-    match: [/^[0-9]{9,15}$/, 'Por favor ingresa un teléfono válido']
+    match: [/^\d{9,15}$/, 'Por favor ingresa un teléfono válido']
   },
   role: {
     type: String,
@@ -35,13 +35,17 @@ const userSchema = new mongoose.Schema({
   activo: {
     type: Boolean,
     default: true
+  },
+  // Fecha del último cambio de contraseña. Permite invalidar tokens emitidos antes del cambio.
+  passwordChangedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true // createdAt, updatedAt automáticos
 });
 
 // Índices
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 
 // Middleware pre-save para hashear password

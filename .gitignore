@@ -31,12 +31,9 @@ Thumbs.db
 # ========================
 # Obsidian / Kanvas
 # ========================
-# Ignoramos el estado local del espacio de trabajo para evitar conflictos entre tú y tu compañero.
-# Mantenemos el resto de .obsidian para que él también tenga el plugin Canvas Watcher configurado.
-.obsidian/workspace
-.obsidian/workspace.json
-.obsidian/workspace-mobile.json
-.obsidian/backlink-cache
+.obsidian/
+
+project_bible.md
 
 # ========================
 # Archivos Temporales

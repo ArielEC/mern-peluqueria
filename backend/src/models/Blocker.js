@@ -78,20 +78,21 @@ blockerSchema.statics.hayBloqueo = async function(profesionalId, inicio, fin) {
   return !!bloqueo;
 };
 
-// Método estático para obtener bloqueos en un rango de fechas
+// Método estático para obtener bloqueos en un rango de fechas.
+// Siempre incluye bloqueos globales (profesional: null).
+// Si profesionalId es null/undefined, devuelve solo bloqueos globales.
 blockerSchema.statics.getBloqueos = async function(profesionalId, inicio, fin) {
+  const condicionesProfesional = [{ profesional: null }];
+  if (profesionalId) {
+    condicionesProfesional.push({ profesional: profesionalId });
+  }
+
   const query = {
     fechaHoraInicio: { $lt: fin },
-    fechaHoraFin: { $gt: inicio }
+    fechaHoraFin: { $gt: inicio },
+    $or: condicionesProfesional
   };
-  
-  if (profesionalId) {
-    query.$or = [
-      { profesional: profesionalId },
-      { profesional: null }
-    ];
-  }
-  
+
   return await this.find(query).populate('profesional', 'nombre');
 };
 

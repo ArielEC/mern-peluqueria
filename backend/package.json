@@ -6,7 +6,12 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "test:ab05": "node src/scripts/test.ab05.rounding.js",
+    "test:ab06": "node src/scripts/test.ab06.admin-third-party.js",
+    "test:ab08": "node src/scripts/test.ab08.timezone.js",
+    "test:ab09": "node src/scripts/test.ab09.validate.js",
+    "test:ab10": "node src/scripts/test.ab10.settings-cache.js"
   },
   "keywords": [
     "mern",
@@ -20,10 +25,12 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "dayjs": "^1.11.20",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "express-rate-limit": "^7.4.0",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "^7.1.1",
     "mongoose": "^8.6.0",
     "zod": "^3.23.8"
   },

@@ -1,121 +1,61 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Routes, Route } from 'react-router-dom';
+import Layout from '@/components/layout/Layout';
+import AdminLayout from '@/components/admin/AdminLayout';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import HomePage from '@/pages/HomePage';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import BookingPage from '@/pages/BookingPage';
+import BookingConfirmedPage from '@/pages/BookingConfirmedPage';
+import MyAppointmentsPage from '@/pages/MyAppointmentsPage';
+import NotFoundPage from '@/pages/NotFoundPage';
+import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
+import AdminCalendarPage from '@/pages/admin/AdminCalendarPage';
+import ServicesPage from '@/pages/admin/ServicesPage';
+import ProfessionalsPage from '@/pages/admin/ProfessionalsPage';
+import BlockersPage from '@/pages/admin/BlockersPage';
+import ClientsPage from '@/pages/admin/ClientsPage';
+import SettingsPage from '@/pages/admin/SettingsPage';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <Routes>
+      {/* Rutas públicas con Layout (Header + Footer) */}
+      <Route element={<Layout />}>
+        <Route path="/" element={<HomePage />} />
+      </Route>
 
-      <div className="ticks"></div>
+      {/* Rutas de autenticación — layout propio */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {/* Rutas protegidas (cliente) */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<Layout />}>
+          <Route path="/book" element={<BookingPage />} />
+          <Route path="/appointments" element={<MyAppointmentsPage />} />
+        </Route>
+        {/* Confirmación — layout propio (pantalla enfocada) */}
+        <Route path="/booking/confirmed" element={<BookingConfirmedPage />} />
+      </Route>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {/* Rutas protegidas (admin) */}
+      <Route element={<ProtectedRoute adminOnly />}>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin/calendario" element={<AdminCalendarPage />} />
+          <Route path="/admin/servicios" element={<ServicesPage />} />
+          <Route path="/admin/profesionales" element={<ProfessionalsPage />} />
+          <Route path="/admin/bloqueos" element={<BlockersPage />} />
+          <Route path="/admin/clientes" element={<ClientsPage />} />
+          <Route path="/admin/ajustes" element={<SettingsPage />} />
+        </Route>
+      </Route>
+
+      {/* 404 — catch-all */}
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
 }
 
-export default App
+export default App;

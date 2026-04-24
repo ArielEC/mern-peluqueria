@@ -59,6 +59,13 @@ const settingsSchema = new mongoose.Schema({
     trim: true,
     maxlength: [1000, 'La política no puede exceder 1000 caracteres']
   },
+  // Zona horaria IANA del negocio (para cálculos de disponibilidad y fechas)
+  zonaHoraria: {
+    type: String,
+    default: 'Europe/Madrid',
+    trim: true,
+    maxlength: [60, 'La zona horaria no puede exceder 60 caracteres']
+  },
   // Configuración de notificaciones (placeholder para futuro)
   notificaciones: {
     emailConfirmacion: { type: Boolean, default: false },
@@ -69,23 +76,38 @@ const settingsSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Método estático para obtener la configuración global (crea una por defecto si no existe)
+// Cache en memoria para evitar consultas repetidas a MongoDB.
+// Se reemplaza en cada llamada a updateGlobal e invalida con invalidateCache().
+let _settingsCache = null;
+
+// Obtener la configuración global. Sirve el cache si está disponible.
+// Usa findOneAndUpdate atómico (upsert) para eliminar race condition en arranque.
+// Devuelve un POJO congelado para evitar mutaciones accidentales del cache compartido.
 settingsSchema.statics.getGlobal = async function() {
-  let settings = await this.findById('global');
-  if (!settings) {
-    settings = await this.create({ _id: 'global' });
-  }
-  return settings;
+  if (_settingsCache) return _settingsCache;
+  const settings = await this.findOneAndUpdate(
+    { _id: 'global' },
+    { $setOnInsert: { _id: 'global' } },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  ).lean();
+  _settingsCache = Object.freeze(settings);
+  return _settingsCache;
 };
 
-// Método estático para actualizar la configuración global
+// Actualizar la configuración global y refrescar el cache.
 settingsSchema.statics.updateGlobal = async function(updates) {
   const settings = await this.findByIdAndUpdate(
     'global',
     { $set: updates },
     { new: true, upsert: true, runValidators: true }
-  );
+  ).lean();
+  _settingsCache = Object.freeze(settings);
   return settings;
+};
+
+// Invalida el cache — útil en tests o ante cambios externos a la DB.
+settingsSchema.statics.invalidateCache = function() {
+  _settingsCache = null;
 };
 
 const Settings = mongoose.model('Settings', settingsSchema);
