@@ -6,11 +6,11 @@ import { inputCls, selectCls, textareaCls } from '@/components/admin/adminFormSt
 function Section({ icon, title, children }) {
   return (
     <div className="bg-white rounded-xl border border-[#cbc3d7]/20 shadow-[0_12px_40px_-12px_hsla(262,83%,10%,0.04)] overflow-hidden">
-      <div className="px-6 py-4 border-b border-[#cbc3d7]/10 flex items-center gap-2">
+      <div className="px-4 sm:px-6 py-4 border-b border-[#cbc3d7]/10 flex items-center gap-2">
         <span className="material-symbols-outlined text-[20px] text-[#6b38d4]">{icon}</span>
         <h3 className="font-bold text-[#131b2e]">{title}</h3>
       </div>
-      <div className="p-6 space-y-4">{children}</div>
+      <div className="p-4 sm:p-6 space-y-4">{children}</div>
     </div>
   );
 }
@@ -20,7 +20,7 @@ function SaveButton({ isPending, saved }) {
     <button
       type="submit"
       disabled={isPending}
-      className="flex items-center gap-2 px-6 py-3 bg-[#6b38d4] text-white rounded-xl font-bold text-[0.875rem] hover:brightness-110 active:scale-95 transition-all disabled:opacity-60 shadow-sm shadow-[#6b38d4]/20"
+      className="flex items-center justify-center gap-2 px-6 py-3 bg-[#6b38d4] text-white rounded-xl font-bold text-[0.875rem] hover:brightness-110 active:scale-95 transition-all disabled:opacity-60 shadow-sm shadow-[#6b38d4]/20 w-full sm:w-auto"
     >
       {isPending
         ? <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
@@ -80,9 +80,9 @@ function SettingsForm({ settings }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-3xl">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h2 className="text-[2rem] font-extrabold tracking-tight text-[#131b2e]">Ajustes</h2>
+          <h2 className="text-[1.75rem] sm:text-[2rem] font-extrabold tracking-tight text-[#131b2e]">Ajustes</h2>
           <p className="text-[0.875rem] text-[#494454] mt-1">Configuración general del negocio</p>
         </div>
         <SaveButton isPending={updateMut.isPending} saved={saved} />
@@ -92,7 +92,7 @@ function SettingsForm({ settings }) {
         <FormField label="Nombre del negocio">
           <input className={inputCls} value={form.nombreNegocio} onChange={(e) => set('nombreNegocio', e.target.value)} placeholder="The Precision Atelier" />
         </FormField>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="Teléfono">
             <input className={inputCls} value={form.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="612 345 678" />
           </FormField>
@@ -113,7 +113,7 @@ function SettingsForm({ settings }) {
       </Section>
 
       <Section icon="event_available" title="Configuración de Reservas">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <FormField label="Horas mín. cancelación">
             <input type="number" min={0} max={168} className={inputCls} value={form.horasMinimasCancelacion} onChange={(e) => set('horasMinimasCancelacion', e.target.value)} />
           </FormField>
@@ -149,7 +149,7 @@ function SettingsForm({ settings }) {
         </div>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex justify-stretch sm:justify-end">
         <SaveButton isPending={updateMut.isPending} saved={saved} />
       </div>
     </form>

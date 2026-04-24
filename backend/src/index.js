@@ -1,11 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { rateLimit } from 'express-rate-limit';
 import connectDB from './config/db.js';
-
-// Cargar variables de entorno
-dotenv.config();
+import './config/loadEnv.js';
 
 // ─── Validaciones de entorno en startup (SEC-4, DEUDA-6) ───────────────────
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {

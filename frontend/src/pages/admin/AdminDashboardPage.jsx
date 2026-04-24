@@ -1,16 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useAdminTodayAppointments, useAdminWeekAppointments } from '@/hooks/useAdminDashboard';
+import { useSettings } from '@/hooks/useSettings';
+import { formatFullDateInTz, formatInBusinessTz, formatTimeInTz } from '@/lib/utils';
 import useAuthStore from '@/stores/authStore';
-
-/* ── helpers ── */
-function formatHour(isoString) {
-  if (!isoString) return '—';
-  return new Date(isoString).toLocaleTimeString('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  });
-}
 
 function getInitials(name = '') {
   return name
@@ -39,7 +31,7 @@ const STATUS_LABELS = {
 /* ── KPI card ── */
 function KpiCard({ icon, label, value, badge, iconColor = 'text-[#6b38d4]', iconBg = 'bg-[#6b38d4]/10' }) {
   return (
-    <div className="bg-white p-6 rounded-xl border border-[#cbc3d7]/20 shadow-[0_12px_40px_-12px_hsla(262,83%,10%,0.04)]">
+    <div className="bg-white p-5 sm:p-6 rounded-xl border border-[#cbc3d7]/20 shadow-[0_12px_40px_-12px_hsla(262,83%,10%,0.04)]">
       <div className="flex items-center justify-between mb-4">
         <span className={`material-symbols-outlined ${iconColor} ${iconBg} p-2 rounded-lg`}>{icon}</span>
         {badge && (
@@ -55,7 +47,7 @@ function KpiCard({ icon, label, value, badge, iconColor = 'text-[#6b38d4]', icon
 }
 
 /* ── appointment row ── */
-function AppointmentRow({ appt }) {
+function AppointmentRow({ appt, businessTimezone }) {
   const clientName = appt.cliente?.nombre || appt.nombreTercero || 'Cliente';
   const profName = appt.profesional?.nombre || '—';
   const serviceName = appt.servicio?.nombre || '—';
@@ -63,8 +55,10 @@ function AppointmentRow({ appt }) {
 
   return (
     <tr className="hover:bg-[#f2f3ff]/40 transition-colors">
-      <td className="px-6 py-4 font-medium text-[#131b2e] tabular-nums">{formatHour(appt.fechaHoraInicio)}</td>
-      <td className="px-6 py-4">
+      <td className="px-4 sm:px-6 py-4 font-medium text-[#131b2e] tabular-nums">
+        {appt.fechaHoraInicio ? formatTimeInTz(appt.fechaHoraInicio, businessTimezone) : '—'}
+      </td>
+      <td className="px-4 sm:px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-[#e2e7ff] flex items-center justify-center text-xs font-bold text-[#6b38d4] shrink-0">
             {getInitials(clientName)}
@@ -72,9 +66,9 @@ function AppointmentRow({ appt }) {
           <span className="text-[#131b2e] text-[0.875rem]">{clientName}</span>
         </div>
       </td>
-      <td className="px-6 py-4 text-[#494454] text-[0.875rem]">{serviceName}</td>
-      <td className="px-6 py-4 text-[#131b2e] text-[0.875rem]">{profName}</td>
-      <td className="px-6 py-4">
+      <td className="px-4 sm:px-6 py-4 text-[#494454] text-[0.875rem]">{serviceName}</td>
+      <td className="px-4 sm:px-6 py-4 text-[#131b2e] text-[0.875rem]">{profName}</td>
+      <td className="px-4 sm:px-6 py-4">
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.7rem] font-bold ${STATUS_STYLES[status] ?? 'bg-[#eaedff] text-[#494454]'}`}
         >
@@ -88,8 +82,10 @@ function AppointmentRow({ appt }) {
 /* ── page ── */
 export default function AdminDashboardPage() {
   const { user } = useAuthStore();
-  const { data: todayAppts = [], isLoading: loadingToday } = useAdminTodayAppointments();
-  const { data: weekAppts = [], isLoading: loadingWeek } = useAdminWeekAppointments();
+  const { data: settings } = useSettings();
+  const businessTimezone = settings?.zonaHoraria || 'Europe/Madrid';
+  const { data: todayAppts = [], isLoading: loadingToday } = useAdminTodayAppointments(businessTimezone);
+  const { data: weekAppts = [], isLoading: loadingWeek } = useAdminWeekAppointments(businessTimezone);
 
   // 'confirmada' es el único estado "activo pendiente" en el modelo (no existe 'pendiente')
   const pendingCount = todayAppts.filter((a) => a.estado === 'confirmada').length;
@@ -98,11 +94,11 @@ export default function AdminDashboardPage() {
     <div className="flex flex-col gap-8 max-w-7xl">
       {/* Welcome */}
       <section>
-        <h2 className="text-[2.25rem] font-bold tracking-[-0.02em] text-[#131b2e]">
+        <h2 className="text-[1.75rem] sm:text-[2.25rem] font-bold tracking-[-0.02em] text-[#131b2e]">
           Bienvenido, {user?.nombre?.split(' ')[0] ?? 'Admin'}
         </h2>
         <p className="text-[#494454] text-[0.9rem] mt-1">
-          Resumen del panel — {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          Resumen del panel — {formatFullDateInTz(new Date(), businessTimezone)}
         </p>
       </section>
 
@@ -129,7 +125,7 @@ export default function AdminDashboardPage() {
         <KpiCard
           icon="today"
           label="Fecha"
-          value={new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+          value={formatInBusinessTz(new Date(), businessTimezone, { day: '2-digit', month: 'short' })}
         />
       </div>
 
@@ -138,7 +134,7 @@ export default function AdminDashboardPage() {
         {/* Tabla citas de hoy */}
         <div className="xl:col-span-2 bg-[#f2f3ff] rounded-xl overflow-hidden p-1">
           <div className="bg-white rounded-[0.625rem] border border-[#cbc3d7]/10">
-            <div className="p-6 border-b border-[#cbc3d7]/20 flex items-center justify-between">
+            <div className="p-4 sm:p-6 border-b border-[#cbc3d7]/20 flex items-center justify-between gap-3">
               <h3 className="font-bold text-[#131b2e]">Citas de Hoy</h3>
               <span className="text-[#494454] text-[0.75rem]">
                 {loadingToday ? 'Cargando…' : `${todayAppts.length} citas`}
@@ -146,12 +142,12 @@ export default function AdminDashboardPage() {
             </div>
 
             {loadingToday ? (
-              <div className="p-12 flex items-center justify-center text-[#494454] text-[0.875rem]">
+              <div className="p-8 sm:p-12 flex items-center justify-center text-[#494454] text-[0.875rem]">
                 <span className="material-symbols-outlined animate-spin mr-2">refresh</span>
                 Cargando citas…
               </div>
             ) : todayAppts.length === 0 ? (
-              <div className="p-12 text-center text-[#494454] text-[0.875rem]">
+              <div className="p-8 sm:p-12 text-center text-[#494454] text-[0.875rem]">
                 <span className="material-symbols-outlined text-4xl text-[#cbc3d7] block mb-2">event_busy</span>
                 No hay citas para hoy
               </div>
@@ -160,16 +156,16 @@ export default function AdminDashboardPage() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="text-[#494454] text-[0.7rem] bg-[#f2f3ff]/50">
-                      <th className="px-6 py-4 font-semibold uppercase tracking-wider">Hora</th>
-                      <th className="px-6 py-4 font-semibold uppercase tracking-wider">Cliente</th>
-                      <th className="px-6 py-4 font-semibold uppercase tracking-wider">Servicio</th>
-                      <th className="px-6 py-4 font-semibold uppercase tracking-wider">Profesional</th>
-                      <th className="px-6 py-4 font-semibold uppercase tracking-wider">Estado</th>
+                      <th className="px-4 sm:px-6 py-4 font-semibold uppercase tracking-wider">Hora</th>
+                      <th className="px-4 sm:px-6 py-4 font-semibold uppercase tracking-wider">Cliente</th>
+                      <th className="px-4 sm:px-6 py-4 font-semibold uppercase tracking-wider">Servicio</th>
+                      <th className="px-4 sm:px-6 py-4 font-semibold uppercase tracking-wider">Profesional</th>
+                      <th className="px-4 sm:px-6 py-4 font-semibold uppercase tracking-wider">Estado</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#cbc3d7]/10">
                     {todayAppts.map((appt) => (
-                      <AppointmentRow key={appt._id} appt={appt} />
+                      <AppointmentRow key={appt._id} appt={appt} businessTimezone={businessTimezone} />
                     ))}
                   </tbody>
                 </table>
@@ -181,7 +177,7 @@ export default function AdminDashboardPage() {
         {/* Panel secundario */}
         <div className="flex flex-col gap-6">
           {/* Highlight card */}
-          <div className="bg-[#6b38d4] p-8 rounded-xl text-white shadow-xl relative overflow-hidden">
+          <div className="bg-[#6b38d4] p-6 sm:p-8 rounded-xl text-white shadow-xl relative overflow-hidden">
             <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-[#8455ef]/20 rounded-full blur-3xl" />
             <h4 className="font-bold text-lg relative z-10">Panel de Control</h4>
             <p className="text-white/80 text-[0.875rem] mt-2 relative z-10">
@@ -189,7 +185,7 @@ export default function AdminDashboardPage() {
                 ? `Tienes ${weekAppts.length} citas en los próximos 7 días.`
                 : 'Sin citas programadas esta semana.'}
             </p>
-            <div className="mt-8 flex items-center justify-between relative z-10">
+            <div className="mt-6 sm:mt-8 flex items-center justify-between relative z-10">
               <div>
                 <p className="text-[0.65rem] opacity-70 font-bold uppercase tracking-widest">Esta semana</p>
                 <p className="text-2xl font-black mt-1">{loadingWeek ? '…' : weekAppts.length} citas</p>
@@ -199,7 +195,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Accesos rápidos */}
-          <div className="bg-white p-6 rounded-xl border border-[#cbc3d7]/20">
+          <div className="bg-white p-5 sm:p-6 rounded-xl border border-[#cbc3d7]/20">
             <h4 className="font-bold text-[#131b2e] mb-4">Accesos Rápidos</h4>
             <div className="flex flex-col gap-2">
               {[

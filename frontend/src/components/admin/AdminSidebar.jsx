@@ -24,7 +24,7 @@ export default function AdminSidebar({ mobileOpen = false, onClose }) {
   }
 
   return (
-    <aside className={`h-screen w-64 left-0 top-0 fixed bg-[#f2f3ff] border-r border-[#6b38d4]/10 flex flex-col gap-2 p-4 z-50 transition-transform duration-200 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+    <aside className={`h-screen w-64 max-w-[85vw] left-0 top-0 fixed bg-[#f2f3ff] border-r border-[#6b38d4]/10 flex flex-col gap-2 p-4 z-50 transition-transform duration-200 overflow-y-auto ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
       {/* Brand */}
       <div className="mb-8 px-2">
         <h1 className="text-lg font-black text-[#131b2e]">Atelier Admin</h1>

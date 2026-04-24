@@ -20,6 +20,22 @@ export function formatInBusinessTz(date, tz = 'Europe/Madrid', options = {}) {
   }).format(d);
 }
 
+export function formatIsoDateInTz(date, tz = 'Europe/Madrid') {
+  const d = date instanceof Date ? date : new Date(date);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d);
+
+  const year = parts.find((part) => part.type === 'year')?.value ?? '';
+  const month = parts.find((part) => part.type === 'month')?.value ?? '';
+  const day = parts.find((part) => part.type === 'day')?.value ?? '';
+
+  return `${year}-${month}-${day}`;
+}
+
 /**
  * Devuelve solo "HH:mm" en la zona horaria del negocio.
  */

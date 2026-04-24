@@ -58,7 +58,7 @@ function NoteModal({ open, onClose, initial, clienteId }) {
       </>}
     >
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="Categoría">
             <select className={selectCls} value={form.categoria} onChange={(e) => set('categoria', e.target.value)}>
               {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -93,7 +93,7 @@ function ClientDetail({ client, onClose }) {
   return (
     <div className="flex flex-col gap-6">
       {/* Client card */}
-      <div className="bg-[#f2f3ff] rounded-xl p-5 flex items-start gap-4">
+      <div className="bg-[#f2f3ff] rounded-xl p-5 flex flex-col sm:flex-row items-start gap-4">
         <div className="w-14 h-14 rounded-2xl bg-[#6b38d4] flex items-center justify-center text-white text-lg font-black shrink-0">
           {initials}
         </div>
@@ -117,7 +117,7 @@ function ClientDetail({ client, onClose }) {
 
       {/* Technical notes */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h4 className="font-bold text-[#131b2e] flex items-center gap-2">
             <span className="material-symbols-outlined text-[18px] text-[#6b38d4]">clinical_notes</span>
             Notas Técnicas

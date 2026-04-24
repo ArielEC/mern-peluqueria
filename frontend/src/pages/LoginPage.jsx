@@ -42,7 +42,7 @@ function IconInput({ icon, error, rightSlot, ...props }) {
         className: 'absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none',
       })}
       <input
-        className={`w-full pl-10 ${inputRightPadding} py-3 bg-muted border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`w-full pl-10 ${inputRightPadding} py-3 bg-muted border rounded-lg text-base sm:text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
           error ? 'border-destructive' : 'border-border/30'
         }`}
         {...props}
@@ -101,7 +101,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-muted text-foreground min-h-screen flex items-center justify-center p-6">
+    <div className="bg-muted text-foreground min-h-screen flex items-center justify-center px-4 py-6 sm:p-6">
       <main className="w-full max-w-md">
 
         {/* Brand */}
@@ -115,7 +115,7 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-card border border-border/20 ambient-shadow rounded-xl overflow-hidden p-8 md:p-10">
+        <div className="bg-card border border-border/20 ambient-shadow rounded-xl overflow-hidden p-5 sm:p-8 md:p-10">
           <div className="mb-8">
             <h2 className="text-xl font-bold text-foreground">Bienvenido de nuevo</h2>
           </div>

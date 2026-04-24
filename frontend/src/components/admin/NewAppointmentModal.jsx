@@ -166,15 +166,15 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
   }, [selectedService, professionals]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-[#131b2e]/30 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel — max-h y overflow controlados para evitar desborde del logo/header */}
-      <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl z-10 flex flex-col max-h-[min(90vh,700px)] overflow-hidden">
+      <div className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl z-10 flex flex-col max-h-[calc(100vh-1.5rem)] overflow-hidden">
         {/* Header */}
         <div className="h-1 bg-[#6b38d4] shrink-0" />
-        <div className="p-6 border-b border-[#cbc3d7]/20 flex items-center justify-between shrink-0">
+        <div className="p-4 sm:p-6 border-b border-[#cbc3d7]/20 flex items-center justify-between shrink-0 gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-lg bg-[#6b38d4]/10 flex items-center justify-center text-[#6b38d4] shrink-0 overflow-hidden">
               <span className="material-symbols-outlined text-[18px]">calendar_add_on</span>
@@ -190,7 +190,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
         </div>
 
         {/* Form — scrollable */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
           {/* Cliente — combobox con buscador */}
           <Field label="Cliente" error={errors.clienteId}>
             <div className="relative">
@@ -205,7 +205,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
                 onFocus={() => setIsClientDropdownOpen(true)}
                 onBlur={() => setTimeout(() => setIsClientDropdownOpen(false), 200)}
                 placeholder="Buscar cliente por nombre o email..."
-                className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4] placeholder:text-[#494454]/50"
+                className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4] placeholder:text-[#494454]/50"
               />
               {clientsLoading && clientSearchInput && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -226,7 +226,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
                           setClientSearchInput('');
                           setIsClientDropdownOpen(false);
                         }}
-                        className={`px-3 py-2.5 text-[0.875rem] cursor-pointer transition-colors border-b border-[#cbc3d7]/10 last:border-0 ${form.clienteId === c._id ? 'bg-[#6b38d4]/10 text-[#6b38d4] font-bold' : 'text-[#131b2e] hover:bg-[#f2f3ff]'}`}
+                        className={`px-3 py-2.5 text-base sm:text-[0.875rem] cursor-pointer transition-colors border-b border-[#cbc3d7]/10 last:border-0 ${form.clienteId === c._id ? 'bg-[#6b38d4]/10 text-[#6b38d4] font-bold' : 'text-[#131b2e] hover:bg-[#f2f3ff]'}`}
                       >
                         {c.nombre} <span className="text-[0.75rem] opacity-60">({c.email})</span>
                       </div>
@@ -242,7 +242,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
             <select
               value={form.servicioId}
               onChange={(e) => set('servicioId', e.target.value)}
-              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
+              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
             >
               <option value="">— Selecciona un servicio —</option>
               {activeServices.map((s) => (
@@ -258,7 +258,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
             <select
               value={form.profesionalId}
               onChange={(e) => set('profesionalId', e.target.value)}
-              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
+              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
             >
               <option value="">— Automático —</option>
               {filteredProfessionals.map((p) => (
@@ -273,7 +273,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
               type="datetime-local"
               value={form.fechaHoraInicio}
               onChange={(e) => set('fechaHoraInicio', e.target.value)}
-              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
+              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
             />
             <p className="text-[0.65rem] text-[#494454]/60 mt-0.5">
               La hora corresponde a la zona horaria de la peluquería ({businessTimezone})
@@ -282,7 +282,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
 
           {/* Resumen servicio seleccionado */}
           {selectedService && (
-            <div className="bg-[#f2f3ff] rounded-lg p-4 flex items-center justify-between text-[0.8rem]">
+            <div className="bg-[#f2f3ff] rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[0.8rem]">
               <div>
                 <p className="font-bold text-[#131b2e]">{selectedService.nombre}</p>
                 {selectedService.duracion && (
@@ -302,7 +302,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
               onChange={(e) => set('notasCliente', e.target.value)}
               rows={3}
               placeholder="Indicaciones para el profesional..."
-              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-[0.875rem] text-[#131b2e] placeholder:text-[#494454]/50 outline-none focus:ring-2 focus:ring-[#6b38d4] resize-none"
+              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] placeholder:text-[#494454]/50 outline-none focus:ring-2 focus:ring-[#6b38d4] resize-none"
             />
           </Field>
 
@@ -329,7 +329,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
         </form>
 
         {/* Footer — siempre visible */}
-        <div className="p-6 pt-4 flex gap-3 shrink-0 border-t border-[#cbc3d7]/20">
+        <div className="p-4 sm:p-6 pt-4 flex flex-col sm:flex-row gap-3 shrink-0 border-t border-[#cbc3d7]/20">
           <button
             type="button"
             onClick={onClose}

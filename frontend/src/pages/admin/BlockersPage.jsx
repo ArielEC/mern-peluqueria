@@ -110,7 +110,7 @@ function BlockerModal({ open, onClose, initial, professionals }) {
         <FormField label="Título" error={errors.titulo} required>
           <input className={inputCls} value={form.titulo} onChange={(e) => set('titulo', e.target.value)} placeholder="Ej: Vacaciones agosto…" />
         </FormField>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="Tipo" error={errors.tipo}>
             <select className={selectCls} value={form.tipo} onChange={(e) => set('tipo', e.target.value)}>
               {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -125,7 +125,7 @@ function BlockerModal({ open, onClose, initial, professionals }) {
         </div>
         <div className="space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-widest text-[#494454]">Periodo del bloqueo</p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Fecha inicio" error={errors.fechaHoraInicio} required>
               <input type="date" className={inputCls} value={form.fechaHoraInicio?.split('T')[0] || ''} onChange={(e) => {
                 const time = form.fechaHoraInicio?.split('T')[1] || '09:00';
@@ -139,7 +139,7 @@ function BlockerModal({ open, onClose, initial, professionals }) {
               }} />
             </FormField>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Fecha fin" error={errors.fechaHoraFin} required>
               <input type="date" className={inputCls} value={form.fechaHoraFin?.split('T')[0] || ''} onChange={(e) => {
                 const time = form.fechaHoraFin?.split('T')[1] || '18:00';

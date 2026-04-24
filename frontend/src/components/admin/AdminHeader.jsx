@@ -15,9 +15,9 @@ export default function AdminHeader({ onToggleSidebar }) {
   const current = BREADCRUMB_MAP[pathname] ?? 'Admin';
 
   return (
-    <header className="h-16 px-8 flex items-center justify-between sticky top-0 bg-[#faf8ff]/80 backdrop-blur-xl z-40 border-b border-[#6b38d4]/5">
+    <header className="h-16 px-4 sm:px-6 md:px-8 flex items-center justify-between sticky top-0 bg-[#faf8ff]/80 backdrop-blur-xl z-40 border-b border-[#6b38d4]/5 gap-3">
       {/* Mobile hamburger + Breadcrumb */}
-      <div className="flex items-center gap-2 text-[0.75rem] font-medium tracking-tight">
+      <div className="flex items-center gap-2 text-[0.75rem] font-medium tracking-tight min-w-0">
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
@@ -29,11 +29,11 @@ export default function AdminHeader({ onToggleSidebar }) {
         )}
         <span className="text-[#494454]">Admin</span>
         <span className="material-symbols-outlined text-[14px] text-[#cbc3d7]">chevron_right</span>
-        <span className="text-[#6b38d4] font-bold">{current}</span>
+        <span className="text-[#6b38d4] font-bold truncate">{current}</span>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[#eaedff] transition-colors text-[#494454]">
           <span className="material-symbols-outlined">notifications</span>
         </button>
