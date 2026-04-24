@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAdminServices, useAdminProfessionals, useAdminClients } from '@/hooks/useAdminEntities';
 import { useAdminCreateAppointment } from '@/hooks/useAdminAppointments';
 import { useSettings } from '@/hooks/useSettings';
+import { notifyValidationError } from '@/lib/notifications';
 
 /**
  * Construye una ISO string en la zona horaria del negocio a partir de un datetime-local.
@@ -54,10 +55,72 @@ function formatDatetimeLocalInTz(value, businessTz = 'Europe/Madrid') {
   return `${getPart('year')}-${getPart('month')}-${getPart('day')}T${getPart('hour')}:${getPart('minute')}`;
 }
 
+function parseDatetimeLocal(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return null;
+
+  return {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+    hour: Number(match[4]),
+    minute: Number(match[5]),
+  };
+}
+
+function formatUtcDatetimeLocal(date) {
+  const pad = (value) => String(value).padStart(2, '0');
+
+  return [
+    `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`,
+    `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`,
+  ].join('T');
+}
+
+function buildDatetimeLocal(datePart, hourPart = '00', minutePart = '00') {
+  if (!datePart) return '';
+  return `${datePart}T${hourPart}:${minutePart}`;
+}
+
+function timeToMinutes(time) {
+  if (!time) return null;
+
+  const [hours, minutes] = time.split(':').map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+
+  return (hours * 60) + minutes;
+}
+
+function getSlotBaseMinutes(datetimeLocalStr, professional) {
+  const parts = parseDatetimeLocal(datetimeLocalStr);
+  if (!parts || !professional?.horarioSemanal) return 0;
+
+  const day = new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay();
+  const schedule = professional.horarioSemanal?.[day];
+
+  if (!schedule?.activo || !schedule?.inicio) return 0;
+
+  return timeToMinutes(schedule.inicio) ?? 0;
+}
+
+function snapDatetimeLocalToSlot(datetimeLocalStr, slotMinutes = 15, professional = null) {
+  const parts = parseDatetimeLocal(datetimeLocalStr);
+  if (!parts) return datetimeLocalStr;
+
+  const safeSlotMinutes = Math.max(1, Number(slotMinutes) || 15);
+  const currentMinutes = (parts.hour * 60) + parts.minute;
+  const baseMinutes = getSlotBaseMinutes(datetimeLocalStr, professional);
+  const offsetFromBase = currentMinutes - baseMinutes;
+  const alignedMinutes = baseMinutes + (Math.ceil(offsetFromBase / safeSlotMinutes) * safeSlotMinutes);
+  const alignedDate = new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 0, alignedMinutes));
+
+  return formatUtcDatetimeLocal(alignedDate);
+}
+
 function Field({ label, error, children }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[11px] font-bold uppercase tracking-widest text-[#494454]">{label}</label>
+      {label ? <label className="text-[11px] font-bold uppercase tracking-widest text-[#494454]">{label}</label> : null}
       {children}
       {error && <p className="text-[11px] text-red-600 font-medium">{error}</p>}
     </div>
@@ -69,6 +132,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
   const { data: allProfessionals = [] } = useAdminProfessionals();
   const { data: settings } = useSettings();
   const businessTimezone = settings?.zonaHoraria || 'Europe/Madrid';
+  const slotDurationMinutes = Number(settings?.duracionSlot) || 15;
 
   // Búsqueda de clientes: texto del input + debounce para la API
   const [clientSearchInput, setClientSearchInput] = useState('');
@@ -96,10 +160,18 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
 
   // Solo mostrar profesionales activos en el select
   const professionals = useMemo(() => allProfessionals.filter((p) => p.activo !== false), [allProfessionals]);
+  const initialProfessional = useMemo(
+    () => professionals.find((professional) => professional._id === initialProfesionalId) ?? null,
+    [initialProfesionalId, professionals]
+  );
 
   const defaultDatetime = useMemo(
-    () => formatDatetimeLocalInTz(initialDate, businessTimezone),
-    [initialDate, businessTimezone]
+    () => snapDatetimeLocalToSlot(
+      formatDatetimeLocalInTz(initialDate, businessTimezone),
+      slotDurationMinutes,
+      initialProfessional
+    ),
+    [initialDate, businessTimezone, initialProfessional, slotDurationMinutes]
   );
 
   const [form, setForm] = useState({
@@ -117,41 +189,6 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     setErrors((e) => ({ ...e, [field]: undefined }));
   }
 
-  function validate() {
-    const errs = {};
-    if (!form.servicioId) errs.servicioId = 'Selecciona un servicio';
-    if (!form.clienteId) errs.clienteId = 'Selecciona un cliente';
-    if (!form.fechaHoraInicio) errs.fechaHoraInicio = 'Selecciona fecha y hora';
-    else if (new Date(buildFechaHoraAdmin(form.fechaHoraInicio, businessTimezone)) <= new Date()) {
-      errs.fechaHoraInicio = 'La fecha debe ser futura';
-    }
-    return errs;
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-
-    // Construir ISO con la TZ del negocio (no la del navegador)
-    const fechaHoraISO = buildFechaHoraAdmin(form.fechaHoraInicio, businessTimezone);
-    const payload = {
-      servicioId: form.servicioId,
-      fechaHoraInicio: fechaHoraISO,
-      clienteId: form.clienteId,
-      ...(form.profesionalId && { profesionalId: form.profesionalId }),
-      ...(form.notasCliente.trim() && { notasCliente: form.notasCliente.trim() }),
-      ...(form.forceOverbook && { forceOverbook: true }),
-    };
-
-    createMutation.mutate(payload, {
-      onSuccess: (data) => { onSuccess?.(data); onClose(); },
-      onError: (err) => {
-        setErrors({ api: err?.response?.data?.error || 'Error al crear la cita' });
-      },
-    });
-  }
-
   // Solo servicios activos para el select
   const activeServices = useMemo(() => services.filter((s) => s.activo !== false), [services]);
   const selectedService = activeServices.find((s) => s._id === form.servicioId);
@@ -164,6 +201,74 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     const capaceIds = capaces.map((p) => typeof p === 'object' ? p._id : p);
     return professionals.filter((p) => capaceIds.includes(p._id));
   }, [selectedService, professionals]);
+
+  const selectedProfessional = useMemo(
+    () => professionals.find((professional) => professional._id === form.profesionalId) ?? null,
+    [form.profesionalId, professionals]
+  );
+  const hourOptions = useMemo(
+    () => Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0')),
+    []
+  );
+  const minuteOptions = useMemo(() => {
+    const totalOptions = Math.floor(60 / slotDurationMinutes);
+    return Array.from({ length: totalOptions }, (_, index) => {
+      const minute = index * slotDurationMinutes;
+      return String(minute).padStart(2, '0');
+    });
+  }, [slotDurationMinutes]);
+  const normalizedFechaHoraInicio = useMemo(
+    () => snapDatetimeLocalToSlot(form.fechaHoraInicio, slotDurationMinutes, selectedProfessional),
+    [form.fechaHoraInicio, selectedProfessional, slotDurationMinutes]
+  );
+  const selectedDatePart = normalizedFechaHoraInicio ? normalizedFechaHoraInicio.slice(0, 10) : '';
+  const selectedHourPart = normalizedFechaHoraInicio ? normalizedFechaHoraInicio.slice(11, 13) : '00';
+  const selectedMinutePart = normalizedFechaHoraInicio ? normalizedFechaHoraInicio.slice(14, 16) : (minuteOptions[0] ?? '00');
+
+  function updateFechaHora(nextDate, nextHour, nextMinute) {
+    set('fechaHoraInicio', buildDatetimeLocal(nextDate, nextHour, nextMinute));
+  }
+
+  function validate() {
+    const errs = {};
+    if (!form.servicioId) errs.servicioId = 'Selecciona un servicio';
+    if (!form.clienteId) errs.clienteId = 'Selecciona un cliente';
+    if (!normalizedFechaHoraInicio) errs.fechaHoraInicio = 'Selecciona fecha y hora';
+    else if (new Date(buildFechaHoraAdmin(normalizedFechaHoraInicio, businessTimezone)) <= new Date()) {
+      errs.fechaHoraInicio = 'La fecha debe ser futura';
+    }
+    return errs;
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length) {
+      setErrors(errs);
+      notifyValidationError(errs, 'La cita no se ha podido crear');
+      return;
+    }
+
+    // Construir ISO con la TZ del negocio (no la del navegador)
+    const fechaHoraISO = buildFechaHoraAdmin(normalizedFechaHoraInicio, businessTimezone);
+    const payload = {
+      servicioId: form.servicioId,
+      fechaHoraInicio: fechaHoraISO,
+      clienteId: form.clienteId,
+      ...(form.profesionalId && { profesionalId: form.profesionalId }),
+      ...(form.notasCliente.trim() && { notasCliente: form.notasCliente.trim() }),
+      ...(form.forceOverbook && { forceOverbook: true }),
+    };
+
+    createMutation.mutate(payload, {
+      onSuccess: (data) => { onSuccess?.(data); onClose(); },
+      onError: (err) => {
+        setErrors({
+          api: err?.response?.data?.razon || err?.response?.data?.error || 'Error al crear la cita',
+        });
+      },
+    });
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
@@ -260,7 +365,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
               onChange={(e) => set('profesionalId', e.target.value)}
               className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
             >
-              <option value="">— Automático —</option>
+              <option value="">— Seleccione un profesional —</option>
               {filteredProfessionals.map((p) => (
                 <option key={p._id} value={p._id}>{p.nombre}{p.especialidad ? ` · ${p.especialidad}` : ''}</option>
               ))}
@@ -268,15 +373,48 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
           </Field>
 
           {/* Fecha y hora */}
-          <Field label={`Fecha y Hora (${businessTimezone})`} error={errors.fechaHoraInicio}>
-            <input
-              type="datetime-local"
-              value={form.fechaHoraInicio}
-              onChange={(e) => set('fechaHoraInicio', e.target.value)}
-              className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
-            />
+          <Field error={errors.fechaHoraInicio}>
+            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_5.5rem_5.5rem] gap-3">
+              <div className="flex flex-col gap-1">
+                <span className="text-[0.68rem] font-bold uppercase tracking-wider text-[#494454]">Fecha</span>
+                <input
+                  type="date"
+                  value={selectedDatePart}
+                  onChange={(e) => updateFechaHora(e.target.value, selectedHourPart, selectedMinutePart)}
+                  className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[0.68rem] font-bold uppercase tracking-wider text-[#494454]">Hora</span>
+                <select
+                  value={selectedHourPart}
+                  onChange={(e) => updateFechaHora(selectedDatePart, e.target.value, selectedMinutePart)}
+                  disabled={!selectedDatePart}
+                  className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4] disabled:opacity-60"
+                >
+                  {hourOptions.map((hour) => (
+                    <option key={hour} value={hour}>{hour}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[0.68rem] font-bold uppercase tracking-wider text-[#494454]">Minutos</span>
+                <select
+                  value={selectedMinutePart}
+                  onChange={(e) => updateFechaHora(selectedDatePart, selectedHourPart, e.target.value)}
+                  disabled={!selectedDatePart}
+                  className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4] disabled:opacity-60"
+                >
+                  {minuteOptions.map((minute) => (
+                    <option key={minute} value={minute}>{minute}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <p className="text-[0.65rem] text-[#494454]/60 mt-0.5">
-              La hora corresponde a la zona horaria de la peluquería ({businessTimezone})
+              La hora sigue el horario configurado del negocio y los minutos disponibles van en tramos de {slotDurationMinutes}: {minuteOptions.join(', ')}.
             </p>
           </Field>
 

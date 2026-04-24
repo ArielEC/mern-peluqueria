@@ -8,6 +8,7 @@ import {
   useAdminProfessionals, useAdminCreateProfessional,
   useAdminUpdateProfessional, useAdminDeleteProfessional,
 } from '@/hooks/useAdminEntities';
+import { notifyValidationError } from '@/lib/notifications';
 
 const DIAS = [
   { key: '1', label: 'Lun' }, { key: '2', label: 'Mar' }, { key: '3', label: 'Mié' },
@@ -83,7 +84,12 @@ function ProfModal({ open, onClose, initial }) {
 
   function handleSubmit() {
     const e = validate();
-    if (Object.keys(e).length) { setErrors(e); setTab('info'); return; }
+    if (Object.keys(e).length) {
+      setErrors(e);
+      setTab('info');
+      notifyValidationError(e, 'Revisa los datos del profesional');
+      return;
+    }
     const mut = isEdit ? updateMut : createMut;
     const args = isEdit ? { id: initial._id, ...form } : form;
     mut.mutate(args, { onSuccess: onClose, onError: (err) => setErrors({ api: err?.response?.data?.error || 'Error' }) });
@@ -156,6 +162,7 @@ export default function ProfessionalsPage() {
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
 
   const filtered = useMemo(() => {
     if (!search) return professionals;
@@ -204,7 +211,15 @@ export default function ProfessionalsPage() {
     },
     {
       key: 'actions', label: 'Acciones', className: 'text-right',
-      render: (p) => <ActionButtons onEdit={() => setModal(p)} onDelete={() => setDeleteTarget(p)} />,
+      render: (p) => (
+        <ActionButtons
+          onEdit={() => setModal(p)}
+          onDelete={() => {
+            setDeleteError('');
+            setDeleteTarget(p);
+          }}
+        />
+      ),
     },
   ];
 
@@ -238,9 +253,21 @@ export default function ProfessionalsPage() {
       <ConfirmDeleteModal
         open={Boolean(deleteTarget)}
         title="Eliminar Profesional"
-        description={`¿Eliminar a "${deleteTarget?.nombre}"? Sus citas futuras no se verán afectadas.`}
-        onConfirm={() => deleteMut.mutate(deleteTarget._id, { onSuccess: () => setDeleteTarget(null) })}
-        onCancel={() => setDeleteTarget(null)}
+        description={`¿Eliminar "${deleteTarget?.nombre}"? Se borrará del sistema y se quitará de servicios y bloqueos si no tiene citas asociadas.`}
+        error={deleteError}
+        onConfirm={() => deleteMut.mutate(deleteTarget._id, {
+          onSuccess: () => {
+            setDeleteError('');
+            setDeleteTarget(null);
+          },
+          onError: (err) => {
+            setDeleteError(err?.response?.data?.error || 'No se pudo eliminar el profesional');
+          },
+        })}
+        onCancel={() => {
+          setDeleteError('');
+          setDeleteTarget(null);
+        }}
         isPending={deleteMut.isPending}
       />
     </div>

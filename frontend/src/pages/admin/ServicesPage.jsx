@@ -8,6 +8,7 @@ import {
   useAdminServices, useAdminCreateService, useAdminUpdateService, useAdminDeleteService,
   useAdminProfessionals,
 } from '@/hooks/useAdminEntities';
+import { notifyValidationError } from '@/lib/notifications';
 
 const EMPTY_FORM = { nombre: '', descripcion: '', duracion: 30, precio: 0, categoria: '', profesionalesCapaces: [], activo: true };
 
@@ -61,6 +62,7 @@ function ServiceModal({ open, onClose, initial, professionals }) {
     const e = validate();
     if (Object.keys(e).length) {
       setErrors(e);
+      notifyValidationError(e, 'Revisa los datos del servicio');
       return;
     }
 

@@ -4,6 +4,24 @@ import api from '@/lib/api';
 import { getAutoSyncQueryOptions } from '@/lib/querySync';
 import { formatIsoDateInTz } from '@/lib/utils';
 
+function getMonthRangeInTz(date, businessTimezone) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: businessTimezone,
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(date);
+
+  const year = parts.find((part) => part.type === 'year')?.value ?? '1970';
+  const month = parts.find((part) => part.type === 'month')?.value ?? '01';
+  const lastDay = new Date(Date.UTC(Number(year), Number(month), 0)).getUTCDate();
+
+  return {
+    monthKey: `${year}-${month}`,
+    desde: `${year}-${month}-01`,
+    hasta: `${year}-${month}-${String(lastDay).padStart(2, '0')}`,
+  };
+}
+
 export function useAdminTodayAppointments(businessTimezone = 'Europe/Madrid') {
   return useQuery({
     queryKey: ['admin', 'appointments', 'today', businessTimezone],
@@ -25,6 +43,20 @@ export function useAdminWeekAppointments(businessTimezone = 'Europe/Madrid') {
       const today = new Date();
       const desde = formatIsoDateInTz(today, businessTimezone);
       const hasta = formatIsoDateInTz(addDays(today, 6), businessTimezone);
+      const { data } = await api.get('/appointments', { params: { desde, hasta } });
+      return Array.isArray(data) ? data : data.appointments ?? [];
+    },
+    staleTime: 60 * 1000,
+    ...getAutoSyncQueryOptions(),
+  });
+}
+
+export function useAdminMonthAppointments(businessTimezone = 'Europe/Madrid') {
+  const { monthKey, desde, hasta } = getMonthRangeInTz(new Date(), businessTimezone);
+
+  return useQuery({
+    queryKey: ['admin', 'appointments', 'month', businessTimezone, monthKey],
+    queryFn: async () => {
       const { data } = await api.get('/appointments', { params: { desde, hasta } });
       return Array.isArray(data) ? data : data.appointments ?? [];
     },

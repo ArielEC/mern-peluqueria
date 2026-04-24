@@ -31,7 +31,12 @@ const useUIStore = create((set) => ({
     set((state) => ({
       notifications: [
         ...state.notifications,
-        { id: Date.now(), ...notification },
+        {
+          id: notification.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          type: notification.type ?? 'info',
+          duration: notification.duration ?? 4000,
+          ...notification,
+        },
       ],
     })),
   removeNotification: (id) =>

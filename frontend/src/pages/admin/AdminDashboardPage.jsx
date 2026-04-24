@@ -1,8 +1,28 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useAdminTodayAppointments, useAdminWeekAppointments } from '@/hooks/useAdminDashboard';
+import {
+  useAdminMonthAppointments,
+  useAdminTodayAppointments,
+  useAdminWeekAppointments,
+} from '@/hooks/useAdminDashboard';
 import { useSettings } from '@/hooks/useSettings';
-import { formatFullDateInTz, formatInBusinessTz, formatTimeInTz } from '@/lib/utils';
+import { formatFullDateInTz, formatTimeInTz } from '@/lib/utils';
 import useAuthStore from '@/stores/authStore';
+
+const ACTIVE_REVENUE_STATES = new Set(['confirmada', 'completada']);
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function getPluralLabel(count, singular, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
 
 function getInitials(name = '') {
   return name
@@ -29,7 +49,16 @@ const STATUS_LABELS = {
 };
 
 /* ── KPI card ── */
-function KpiCard({ icon, label, value, badge, iconColor = 'text-[#6b38d4]', iconBg = 'bg-[#6b38d4]/10' }) {
+function KpiCard({
+  icon,
+  label,
+  value,
+  badge,
+  note,
+  valueClassName = 'mt-1 text-[1.75rem] font-bold text-[#131b2e] tabular-nums',
+  iconColor = 'text-[#6b38d4]',
+  iconBg = 'bg-[#6b38d4]/10',
+}) {
   return (
     <div className="bg-white p-5 sm:p-6 rounded-xl border border-[#cbc3d7]/20 shadow-[0_12px_40px_-12px_hsla(262,83%,10%,0.04)]">
       <div className="flex items-center justify-between mb-4">
@@ -41,7 +70,8 @@ function KpiCard({ icon, label, value, badge, iconColor = 'text-[#6b38d4]', icon
         )}
       </div>
       <p className="text-[#494454] text-[0.8rem] font-medium">{label}</p>
-      <h3 className="text-[1.75rem] font-bold text-[#131b2e] mt-1 tabular-nums">{value}</h3>
+      <h3 className={valueClassName}>{value}</h3>
+      {note && <p className="mt-2 text-[0.75rem] text-[#494454]">{note}</p>}
     </div>
   );
 }
@@ -86,9 +116,51 @@ export default function AdminDashboardPage() {
   const businessTimezone = settings?.zonaHoraria || 'Europe/Madrid';
   const { data: todayAppts = [], isLoading: loadingToday } = useAdminTodayAppointments(businessTimezone);
   const { data: weekAppts = [], isLoading: loadingWeek } = useAdminWeekAppointments(businessTimezone);
+  const { data: monthAppts = [], isLoading: loadingMonth } = useAdminMonthAppointments(businessTimezone);
 
-  // 'confirmada' es el único estado "activo pendiente" en el modelo (no existe 'pendiente')
-  const pendingCount = todayAppts.filter((a) => a.estado === 'confirmada').length;
+  const confirmedTodayCount = useMemo(
+    () => todayAppts.filter((appointment) => appointment.estado === 'confirmada').length,
+    [todayAppts]
+  );
+  const confirmedWeekCount = useMemo(
+    () => weekAppts.filter((appointment) => appointment.estado === 'confirmada').length,
+    [weekAppts]
+  );
+  const activeMonthAppointments = useMemo(
+    () => monthAppts.filter((appointment) => ACTIVE_REVENUE_STATES.has(appointment.estado)),
+    [monthAppts]
+  );
+  const monthRevenue = useMemo(
+    () => activeMonthAppointments.reduce((sum, appointment) => (
+      sum + Number(appointment.precioFinal ?? appointment.servicio?.precio ?? 0)
+    ), 0),
+    [activeMonthAppointments]
+  );
+  const averageTicket = useMemo(
+    () => (activeMonthAppointments.length > 0 ? monthRevenue / activeMonthAppointments.length : 0),
+    [activeMonthAppointments.length, monthRevenue]
+  );
+  const topClient = useMemo(() => {
+    const summary = new Map();
+
+    activeMonthAppointments.forEach((appointment) => {
+      if (appointment.cliente?.role !== 'cliente') return;
+
+      const clientId = appointment.cliente?._id || appointment.cliente || appointment._id;
+      const clientName = appointment.cliente?.nombre || appointment.nombreTercero || 'Cliente';
+      const current = summary.get(clientId) || { name: clientName, visits: 0, revenue: 0 };
+
+      current.visits += 1;
+      current.revenue += Number(appointment.precioFinal ?? appointment.servicio?.precio ?? 0);
+      summary.set(clientId, current);
+    });
+
+    return Array.from(summary.values()).sort((left, right) => (
+      right.visits - left.visits
+      || right.revenue - left.revenue
+      || left.name.localeCompare(right.name, 'es')
+    ))[0] ?? null;
+  }, [activeMonthAppointments]);
 
   return (
     <div className="flex flex-col gap-8 max-w-7xl">
@@ -105,27 +177,38 @@ export default function AdminDashboardPage() {
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard
-          icon="event_available"
-          label="Citas hoy"
-          value={loadingToday ? '…' : todayAppts.length}
-        />
-        <KpiCard
-          icon="calendar_today"
-          label="Confirmadas (7 días)"
-          value={loadingWeek ? '…' : weekAppts.filter((a) => a.estado === 'confirmada').length}
-        />
-        <KpiCard
           icon="pending_actions"
           label="Confirmadas hoy"
-          value={loadingToday ? '…' : pendingCount}
-          badge={pendingCount > 0 ? 'Activas' : null}
+          value={loadingToday ? '…' : confirmedTodayCount}
+          badge={confirmedTodayCount > 0 ? 'Activas' : null}
+          note={loadingToday ? 'Actualizando citas de hoy…' : `${getPluralLabel(todayAppts.length, 'cita')} en total hoy`}
           iconColor="text-[#665396]"
           iconBg="bg-[#665396]/10"
         />
         <KpiCard
-          icon="today"
-          label="Fecha"
-          value={formatInBusinessTz(new Date(), businessTimezone, { day: '2-digit', month: 'short' })}
+          icon="receipt_long"
+          label="Ticket medio (mes)"
+          value={loadingMonth ? '…' : formatCurrency(averageTicket)}
+          note={loadingMonth ? 'Calculando importe medio…' : activeMonthAppointments.length > 0 ? `Sobre ${getPluralLabel(activeMonthAppointments.length, 'reserva')} activas este mes` : 'Sin reservas activas este mes'}
+          iconColor="text-[#0059c0]"
+          iconBg="bg-[#0059c0]/10"
+        />
+        <KpiCard
+          icon="payments"
+          label="Ingresos previstos (mes)"
+          value={loadingMonth ? '…' : formatCurrency(monthRevenue)}
+          note={loadingMonth ? 'Sumando reservas activas…' : `${getPluralLabel(activeMonthAppointments.length, 'reserva')} activas este mes`}
+          iconColor="text-[#006e1c]"
+          iconBg="bg-[#006e1c]/10"
+        />
+        <KpiCard
+          icon="workspace_premium"
+          label="Cliente top (mes)"
+          value={loadingMonth ? '…' : topClient?.name ?? 'Sin datos'}
+          note={loadingMonth ? 'Buscando recurrencia…' : topClient ? `${getPluralLabel(topClient.visits, 'cita')} · ${formatCurrency(topClient.revenue)}` : 'Sin citas activas este mes'}
+          valueClassName="mt-1 text-[1.18rem] sm:text-[1.3rem] font-bold text-[#131b2e] leading-tight break-words"
+          iconColor="text-[#855000]"
+          iconBg="bg-[#855000]/10"
         />
       </div>
 
@@ -182,13 +265,15 @@ export default function AdminDashboardPage() {
             <h4 className="font-bold text-lg relative z-10">Panel de Control</h4>
             <p className="text-white/80 text-[0.875rem] mt-2 relative z-10">
               {weekAppts.length > 0
-                ? `Tienes ${weekAppts.length} citas en los próximos 7 días.`
+                ? `Tienes ${weekAppts.length} citas en los próximos 7 días y ${confirmedWeekCount} confirmadas.`
                 : 'Sin citas programadas esta semana.'}
             </p>
             <div className="mt-6 sm:mt-8 flex items-center justify-between relative z-10">
               <div>
                 <p className="text-[0.65rem] opacity-70 font-bold uppercase tracking-widest">Esta semana</p>
-                <p className="text-2xl font-black mt-1">{loadingWeek ? '…' : weekAppts.length} citas</p>
+                <p className="text-2xl font-black mt-1">
+                  {loadingWeek ? '…' : getPluralLabel(confirmedWeekCount, 'confirmada')}
+                </p>
               </div>
               <span className="material-symbols-outlined text-4xl opacity-20">trending_up</span>
             </div>

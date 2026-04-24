@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { getErrorMessage, notifyError, notifySuccess } from '@/lib/notifications';
 import useAuthStore from '@/stores/authStore';
 import { invalidateAndSyncGroups } from '@/lib/querySync';
 
@@ -20,7 +21,9 @@ export const useLogin = () => {
     },
     onSuccess: (data) => {
       setAuth(data.user, data.token);
+      notifySuccess('Sesión iniciada con éxito');
     },
+    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido iniciar sesión')),
   });
 };
 
@@ -36,8 +39,10 @@ export const useRegister = () => {
     },
     onSuccess: (data) => {
       setAuth(data.user, data.token);
+      notifySuccess('Cuenta creada con éxito');
       return invalidateAndSyncGroups(queryClient, 'clients');
     },
+    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido crear la cuenta')),
   });
 };
 

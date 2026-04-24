@@ -4,6 +4,7 @@ import { User, Mail, Phone, Lock, ShieldCheck, ArrowRight, Eye, EyeOff, Scissors
 import { z } from 'zod';
 import { useRegister } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
+import { notifyValidationError } from '@/lib/notifications';
 
 // ─── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -104,6 +105,7 @@ export default function RegisterPage() {
         errors[err.path[0]] = err.message;
       });
       setFieldErrors(errors);
+      notifyValidationError(errors, 'Revisa los datos del registro');
       return;
     }
 

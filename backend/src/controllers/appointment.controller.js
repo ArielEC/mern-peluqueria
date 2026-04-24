@@ -98,7 +98,7 @@ export const getAppointments = async (req, res) => {
     }
 
     const appointments = await Appointment.find(filter)
-      .populate('cliente', 'nombre email telefono')
+      .populate('cliente', 'nombre email telefono role')
       .populate('profesional', 'nombre color especialidad')
       .populate('servicio', 'nombre duracion precio')
       .sort({ fechaHoraInicio: -1 });
@@ -122,7 +122,7 @@ export const getAppointmentById = async (req, res) => {
     }
 
     const appointment = await Appointment.findById(req.params.id)
-      .populate('cliente', 'nombre email telefono')
+      .populate('cliente', 'nombre email telefono role')
       .populate('profesional', 'nombre color especialidad')
       .populate('servicio', 'nombre duracion precio');
 
@@ -163,6 +163,12 @@ export const createAppointment = async (req, res) => {
     // Solo admin puede crear citas para un cliente tercero mediante clienteId
     if (clienteId && !esAdmin) {
       return res.status(403).json({ error: 'Solo administradores pueden especificar clienteId' });
+    }
+
+    if (esAdmin && !clienteId) {
+      return res.status(400).json({
+        error: 'clienteId es obligatorio para crear citas manuales desde administración'
+      });
     }
 
     let clienteReservaId = req.user._id;
@@ -406,7 +412,7 @@ export const createAppointment = async (req, res) => {
     }
 
     // Poblar referencias antes de devolver
-    await appointment.populate('cliente', 'nombre email telefono');
+    await appointment.populate('cliente', 'nombre email telefono role');
     await appointment.populate('profesional', 'nombre color especialidad');
     await appointment.populate('servicio', 'nombre duracion precio');
 
@@ -443,7 +449,7 @@ export const updateAppointment = async (req, res) => {
       { $set: req.validatedBody },
       { new: true, runValidators: true }
     )
-      .populate('cliente', 'nombre email telefono')
+      .populate('cliente', 'nombre email telefono role')
       .populate('profesional', 'nombre color especialidad')
       .populate('servicio', 'nombre duracion precio');
 
@@ -511,7 +517,7 @@ export const cancelAppointment = async (req, res) => {
     await appointment.save();
 
     // Poblar referencias
-    await appointment.populate('cliente', 'nombre email telefono');
+    await appointment.populate('cliente', 'nombre email telefono role');
     await appointment.populate('profesional', 'nombre color especialidad');
     await appointment.populate('servicio', 'nombre duracion precio');
 

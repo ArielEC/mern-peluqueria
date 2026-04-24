@@ -4,6 +4,7 @@ import { Mail, Lock, ArrowRight, Eye, EyeOff, Scissors } from 'lucide-react';
 import { z } from 'zod';
 import { useLogin } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
+import { notifyValidationError } from '@/lib/notifications';
 
 // ─── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -86,6 +87,7 @@ export default function LoginPage() {
         errors[err.path[0]] = err.message;
       });
       setFieldErrors(errors);
+      notifyValidationError(errors, 'Revisa tus credenciales');
       return;
     }
 

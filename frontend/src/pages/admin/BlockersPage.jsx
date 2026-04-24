@@ -11,6 +11,7 @@ import {
   useAdminUpdateBlocker, useAdminDeleteBlocker,
   useAdminProfessionals,
 } from '@/hooks/useAdminEntities';
+import { notifyValidationError } from '@/lib/notifications';
 
 const TIPOS = [
   { value: 'vacaciones', label: 'Vacaciones' },
@@ -77,7 +78,11 @@ function BlockerModal({ open, onClose, initial, professionals }) {
 
   function handleSubmit() {
     const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
+    if (Object.keys(e).length) {
+      setErrors(e);
+      notifyValidationError(e, 'Revisa los datos del bloqueo');
+      return;
+    }
     const payload = {
       titulo: form.titulo,
       descripcion: form.descripcion || undefined,

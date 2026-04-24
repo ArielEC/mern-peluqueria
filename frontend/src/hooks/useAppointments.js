@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { getErrorMessage, notifyError, notifySuccess } from '@/lib/notifications';
 import { getAutoSyncQueryOptions, invalidateAndSyncGroups } from '@/lib/querySync';
 
 export const appointmentsKeys = {
@@ -15,7 +16,11 @@ export const useCreateAppointment = () => {
       const { data } = await api.post('/appointments', payload);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(queryClient, 'appointments'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(queryClient, 'appointments');
+      notifySuccess('Cita creada con éxito');
+    },
+    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido crear la cita')),
   });
 };
 
@@ -41,6 +46,10 @@ export const useCancelAppointment = () => {
       });
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(queryClient, 'appointments'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(queryClient, 'appointments');
+      notifySuccess('Cita cancelada con éxito');
+    },
+    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido cancelar la cita')),
   });
 };

@@ -516,6 +516,8 @@ export default function AdminCalendarPage() {
 
   const { data: settings } = useSettings();
   const businessTimezone = settings?.zonaHoraria || 'Europe/Madrid';
+  const slotDurationMinutes = Number(settings?.duracionSlot) || 15;
+  const slotDurationValue = `00:${String(slotDurationMinutes).padStart(2, '0')}:00`;
   const isMobile = useIsMobileBreakpoint();
   const isDayView = view === 'resourceTimeGridDay';
   const isWeekView = view === 'timeGridWeek';
@@ -577,6 +579,7 @@ export default function AdminCalendarPage() {
     calendarView,
     currentDate.toISOString(),
     businessTimezone,
+    slotDurationMinutes,
     isDesktopWeekView ? activeWeekProfessionalId : 'all',
     isMobileDayView || isMobileWeekView ? activeMobileProfessionalId : 'all',
   ].join(':');
@@ -741,7 +744,7 @@ export default function AdminCalendarPage() {
             timeZone={businessTimezone}
             resources={isDayView && !isMobileDayView ? resources : []}
             events={events}
-            slotDuration="00:15:00"
+            slotDuration={slotDurationValue}
             slotLabelInterval="01:00:00"
             slotMinTime="08:00:00"
             slotMaxTime="21:00:00"

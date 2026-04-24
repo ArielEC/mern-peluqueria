@@ -36,7 +36,14 @@ export function AdminPageHeader({ title, subtitle, actionLabel, actionIcon = 'ad
   );
 }
 
-export function AdminTable({ columns, rows, loading, emptyIcon = 'inbox', emptyText = 'No hay datos' }) {
+export function AdminTable({
+  columns,
+  rows,
+  loading,
+  emptyIcon = 'inbox',
+  emptyText = 'No hay datos',
+  getRowProps,
+}) {
   return (
     <div className="bg-[#f2f3ff] rounded-xl overflow-hidden p-1 shadow-[0_12px_40px_-12px_hsla(262,83%,10%,0.08)]">
       <div className="bg-white rounded-[0.625rem] overflow-hidden border border-[#cbc3d7]/10">
@@ -73,15 +80,24 @@ export function AdminTable({ columns, rows, loading, emptyIcon = 'inbox', emptyT
                   </td>
                 </tr>
               ) : (
-                rows.map((row, i) => (
-                  <tr key={row.id ?? i} className="bg-white hover:bg-[#f2f3ff]/40 transition-colors">
-                    {columns.map((col) => (
-                      <td key={col.key} className={`px-4 sm:px-6 py-4 ${col.cellClassName ?? ''}`}>
-                        {col.render ? col.render(row) : row[col.key]}
-                      </td>
-                    ))}
-                  </tr>
-                ))
+                rows.map((row, i) => {
+                  const rowProps = getRowProps?.(row) ?? {};
+                  const { className: rowClassName = '', ...restRowProps } = rowProps;
+
+                  return (
+                    <tr
+                      key={row.id ?? i}
+                      className={`bg-white hover:bg-[#f2f3ff]/40 transition-colors ${rowClassName}`}
+                      {...restRowProps}
+                    >
+                      {columns.map((col) => (
+                        <td key={col.key} className={`px-4 sm:px-6 py-4 ${col.cellClassName ?? ''}`}>
+                          {col.render ? col.render(row) : row[col.key]}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -125,7 +141,7 @@ export function StatusToggle({ active, onChange }) {
   );
 }
 
-export function ConfirmDeleteModal({ open, title, description, onConfirm, onCancel, isPending }) {
+export function ConfirmDeleteModal({ open, title, description, error, onConfirm, onCancel, isPending }) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
@@ -142,6 +158,11 @@ export function ConfirmDeleteModal({ open, title, description, onConfirm, onCanc
               <p className="text-[0.75rem] text-[#494454]">{description}</p>
             </div>
           </div>
+          {error && (
+            <div className="mb-4 rounded-lg bg-[#ffdad6] px-4 py-3 text-[0.8rem] font-medium text-[#93000a]">
+              {error}
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row gap-3">
             <button onClick={onCancel} className="flex-1 py-2.5 rounded-lg border border-[#cbc3d7]/40 text-[#494454] font-bold text-[0.875rem] hover:bg-[#f2f3ff]">
               Cancelar

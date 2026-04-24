@@ -4,6 +4,7 @@ import { es } from 'date-fns/locale';
 import { AdminPageHeader, AdminTable, ConfirmDeleteModal, AdminModal, FormField } from '@/components/admin/AdminTable';
 import { inputCls, selectCls, textareaCls } from '@/components/admin/adminFormStyles';
 import { useAdminClients, useAdminTechnicalNotes, useAdminCreateNote, useAdminUpdateNote, useAdminDeleteNote } from '@/hooks/useAdminEntities';
+import { notifyValidationError } from '@/lib/notifications';
 
 const CATEGORIAS = [
   { value: 'color', label: 'Color', color: 'bg-[#ffdcbb] text-[#673d00]' },
@@ -15,6 +16,36 @@ const CATEGORIAS = [
 
 function getCatStyle(cat) {
   return CATEGORIAS.find((c) => c.value === cat)?.color ?? 'bg-[#f2f3ff] text-[#494454]';
+}
+
+function useIsMobileBreakpoint(maxWidth = 767) {
+  const query = `(max-width: ${maxWidth}px)`;
+  const [isMobile, setIsMobile] = useState(() => (
+    typeof window !== 'undefined' && window.matchMedia(query).matches
+  ));
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const mediaQuery = window.matchMedia(query);
+    const handleChange = (event) => setIsMobile(event.matches);
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange);
+    } else {
+      mediaQuery.addListener(handleChange);
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleChange);
+      } else {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
+  }, [query]);
+
+  return isMobile;
 }
 
 // ─── Note form modal ──────────────────────────────────────────────────────────
@@ -35,7 +66,12 @@ function NoteModal({ open, onClose, initial, clienteId }) {
   function set(k, v) { setForm((f) => ({ ...f, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })); }
 
   function handleSubmit() {
-    if (!form.contenido.trim()) { setErrors({ contenido: 'El contenido es obligatorio' }); return; }
+    if (!form.contenido.trim()) {
+      const nextErrors = { contenido: 'El contenido es obligatorio' };
+      setErrors(nextErrors);
+      notifyValidationError(nextErrors, 'La nota no se ha podido guardar');
+      return;
+    }
     const payload = { ...form, clienteId };
     const mut = isEdit ? updateMut : createMut;
     const args = isEdit ? { id: initial._id, titulo: form.titulo, contenido: form.contenido, categoria: form.categoria, importante: form.importante } : payload;
@@ -82,7 +118,7 @@ function NoteModal({ open, onClose, initial, clienteId }) {
 }
 
 // ─── Client detail panel ──────────────────────────────────────────────────────
-function ClientDetail({ client, onClose }) {
+function ClientDetail({ client, onClose, showCloseButton = true }) {
   const { data: notes = [], isLoading } = useAdminTechnicalNotes(client._id);
   const deleteMut = useAdminDeleteNote();
   const [noteModal, setNoteModal] = useState(null);
@@ -110,9 +146,11 @@ function ClientDetail({ client, onClose }) {
             Cliente desde {client.createdAt ? format(new Date(client.createdAt), "MMMM yyyy", { locale: es }) : '—'}
           </p>
         </div>
-        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-[#494454] shrink-0">
-          <span className="material-symbols-outlined text-[18px]">close</span>
-        </button>
+        {showCloseButton && (
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-[#494454] shrink-0">
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        )}
       </div>
 
       {/* Technical notes */}
@@ -207,6 +245,7 @@ export default function ClientsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const timerRef = useRef(null);
+  const isMobile = useIsMobileBreakpoint();
 
   // Debounce limpio con useEffect
   useEffect(() => {
@@ -221,14 +260,17 @@ export default function ClientsPage() {
     {
       key: 'nombre', label: 'Cliente',
       render: (c) => (
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#6b38d4]/10 flex items-center justify-center text-[#6b38d4] text-xs font-bold shrink-0">
-            {c.nombre?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-[#6b38d4]/10 flex items-center justify-center text-[#6b38d4] text-xs font-bold shrink-0">
+              {c.nombre?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-[#131b2e] text-[0.875rem] truncate">{c.nombre}</p>
+              <p className="text-[0.75rem] text-[#494454] truncate">{c.email}</p>
+            </div>
           </div>
-          <div>
-            <p className="font-bold text-[#131b2e] text-[0.875rem]">{c.nombre}</p>
-            <p className="text-[0.75rem] text-[#494454]">{c.email}</p>
-          </div>
+          <span className="material-symbols-outlined text-[18px] text-[#cbc3d7] shrink-0">chevron_right</span>
         </div>
       ),
     },
@@ -254,45 +296,59 @@ export default function ClientsPage() {
         </span>
       ),
     },
-    {
-      key: 'actions', label: 'Ficha', className: 'text-right',
-      render: (c) => (
-        <button
-          onClick={() => setSelectedClient(c)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-[#6b38d4] font-bold text-[0.75rem] hover:bg-[#6b38d4]/10 rounded-lg transition-colors"
-        >
-          <span className="material-symbols-outlined text-[16px]">person_search</span>
-          Ver ficha
-        </button>
-      ),
-    },
   ];
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl">
       <AdminPageHeader
         title="Clientes"
-        subtitle="Consulta la base de clientes y sus notas técnicas"
+        subtitle="Consulta la base de clientes y pulse para ver sus notas técnicas"
         searchValue={search}
         onSearch={setSearch}
         searchPlaceholder="Buscar por nombre, email o teléfono..."
       />
 
-      <div className={`grid gap-6 transition-all ${selectedClient ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
+      <div className={`grid gap-6 transition-all ${selectedClient && !isMobile ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
         <AdminTable
           columns={columns}
           rows={clients.map((c) => ({ ...c, id: c._id }))}
           loading={isLoading}
           emptyIcon="group"
           emptyText="No se encontraron clientes."
+          getRowProps={(client) => ({
+            onClick: () => setSelectedClient(client),
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setSelectedClient(client);
+              }
+            },
+            tabIndex: 0,
+            className: `cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6b38d4]/40 ${selectedClient?._id === client._id ? 'bg-[#f8f5ff]' : ''}`,
+          })}
         />
 
-        {selectedClient && (
+        {selectedClient && !isMobile && (
           <div className="bg-white rounded-xl p-6 border border-[#cbc3d7]/20 shadow-[0_12px_40px_-12px_hsla(262,83%,10%,0.08)] h-fit">
             <ClientDetail client={selectedClient} onClose={() => setSelectedClient(null)} />
           </div>
         )}
       </div>
+
+      <AdminModal
+        open={Boolean(selectedClient) && isMobile}
+        onClose={() => setSelectedClient(null)}
+        title={selectedClient?.nombre || 'Ficha de cliente'}
+        subtitle="Notas técnicas y detalles del cliente"
+      >
+        {selectedClient && (
+          <ClientDetail
+            client={selectedClient}
+            onClose={() => setSelectedClient(null)}
+            showCloseButton={false}
+          />
+        )}
+      </AdminModal>
     </div>
   );
 }
