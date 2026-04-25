@@ -1,12 +1,13 @@
 % !TEX encoding = UTF-8 Unicode
 \documentclass{pclass}
-\usepackage[utf8]{inputenc} % para linux y mac 
+\usepackage[utf8]{inputenc} % para linux y mac
 %\usepackage[latin1]{inputenc} % para windows
-  
+
 
 %DIFERENTES TIPOS DE LETRA
 %\usepackage{palatino}
-\usepackage{times}   
+\usepackage{times}
+\usepackage{eurosym}
 
 
 \begin{document}
@@ -22,29 +23,25 @@
 
 	\input{tocdef}
 \frontmatter
-        
+
     \input{resumen}
-    \input{agradecimientos}	
+    \input{agradecimientos}
 
 	\tableofcontents % Índice de contenidos
  	\listoftables % Índice de cuadros
  	\listoffigures % Índice de figuras
- 	\lstlistoflistings %Índice de códigos
 
- \mainmatter  
-    
+ \mainmatter
+
      \input{Capitulos/capitulo1}  % Cap 1: Introducci\'on
-%     \input{Capitulos/capitulo2}  % Cap 2: Dise\~no de la Base de Datos (pendiente)
-%     \input{Capitulos/capitulo3}  % Cap 3: Implementaci\'on (pendiente)
-%     \input{Capitulos/capitulo4}  % Cap 4: Manual de Usuario (pendiente)
-%     \input{Capitulos/capitulo5}  % Cap 5: Manual de Despliegue (pendiente)
+     \input{Capitulos/capitulo2}  % Cap 2: Dise\~no de la Base de Datos
+     \input{Capitulos/capitulo3}  % Cap 3: Implementaci\'on
+     \input{Capitulos/capitulo4}  % Cap 4: Manual de Usuario
+     \input{Capitulos/capitulo5}  % Cap 5: Manual de Despliegue
      \input{Capitulos/conclusiones}  % Cap 6: Conclusiones
-     \input{Capitulos/uso_ia}  % Uso de IA (obligatorio)
+     \input{Capitulos/uso_ia}  % Declaraci\'on de Uso de IA
 
 \backmatter
-
-% \input{Capitulos/apendices}
-%\bibliographystyle{sousa5}
 
 \bibliographystyle{apacite}
 

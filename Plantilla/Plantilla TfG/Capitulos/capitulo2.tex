@@ -1,120 +1,201 @@
 % !TEX root = ../proyect.tex
 
-\chapter{Partes y plantillas}
+\chapter{Dise\~no de la Base de Datos}\label{cap:diseno-bd}
 
-\section{Partes}\label{sec:partes}
+Este cap\'itulo describe el dise\~no de la capa de persistencia del sistema. Se ha optado por MongoDB, una base de datos NoSQL orientada a documentos, accedida a trav\'es de Mongoose como ODM (\textit{Object Document Mapper}). A continuaci\'on se justifica la elecci\'on, se detallan las colecciones dise\~nadas y se describe la estrategia de indexaci\'on adoptada.
 
-Todas las memorias de Trabajo fin de Grado deberán constar de las siguientes partes 
+\section{Justificaci\'on de MongoDB}\label{sec:justificacion-mongo}
+
+La elecci\'on de MongoDB frente a un sistema relacional tradicional se fundamenta en los siguientes criterios:
+
 \begin{itemize}
- \item Portada (seg\'un formato oficial). No debe incluir n\'umero de p\'agina. Debe incluir:
- \begin{itemize}
- \item Sello de la universidad de Sevilla a dos tintas
- \item ESCUELA T\'ECNICA SUPERIOR DE INGENIER\'IA INFORM\'ATICA
- \item Trabajo fin de Grado
- \item \emph{Denominaci\'on del Grado}
- \item Realizado por: \emph{Nombre y apellidos del estudiante}
- \item Dirigido por: \emph{Nombre y apellidos del tutor o tutores}
- \item Departamento \emph{Nombre del departamento en el que se lee el TfG}
- \item Sevilla, \emph{Mes y año de la convocatoria de entrega}
- \end{itemize}
-  \item Preliminares: las p\'aginas no se numeran o se numeran con n\'umeros romanos.
- \begin{itemize} 
-\item Resumen en castellano (m\'aximo una hoja)
- \item Abstract (resumen en ingl\'es, obligatorio para el caso de las memorias escritas en ingl\'es, opcional
- para las escritas en castellano)
- \item Agradecimientos (opcional)
- \item \'Indice general (contenido de la memoria, con menci\'on de las partes en que está dividida)
- \item \'Indice de figuras (opcional)
- \item \'Indice de cuadros (mal llamados en general, tablas) (opcional)
- \item \'Indice de c\'odigo o algoritmos (opcional). 
- \end{itemize}
- \item Cuerpo de la memoria, dividida en cap{\'\i}tulos. El contenido de la memoria ha de incluir 
-los elementos característicos de un proyecto de ingeniería o de un estudio o trabajo en el ámbito de una investigación, 
-los cuales, en el sentido más amplio, son:
- \begin{itemize}
- \item Definición de objetivos.
-\item Análisis de antecedentes y aportación realizada.
-\item Análisis temporal y de costes de desarrollo.
-\item Análisis de requisitos, diseño e implementación.
-\item Manual de usuario, en su caso.
-\item Pruebas.
-\item Comparación con otras alternativas.
-\item Conclusiones y desarrollos futuros
- \end{itemize}
-Estos puntos podrán ser ajustados y modificados en función de la naturaleza del proyecto realizado.
- \item Bibliograf{\'\i}a: se deben documentar las fuentes bibliográficas utilizadas en el formato APA 2009.
- \item  Índice alfabético o glosario (Lista ordenada de los conceptos, los nombres propios, etc.; 
- que aparecen en la memoria, con las indicaciones necesarias para su localización)(opcional)
- \item Ap'endices: Si la memoria contiene alg\'un art{\'\i}culo de investigaci\'on o similar, 
- este se incluir\'a en los Ap\'endices. 
- Es necesario, en ese caso, incluir en la página anterior una hoja con la citación bibliográfica. 
- En esta citación, el título del artículo se debe enlazar con la página web de la revista 
- en la que aparecen el resumen o abstract y el acceso al texto completo. 
- \end{itemize}
- La numeraci\'on de las p\'aginas de la bibliograf{\'\i}a y del glosario debe continuar la del cuerpo de la memoria.
- Los ap\'endices pueden llevar su propia numeraci\'on independiente o usar la general del cuerpo de la memoria.
-
-
-\section{Impresión}\label{sec:impresion} 
-La entrega del memoria y en su caso, el dep\'osito en biblioteca, se hacen en formato electr\'onico. Debido a ello, la memoria se presentará \emph{a una cara}. Si se requiriera
-por alg\'un motivo la impresi\'on de la misma, se recomienda vivamente preparar la memoria adecuadamente para su impresi\'on. Algunas sugerencias:
-\begin{itemize}
- \item Dejar una p\'agina en blanco cuando sea necesario para que los cap{\'\i}tulos comiencen siempre en p\'agina impar (derecha)
- \item Ajustar los m\'argentes para que el exterior sea ligeramente m\'as grande que el interior.
- \item Ajustar las cabeceras y pies de p\'agina (en su caso). Por ejemplo, si el n\'umero de p\'agina ocurriese en un lateral
- de la cabecera o pie, este debe ser siempre el exterior (derecho para las p\'aginas impares, izquierdo para las pares)
+    \item \textbf{Flexibilidad del esquema:} Las entidades del dominio, como el horario semanal de un profesional, se modelan de forma natural mediante subdocumentos anidados, evitando m\'ultiples tablas auxiliares y \textit{joins} complejos.
+    \item \textbf{Cohesi\'on con el \textit{stack}:} MongoDB se integra nativamente con Node.js y Express, formando parte del \textit{stack} MERN. Los documentos JSON almacenados se transfieren directamente entre base de datos, servidor y cliente sin transformaciones intermedias~\cite{mongodb_docs}.
+    \item \textbf{Rendimiento en lecturas:} Las consultas m\'as frecuentes del sistema (disponibilidad de huecos, listado de citas de un d\'ia, fichas de cliente) se resuelven sobre una \'unica colecci\'on con \'indices compuestos, sin necesidad de operaciones de \textit{join}.
+    \item \textbf{Escalabilidad horizontal:} Aunque el alcance actual es \textit{single-tenant}, MongoDB facilita el escalado futuro mediante \textit{sharding} y r\'eplicas.
 \end{itemize}
 
-\section{Plantillas}\label{sec:plantillas} 
+No obstante, se mantiene la integridad referencial a nivel de aplicaci\'on mediante Mongoose, que proporciona validaciones de esquema, \textit{hooks} pre/post-guardado y poblaci\'on de referencias (\texttt{populate}).
 
-Se encuentra disponible una plantilla LaTex en la secci\'on de documentos de la plataforma
-de la aplicaci\'on de TfG de la ETSII 
-\url{https://tfc.eii.us.es/TfG/}. Esa plantilla ha sido utilizada para preparar este documento.
-Se espera en breve disponer de plantillas de ejemplo para las aplicaciones OpenOffice Writer y Office Word.
+\section{Modelo de Datos}\label{sec:modelo-datos}
 
-Nota: Las plantillas se proporcionan como ejemplo, las condiciones obligatorias son las que constan en este procedimiento.
+El sistema se compone de siete colecciones principales, representadas en la figura~\ref{fig:modelo-datos}. Cada colecci\'on se describe a continuaci\'on con sus campos, tipos, restricciones y relaciones.
 
-\chapter{Ejemplos}\label{cap2} 
-					
-\section{Manejo de la bibliograf{\'\i}a}
-En esta secci\'on mostramos brevemente ejemplos de referencia a la bibliograf{\'\i}a 
-citando un libro~\cite{desousa}, un art{\'\i}culo~\cite{guiatitlesec} 
-y una p\'agina web~\cite{informatica}. 
+\figura{1.0}{img/modelo_datos}{Modelo de datos del sistema}{fig:modelo-datos}{}
 
-Se recuerda que son campos obligatorios
-en todos los {\'\i}tems de la bibliograf{\'\i}a: 
-autor(es), t{\'\i}tulo del libro o art{\'\i}culo 
-% editorial (en su caso, tambi\'en revista) 
-y a{\~n}o de publicaci\'on.
-En el caso de p\'aginas web, 
-es obligatoria la fecha de la \'ultima consulta. 
-En general, la bibliograf{\'\i}a debe ayudar al lector a encontrar f\'acilmente los {\'\i}tems citados.
+\subsection{Colecci\'on \texttt{users}}\label{subsec:users}
 
-\section{C\'odigo}
+Almacena tanto los clientes que realizan reservas como los administradores del sistema. Se distinguen mediante el campo \texttt{role}. El cuadro~\ref{tab:users} detalla su estructura.
 
-En general se debe evitar incluir c\'odigo o seudoc\'odigo en la memoria. Si fuese preciso, se destacar\'a de forma
-que sea f\'acilmente identificable y se indexar\'an los trozos de c\'odigo incluidos. Un ejemplo puede verse
-a continuaci\'on.
+\cuadro{|l|l|l|p{5cm}|}{Estructura de la colecci\'on \texttt{users}}{tab:users}{
+\textbf{Campo} & \textbf{Tipo} & \textbf{Requerido} & \textbf{Descripci\'on} \\
+\hline
+nombre & String & S\'i & Nombre completo (m\'ax. 100 caracteres) \\
+email & String & S\'i & Correo electr\'onico, \'unico y en min\'usculas \\
+password & String & S\'i & Contrase\~na cifrada con bcrypt (m\'in. 6 caracteres) \\
+telefono & String & No & Tel\'efono validado por expresi\'on regular \\
+role & String & S\'i & \texttt{cliente} o \texttt{admin} \\
+activo & Boolean & S\'i & Permite desactivar cuentas sin eliminarlas \\
+passwordChangedAt & Date & No & Marca temporal para invalidar \textit{tokens} anteriores \\
+}
 
-\codigofuente{TeX}{Código de ejemplo en LaTeX}{codigo/macrotabla}
+La contrase\~na se cifra autom\'aticamente mediante un \textit{hook} \texttt{pre-save} de Mongoose con bcrypt y un factor de coste de 10. El campo \texttt{password} se excluye de las consultas por defecto (\texttt{select: false}) para evitar su exposici\'on accidental. Se define un \'indice sobre el campo \texttt{role} para acelerar las consultas de listado de clientes.
 
-\section{Im\'agenes}
+\subsection{Colecci\'on \texttt{professionals}}\label{subsec:professionals}
 
-Este es un ejemplo de inclusi\'on de figura en el texto (v\'ease la figura~\ref{fig:ada}). 
+Representa a los profesionales (peluqueros/barberos) del establecimiento. Cada profesional tiene un horario semanal configurable con soporte para descansos. El cuadro~\ref{tab:professionals} muestra los campos principales.
 
-\figura{0.5}{img/AdaLovelace}{Ada Lovelace}{fig:ada}{}
+\cuadro{|l|l|l|p{5cm}|}{Estructura de la colecci\'on \texttt{professionals}}{tab:professionals}{
+\textbf{Campo} & \textbf{Tipo} & \textbf{Requerido} & \textbf{Descripci\'on} \\
+\hline
+nombre & String & S\'i & Nombre del profesional (m\'ax. 100) \\
+especialidad & String & S\'i & Especialidad principal (m\'ax. 100) \\
+color & String & No & Color hexadecimal para el calendario (por defecto \texttt{\#3B82F6}) \\
+activo & Boolean & S\'i & Indica si el profesional est\'a disponible \\
+horarioSemanal & Object & S\'i & Subdocumento con la configuraci\'on de cada d\'ia \\
+}
 
-Figuras y cuadros se colocar\'an preferentemente tras el p\'arrafo en el que
-son llamados por primera vez. Si no cupieran, se colocar\'an (en orden de preferencia):
+El campo \texttt{horarioSemanal} es un subdocumento con siete entradas (claves \texttt{0} a \texttt{6}, donde 0 es domingo), cada una con los campos: \texttt{activo} (Boolean), \texttt{inicio} y \texttt{fin} (String en formato HH:MM), y opcionalmente \texttt{descansoInicio} y \texttt{descansoFin} para la pausa intermedia. Este dise\~no embebido evita una colecci\'on separada de horarios y permite recuperar el horario completo en una sola consulta. El modelo expone m\'etodos de instancia \texttt{getHorarioDia(dia)} y \texttt{trabajaElDia(dia)} que encapsulan la l\'ogica de acceso.
+
+\subsection{Colecci\'on \texttt{services}}\label{subsec:services}
+
+Define el cat\'alogo de servicios ofrecidos por el establecimiento. El cuadro~\ref{tab:services} presenta su estructura.
+
+\cuadro{|l|l|l|p{5cm}|}{Estructura de la colecci\'on \texttt{services}}{tab:services}{
+\textbf{Campo} & \textbf{Tipo} & \textbf{Requerido} & \textbf{Descripci\'on} \\
+\hline
+nombre & String & S\'i & Nombre del servicio (m\'ax. 100) \\
+descripcion & String & No & Descripci\'on detallada (m\'ax. 500) \\
+duracion & Number & S\'i & Duraci\'on en minutos (m\'in. 15) \\
+precio & Number & S\'i & Precio en euros (m\'in. 0) \\
+categoria & String & No & Categor\'ia para agrupaci\'on (m\'ax. 50) \\
+profesionalesCapaces & [ObjectId] & No & Referencias a profesionales que ofrecen el servicio \\
+activo & Boolean & S\'i & Visibilidad en el cat\'alogo p\'ublico \\
+orden & Number & No & Posici\'on para ordenaci\'on en la interfaz \\
+}
+
+El campo \texttt{profesionalesCapaces} establece una relaci\'on muchos-a-muchos entre servicios y profesionales, almacenada como un \textit{array} de referencias. Esta decisi\'on permite que el motor de disponibilidad filtre r\'apidamente qu\'e profesionales pueden atender un servicio concreto. El modelo incluye propiedades virtuales \texttt{duracionFormateada} y \texttt{precioFormateado} que generan cadenas legibles (por ejemplo, ``1h 30min'' o ``25,50 \euro{}'').
+
+\subsection{Colecci\'on \texttt{appointments}}\label{subsec:appointments}
+
+Es la colecci\'on central del sistema, que registra cada cita reservada. El cuadro~\ref{tab:appointments} detalla sus campos.
+
+\cuadro{|l|l|l|p{4.5cm}|}{Estructura de la colecci\'on \texttt{appointments}}{tab:appointments}{
+\textbf{Campo} & \textbf{Tipo} & \textbf{Requerido} & \textbf{Descripci\'on} \\
+\hline
+cliente & ObjectId & S\'i & Referencia al usuario que reserva \\
+profesional & ObjectId & S\'i & Referencia al profesional asignado \\
+servicio & ObjectId & S\'i & Referencia al servicio solicitado \\
+fechaHoraInicio & Date & S\'i & Inicio de la cita (UTC) \\
+fechaHoraFin & Date & S\'i & Fin real de la cita (UTC) \\
+fechaHoraFinOperativa & Date & No & Fin operativo redondeado a la rejilla de \textit{slots} \\
+duracionOperativaMinutos & Number & No & Duraci\'on operativa para bloqueo de agenda (m\'in. 15) \\
+estado & String & S\'i & \texttt{confirmada}, \texttt{completada}, \texttt{cancelada} o \texttt{no\_presentado} \\
+precioFinal & Number & No & Instant\'anea del precio en el momento de la reserva \\
+notasCliente & String & No & Observaciones del cliente (m\'ax. 500) \\
+notasInternas & String & No & Notas privadas del administrador (m\'ax. 1000) \\
+forzadaPorAdmin & Boolean & No & Indica si se permiti\'o \textit{overbooking} \\
+motivoCancelacion & String & No & Raz\'on de la cancelaci\'on (m\'ax. 500) \\
+canceladaPor & String & No & \texttt{cliente} o \texttt{admin} \\
+}
+
+Se distingue entre \texttt{fechaHoraFin} (duraci\'on real del servicio) y \texttt{fechaHoraFinOperativa} (duraci\'on redondeada a la rejilla de 15 o 30 minutos configurada en los ajustes del negocio). Esta distinci\'on permite que un servicio de 20 minutos bloquee un \textit{slot} de 30 minutos en la agenda, evitando fragmentaci\'on. El modelo incluye propiedades virtuales \texttt{esPasada} y \texttt{esHoy} que facilitan el filtrado temporal, y un m\'etodo \texttt{puedeCancelar(horasMinimas)} que verifica si la cita admite cancelaci\'on seg\'un la pol\'itica del negocio.
+
+Esta colecci\'on cuenta con m\'ultiples \'indices compuestos, detallados en la secci\'on~\ref{sec:indices}.
+
+\subsection{Colecci\'on \texttt{blockers}}\label{subsec:blockers}
+
+Registra los periodos de tiempo en los que no se pueden agendar citas, ya sea para un profesional concreto o para todo el negocio. El cuadro~\ref{tab:blockers} muestra su estructura.
+
+\cuadro{|l|l|l|p{4.5cm}|}{Estructura de la colecci\'on \texttt{blockers}}{tab:blockers}{
+\textbf{Campo} & \textbf{Tipo} & \textbf{Requerido} & \textbf{Descripci\'on} \\
+\hline
+profesional & ObjectId & No & Profesional afectado (\texttt{null} = bloqueo global) \\
+titulo & String & S\'i & T\'itulo descriptivo (m\'ax. 100) \\
+descripcion & String & No & Detalle del bloqueo (m\'ax. 500) \\
+fechaHoraInicio & Date & S\'i & Inicio del bloqueo (UTC) \\
+fechaHoraFin & Date & S\'i & Fin del bloqueo (debe ser posterior al inicio) \\
+tipo & String & S\'i & \texttt{vacaciones}, \texttt{festivo}, \texttt{personal}, \texttt{mantenimiento} u \texttt{otro} \\
+esRecurrente & Boolean & No & Reservado para funcionalidad futura \\
+creadoPor & ObjectId & No & Referencia al administrador que lo cre\'o \\
+}
+
+Cuando el campo \texttt{profesional} es \texttt{null}, el bloqueo se aplica a todo el negocio (por ejemplo, un d\'ia festivo). El modelo expone m\'etodos est\'aticos \texttt{hayBloqueo(profesionalId, inicio, fin)} para verificaci\'on r\'apida de solapamientos y \texttt{getBloqueos(profesionalId, inicio, fin)} para obtener todos los bloqueos aplicables a un rango, incluyendo los globales.
+
+\subsection{Colecci\'on \texttt{technicalnotes}}\label{subsec:technicalnotes}
+
+Implementa la funcionalidad de CRM del sistema, permitiendo a los profesionales registrar informaci\'on t\'ecnica sobre cada cliente. El cuadro~\ref{tab:technicalnotes} detalla sus campos.
+
+\cuadro{|l|l|l|p{4.5cm}|}{Estructura de la colecci\'on \texttt{technicalnotes}}{tab:technicalnotes}{
+\textbf{Campo} & \textbf{Tipo} & \textbf{Requerido} & \textbf{Descripci\'on} \\
+\hline
+cliente & ObjectId & S\'i & Referencia al cliente \\
+cita & ObjectId & No & Referencia a la cita asociada (opcional) \\
+creadaPor & ObjectId & No & Referencia al profesional autor \\
+titulo & String & No & T\'itulo de la nota (m\'ax. 100) \\
+contenido & String & S\'i & Contenido de la nota (m\'ax. 2000) \\
+categoria & String & No & \texttt{color}, \texttt{tratamiento}, \texttt{alergia}, \texttt{preferencia} u \texttt{otro} \\
+importante & Boolean & No & Marca para notas cr\'iticas (alergias, etc.) \\
+}
+
+Las categor\'ias permiten clasificar las notas seg\'un su naturaleza: f\'ormulas de \textit{color} aplicadas, \textit{tratamientos} realizados, \textit{alergias} detectadas o \textit{preferencias} del cliente. La marca \texttt{importante} permite destacar informaci\'on cr\'itica que debe consultarse antes de cada servicio.
+
+\subsection{Colecci\'on \texttt{settings}}\label{subsec:settings}
+
+Almacena la configuraci\'on global del negocio en un \'unico documento con \texttt{\_id} fijo igual a \texttt{global} (patr\'on \textit{singleton}). El cuadro~\ref{tab:settings} presenta los campos configurables.
+
+\cuadro{|l|l|p{6cm}|}{Estructura de la colecci\'on \texttt{settings}}{tab:settings}{
+\textbf{Campo} & \textbf{Tipo} & \textbf{Descripci\'on} \\
+\hline
+nombreNegocio & String & Nombre del establecimiento \\
+telefono & String & Tel\'efono de contacto \\
+email & String & Correo electr\'onico del negocio \\
+direccion & String & Direcci\'on f\'isica \\
+horasMinimasCancelacion & Number & Horas de antelaci\'on m\'inima para cancelar (por defecto 24) \\
+diasMaximosReserva & Number & D\'ias m\'aximos de antelaci\'on para reservar (1--365) \\
+duracionSlot & Number & Rejilla de \textit{slots}: 15 o 30 minutos \\
+zonaHoraria & String & Zona horaria IANA (por defecto \texttt{Europe/Madrid}) \\
+mensajeBienvenida & String & Mensaje personalizado en el portal p\'ublico \\
+politicaCancelacion & String & Texto de la pol\'itica de cancelaci\'on \\
+}
+
+Este documento se carga en memoria al arrancar la aplicaci\'on y se almacena en cach\'e con \texttt{Object.freeze()} para garantizar inmutabilidad. Los m\'etodos est\'aticos \texttt{getGlobal()} y \texttt{updateGlobal()} gestionan el acceso y la invalidaci\'on de la cach\'e respectivamente, evitando consultas repetidas a la base de datos en cada petici\'on.
+
+\section{Estrategia de Indexaci\'on}\label{sec:indices}
+
+Se han definido \'indices para optimizar las consultas m\'as frecuentes del sistema. El cuadro~\ref{tab:indices} resume los \'indices principales.
+
+\cuadro{|l|l|p{5cm}|}{\'Indices principales definidos en las colecciones}{tab:indices}{
+\textbf{Colecci\'on} & \textbf{\'Indice} & \textbf{Prop\'osito} \\
+\hline
+users & \{role: 1\} & Filtrar clientes vs. administradores \\
+appointments & \{profesional: 1, fechaHoraInicio: 1\} & Agenda diaria de un profesional \\
+appointments & \{cliente: 1, fechaHoraInicio: -1\} & Historial de citas de un cliente \\
+appointments & \{fechaHoraInicio: 1, fechaHoraFin: 1\} & Consultas de disponibilidad por rango \\
+appointments & \{estado: 1\} & Filtrado por estado de la cita \\
+professionals & \{activo: 1\} & Listado de profesionales activos \\
+services & \{activo: 1, orden: 1\} & Cat\'alogo ordenado de servicios activos \\
+services & \{profesionalesCapaces: 1\} & B\'usqueda de servicios por profesional \\
+blockers & \{profesional: 1, fechaHoraInicio: 1, fechaHoraFin: 1\} & Detecci\'on de bloqueos por profesional y rango \\
+technicalnotes & \{cliente: 1, createdAt: -1\} & Historial de notas de un cliente \\
+technicalnotes & \{cliente: 1, importante: 1\} & Notas cr\'iticas de un cliente \\
+}
+
+Los \'indices sobre \texttt{appointments} son especialmente cr\'iticos, ya que el motor de disponibilidad realiza consultas de rango temporal para cada \textit{slot} calculado. El \'indice compuesto \texttt{\{profesional, fechaHoraInicio\}} permite resolver la consulta de ``citas de un profesional en un d\'ia concreto'' mediante un recorrido secuencial del \'indice (\textit{index scan}) sin acceder a los documentos.
+
+\section{Relaciones entre Colecciones}\label{sec:relaciones}
+
+Aunque MongoDB no soporta \textit{joins} nativos como los sistemas relacionales, las relaciones entre colecciones se implementan mediante referencias (\texttt{ObjectId}) y se resuelven en tiempo de consulta con el m\'etodo \texttt{populate()} de Mongoose~\cite{mongoose_docs}. Las relaciones principales son:
+
 \begin{itemize}
- \item Al final de la p\'agina en que se llaman
- \item Al principio de la siguiente p\'agina
- \item Al final del cap{\'\i}tulo
+    \item \textbf{Appointment $\rightarrow$ User:} Cada cita referencia al cliente que la reserv\'o.
+    \item \textbf{Appointment $\rightarrow$ Professional:} Cada cita referencia al profesional asignado.
+    \item \textbf{Appointment $\rightarrow$ Service:} Cada cita referencia al servicio solicitado.
+    \item \textbf{Service $\rightarrow$ Professional:} Cada servicio contiene un \textit{array} de referencias a los profesionales capacitados para realizarlo (relaci\'on muchos-a-muchos).
+    \item \textbf{Blocker $\rightarrow$ Professional:} Cada bloqueo puede asociarse a un profesional o ser global.
+    \item \textbf{TechnicalNote $\rightarrow$ User:} Cada nota t\'ecnica referencia al cliente sobre el que se escribe.
+    \item \textbf{TechnicalNote $\rightarrow$ Appointment:} Opcionalmente, una nota puede vincularse a una cita concreta.
 \end{itemize}
-siempre respetando el orden de aparici\'on en el texto.
 
-\section{Cuadros (mal llamados Tablas)}
+La integridad referencial se garantiza a nivel de aplicaci\'on: antes de crear una cita, el controlador verifica que el cliente, el profesional y el servicio existen y est\'an activos. Mongoose valida los tipos \texttt{ObjectId} en el esquema, rechazando documentos con referencias mal formadas.
 
-Este es un ejemplo de inclusi\'on de cuadro en el texto. V\'ease el cuadro~\ref{tab:prueba}
-
-\cuadro{|r||c|c|}{Cuadro de prueba}{tab:prueba}{elemento & elemento & elemento \\ elemento & elemento & elemento \\}

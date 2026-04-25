@@ -1,20 +1,69 @@
 \babel@toc {spanish}{}\relax 
 \contentsline {chapter}{\'Indice general}{III}{}%
-\contentsline {chapter}{{\'I}ndice de cuadros}{IV}{}%
-\contentsline {chapter}{\'{I}ndice de figuras}{V}{}%
-\contentsline {chapter}{{\'I}ndice de c{\'o}digo}{VI}{}%
+\contentsline {chapter}{{\'I}ndice de cuadros}{V}{}%
+\contentsline {chapter}{\'{I}ndice de figuras}{VI}{}%
 \contentsline {chapter}{\numberline {1}Introducci\'on}{1}{}%
 \contentsline {section}{\numberline {1.1}Contexto y Motivaci\'on}{1}{}%
 \contentsline {section}{\numberline {1.2}Descripci\'on del Problema}{1}{}%
-\contentsline {section}{\numberline {1.3}Objetivos del Proyecto}{1}{}%
+\contentsline {section}{\numberline {1.3}Objetivos del Proyecto}{2}{}%
 \contentsline {section}{\numberline {1.4}Alcance del Proyecto}{2}{}%
 \contentsline {section}{\numberline {1.5}Tecnolog\'ias Utilizadas}{2}{}%
 \contentsline {section}{\numberline {1.6}Estructura de la Memoria}{2}{}%
-\contentsline {chapter}{\numberline {2}Conclusiones}{3}{}%
-\contentsline {section}{\numberline {2.1}Objetivos Alcanzados}{3}{}%
-\contentsline {section}{\numberline {2.2}Conocimientos Aplicados}{3}{}%
-\contentsline {section}{\numberline {2.3}Dificultades Encontradas}{4}{}%
-\contentsline {section}{\numberline {2.4}L\'ineas de Trabajo Futuro}{4}{}%
-\contentsline {section}{\numberline {2.5}Valoraci\'on Personal}{4}{}%
-\contentsline {chapter}{\numberline {3}Declaraci\'on de Uso de Inteligencia Artificial}{5}{}%
+\contentsline {chapter}{\numberline {2}Dise\~no de la Base de Datos}{4}{}%
+\contentsline {section}{\numberline {2.1}Justificaci\'on de MongoDB}{4}{}%
+\contentsline {section}{\numberline {2.2}Modelo de Datos}{4}{}%
+\contentsline {subsection}{\numberline {2.2.1}Colecci\'on \texttt {users}}{6}{}%
+\contentsline {subsection}{\numberline {2.2.2}Colecci\'on \texttt {professionals}}{6}{}%
+\contentsline {subsection}{\numberline {2.2.3}Colecci\'on \texttt {services}}{7}{}%
+\contentsline {subsection}{\numberline {2.2.4}Colecci\'on \texttt {appointments}}{7}{}%
+\contentsline {subsection}{\numberline {2.2.5}Colecci\'on \texttt {blockers}}{7}{}%
+\contentsline {subsection}{\numberline {2.2.6}Colecci\'on \texttt {technicalnotes}}{7}{}%
+\contentsline {subsection}{\numberline {2.2.7}Colecci\'on \texttt {settings}}{9}{}%
+\contentsline {section}{\numberline {2.3}Estrategia de Indexaci\'on}{9}{}%
+\contentsline {section}{\numberline {2.4}Relaciones entre Colecciones}{10}{}%
+\contentsline {chapter}{\numberline {3}Implementaci\'on}{11}{}%
+\contentsline {section}{\numberline {3.1}Arquitectura General}{11}{}%
+\contentsline {section}{\numberline {3.2}Implementaci\'on del Backend}{12}{}%
+\contentsline {subsection}{\numberline {3.2.1}Estructura del Proyecto}{12}{}%
+\contentsline {subsection}{\numberline {3.2.2}API REST}{12}{}%
+\contentsline {subsection}{\numberline {3.2.3}Motor de Disponibilidad}{12}{}%
+\contentsline {subsection}{\numberline {3.2.4}Validaci\'on de Datos}{13}{}%
+\contentsline {section}{\numberline {3.3}Implementaci\'on del Frontend}{13}{}%
+\contentsline {subsection}{\numberline {3.3.1}Estructura del Proyecto}{13}{}%
+\contentsline {subsection}{\numberline {3.3.2}Gesti\'on de Estado}{14}{}%
+\contentsline {subsection}{\numberline {3.3.3}Sistema de Rutas}{14}{}%
+\contentsline {subsection}{\numberline {3.3.4}Flujo de Reserva}{14}{}%
+\contentsline {subsection}{\numberline {3.3.5}Panel de Administraci\'on}{14}{}%
+\contentsline {section}{\numberline {3.4}Seguridad}{15}{}%
+\contentsline {chapter}{\numberline {4}Manual de Usuario}{16}{}%
+\contentsline {section}{\numberline {4.1}Portal de Reservas (Cliente)}{16}{}%
+\contentsline {subsection}{\numberline {4.1.1}Registro e Inicio de Sesi\'on}{16}{}%
+\contentsline {subsection}{\numberline {4.1.2}Proceso de Reserva}{16}{}%
+\contentsline {subsection}{\numberline {4.1.3}Gesti\'on de Citas}{16}{}%
+\contentsline {subsection}{\numberline {4.1.4}Perfil de Usuario}{17}{}%
+\contentsline {section}{\numberline {4.2}Panel de Administraci\'on}{17}{}%
+\contentsline {subsection}{\numberline {4.2.1}Dashboard}{17}{}%
+\contentsline {subsection}{\numberline {4.2.2}Calendario}{17}{}%
+\contentsline {subsection}{\numberline {4.2.3}Gesti\'on de Servicios}{17}{}%
+\contentsline {subsection}{\numberline {4.2.4}Gesti\'on de Profesionales}{17}{}%
+\contentsline {subsection}{\numberline {4.2.5}Gesti\'on de Bloqueos}{18}{}%
+\contentsline {subsection}{\numberline {4.2.6}Gesti\'on de Clientes}{18}{}%
+\contentsline {subsection}{\numberline {4.2.7}Notas T\'ecnicas}{18}{}%
+\contentsline {subsection}{\numberline {4.2.8}Configuraci\'on del Negocio}{18}{}%
+\contentsline {chapter}{\numberline {5}Manual de Despliegue}{19}{}%
+\contentsline {section}{\numberline {5.1}Requisitos Previos}{19}{}%
+\contentsline {section}{\numberline {5.2}Instalaci\'on en Entorno Local}{19}{}%
+\contentsline {subsection}{\numberline {5.2.1}Clonado del Repositorio}{19}{}%
+\contentsline {subsection}{\numberline {5.2.2}Configuraci\'on del Backend}{19}{}%
+\contentsline {subsection}{\numberline {5.2.3}Configuraci\'on del Frontend}{20}{}%
+\contentsline {subsection}{\numberline {5.2.4}Inicio del Sistema}{20}{}%
+\contentsline {section}{\numberline {5.3}Consideraciones para Producci\'on}{20}{}%
+\contentsline {chapter}{\numberline {6}Conclusiones}{22}{}%
+\contentsline {section}{\numberline {6.1}Objetivos Alcanzados}{22}{}%
+\contentsline {section}{\numberline {6.2}Conocimientos Aplicados}{22}{}%
+\contentsline {section}{\numberline {6.3}Dificultades Encontradas}{23}{}%
+\contentsline {section}{\numberline {6.4}L\'ineas de Trabajo Futuro}{23}{}%
+\contentsline {section}{\numberline {6.5}Valoraci\'on Personal}{23}{}%
+\contentsline {chapter}{\numberline {7}Declaraci\'on de Uso de Inteligencia Artificial}{24}{}%
+\contentsline {chapter}{Referencias}{25}{}%
 \contentsfinish 
