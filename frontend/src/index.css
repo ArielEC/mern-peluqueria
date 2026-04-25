@@ -67,6 +67,18 @@
   text-overflow: ellipsis;
 }
 
+.fc .fc-bg-event.admin-calendar-unavailable {
+  background:
+    linear-gradient(180deg, rgba(226, 221, 235, 0.72), rgba(242, 239, 249, 0.86)) !important;
+  opacity: 1;
+  pointer-events: none !important;
+}
+
+.fc .admin-calendar-unavailable,
+.fc .admin-calendar-unavailable * {
+  pointer-events: none !important;
+}
+
 .fc .fc-scrollgrid {
   border-radius: 0.75rem;
   overflow: hidden;

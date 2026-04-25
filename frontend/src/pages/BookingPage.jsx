@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   startOfMonth, endOfMonth, eachDayOfInterval, getDay,
@@ -15,6 +15,7 @@ import { useAvailability } from '@/hooks/useAvailability';
 import { useCreateAppointment } from '@/hooks/useAppointments';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useSettings } from '@/hooks/useSettings';
+import { notifyInfo } from '@/lib/notifications';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -762,6 +763,7 @@ function Step3({ selectedService, selectedDate, selectedSlot, notes, onNotesChan
 export default function BookingPage() {
   const navigate = useNavigate();
   const { data: settings } = useSettings();
+  const { data: servicesData } = useServices();
   const { data: professionals } = useProfessionals();
   const createAppointment = useCreateAppointment();
 
@@ -773,6 +775,13 @@ export default function BookingPage() {
 
   const maxDays = settings?.diasMaximosReserva ?? 30;
   const businessTimezone = settings?.zonaHoraria || 'Europe/Madrid';
+  const activeServices = useMemo(
+    () => (servicesData?.services ?? servicesData ?? []),
+    [servicesData]
+  );
+  const selectedDateKey = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
+  const { data: liveAvailabilityData } = useAvailability(selectedDateKey, selectedService?._id);
+  const liveSlots = useMemo(() => liveAvailabilityData?.slots ?? [], [liveAvailabilityData]);
 
   // Calcular días no laborables (días donde NINGÚN profesional trabaja)
   const nonWorkingDays = useMemo(() => {
@@ -785,6 +794,56 @@ export default function BookingPage() {
       })
     );
   }, [professionals]);
+
+  useEffect(() => {
+    if (!selectedService || servicesData === undefined) return;
+
+    const serviceStillAvailable = activeServices.some((service) => service._id === selectedService._id);
+
+    if (serviceStillAvailable) return;
+
+    const resetId = window.setTimeout(() => {
+      setSelectedService(null);
+      setSelectedDate(null);
+      setSelectedSlot(null);
+      setStep(1);
+      notifyInfo(
+        'El servicio ya no está disponible',
+        'Hemos actualizado la reserva para que elijas una opción válida.'
+      );
+    }, 0);
+
+    return () => window.clearTimeout(resetId);
+  }, [activeServices, selectedService, servicesData]);
+
+  useEffect(() => {
+    if (!selectedService || !selectedDate || !selectedSlot) return;
+    if (!Array.isArray(professionals) || liveAvailabilityData === undefined) return;
+
+    const professionalStillActive = professionals?.some(
+      (professional) => professional._id === selectedSlot.profesionalId && professional.activo !== false
+    );
+    const slotStillAvailable = liveSlots.some(
+      (slot) => slot.hora === selectedSlot.hora && slot.profesionalId === selectedSlot.profesionalId
+    );
+
+    if (professionalStillActive && slotStillAvailable) return;
+
+    const resetId = window.setTimeout(() => {
+      setSelectedSlot(null);
+
+      if (step > 2) {
+        setStep(2);
+      }
+
+      notifyInfo(
+        'La disponibilidad ha cambiado',
+        'El horario seleccionado ya no está disponible. Elige otro para continuar.'
+      );
+    }, 0);
+
+    return () => window.clearTimeout(resetId);
+  }, [liveAvailabilityData, liveSlots, professionals, selectedDate, selectedService, selectedSlot, step]);
 
   function handleSelectDate(date) {
     setSelectedDate(date);

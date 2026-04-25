@@ -21,23 +21,24 @@ const TOAST_STYLES = {
 
 function ToastItem({ notification, onDismiss }) {
   const style = TOAST_STYLES[notification.type] ?? TOAST_STYLES.info;
+  const hasDescription = Boolean(notification.description);
 
   return (
     <Toast.Root
-      open
+      defaultOpen
       duration={notification.duration}
       onOpenChange={(open) => {
         if (!open) onDismiss(notification.id);
       }}
       className={`pointer-events-auto rounded-2xl border bg-white/96 p-4 shadow-[0_18px_50px_-18px_rgba(19,27,46,0.35)] backdrop-blur-sm ${style.border}`}
     >
-      <div className="flex items-start gap-3">
-        <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${style.iconWrap}`}>
+      <div className={`flex gap-3 ${hasDescription ? 'items-start' : 'items-center'}`}>
+        <div className={`${hasDescription ? 'mt-0.5' : ''} flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${style.iconWrap}`}>
           <span className="material-symbols-outlined text-[20px]">{style.icon}</span>
         </div>
 
-        <div className="min-w-0 flex-1">
-          <Toast.Title className="text-[0.9rem] font-bold leading-tight text-[#131b2e]">
+        <div className={`min-w-0 flex-1 ${hasDescription ? '' : 'flex min-h-10 items-center'}`}>
+          <Toast.Title className={`text-[0.9rem] font-bold text-[#131b2e] ${hasDescription ? 'leading-tight' : 'leading-none'}`}>
             {notification.title}
           </Toast.Title>
           {notification.description && (
@@ -72,7 +73,7 @@ export default function NotificationToaster() {
         />
       ))}
 
-      <Toast.Viewport className="fixed inset-x-3 bottom-3 z-[120] flex max-h-screen flex-col gap-3 outline-none sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-4 sm:w-full sm:max-w-sm" />
+      <Toast.Viewport className="pointer-events-none fixed inset-x-3 bottom-3 z-[120] flex max-h-screen flex-col gap-3 outline-none sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-4 sm:w-full sm:max-w-sm" />
     </Toast.Provider>
   );
 }

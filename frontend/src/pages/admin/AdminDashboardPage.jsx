@@ -136,9 +136,9 @@ export default function AdminDashboardPage() {
     ), 0),
     [activeMonthAppointments]
   );
-  const averageTicket = useMemo(
-    () => (activeMonthAppointments.length > 0 ? monthRevenue / activeMonthAppointments.length : 0),
-    [activeMonthAppointments.length, monthRevenue]
+  const noShowMonthCount = useMemo(
+    () => monthAppts.filter((appointment) => appointment.estado === 'no_presentado').length,
+    [monthAppts]
   );
   const topClient = useMemo(() => {
     const summary = new Map();
@@ -186,12 +186,13 @@ export default function AdminDashboardPage() {
           iconBg="bg-[#665396]/10"
         />
         <KpiCard
-          icon="receipt_long"
-          label="Ticket medio (mes)"
-          value={loadingMonth ? '…' : formatCurrency(averageTicket)}
-          note={loadingMonth ? 'Calculando importe medio…' : activeMonthAppointments.length > 0 ? `Sobre ${getPluralLabel(activeMonthAppointments.length, 'reserva')} activas este mes` : 'Sin reservas activas este mes'}
-          iconColor="text-[#0059c0]"
-          iconBg="bg-[#0059c0]/10"
+          icon="person_off"
+          label="No presentados (mes)"
+          value={loadingMonth ? '…' : noShowMonthCount}
+          badge={noShowMonthCount > 0 ? 'Atención' : null}
+          note={loadingMonth ? 'Revisando ausencias…' : `${getPluralLabel(monthAppts.length, 'cita')} registradas este mes`}
+          iconColor="text-[#93000a]"
+          iconBg="bg-[#93000a]/10"
         />
         <KpiCard
           icon="payments"

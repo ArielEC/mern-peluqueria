@@ -34,7 +34,7 @@ const useUIStore = create((set) => ({
         {
           id: notification.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           type: notification.type ?? 'info',
-          duration: notification.duration ?? 4000,
+          duration: notification.duration ?? 10000,
           ...notification,
         },
       ],

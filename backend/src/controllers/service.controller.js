@@ -1,4 +1,5 @@
 import Service from '../models/Service.js';
+import { emitQuerySync } from '../services/querySync.service.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 
@@ -70,6 +71,7 @@ export const createService = async (req, res) => {
     
     // Poblar profesionales antes de devolver
     await service.populate('profesionalesCapaces', 'nombre especialidad color');
+    emitQuerySync('services');
     
     res.status(201).json(service);
   } catch (error) {
@@ -99,6 +101,7 @@ export const updateService = async (req, res) => {
       return res.status(404).json({ error: 'Servicio no encontrado' });
     }
 
+    emitQuerySync('services');
     res.json(service);
   } catch (error) {
     console.error('Error al actualizar servicio:', error);
@@ -123,6 +126,7 @@ export const deleteService = async (req, res) => {
       return res.status(404).json({ error: 'Servicio no encontrado' });
     }
 
+    emitQuerySync('services');
     res.json({ message: 'Servicio eliminado correctamente', service });
   } catch (error) {
     console.error('Error al eliminar servicio:', error);

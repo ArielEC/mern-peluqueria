@@ -472,7 +472,7 @@ export const verificarDisponibilidadSlot = async (
   if (!horarioDia || !horarioDia.activo) {
     return {
       disponible: false,
-      razon: `El profesional no trabaja este día. ${mensajeOcupacion}`,
+      razon: 'El profesional no trabaja este día',
       ocupacion
     };
   }

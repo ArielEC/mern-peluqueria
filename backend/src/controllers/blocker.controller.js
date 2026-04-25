@@ -1,5 +1,6 @@
 import Blocker from '../models/Blocker.js';
 import { parsearFiltroFecha, resolverZonaHoraria } from '../utils/dateTime.js';
+import { emitQuerySync } from '../services/querySync.service.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 
@@ -115,6 +116,7 @@ export const createBlocker = async (req, res) => {
     // Poblar referencias antes de devolver
     await blocker.populate('profesional', 'nombre color');
     await blocker.populate('creadoPor', 'nombre email');
+    emitQuerySync('blockers');
     
     res.status(201).json(blocker);
   } catch (error) {
@@ -155,6 +157,7 @@ export const updateBlocker = async (req, res) => {
       return res.status(404).json({ error: 'Bloqueo no encontrado' });
     }
 
+    emitQuerySync('blockers');
     res.json(blocker);
   } catch (error) {
     console.error('Error al actualizar bloqueo:', error);
@@ -179,6 +182,7 @@ export const deleteBlocker = async (req, res) => {
       return res.status(404).json({ error: 'Bloqueo no encontrado' });
     }
 
+    emitQuerySync('blockers');
     res.json({ message: 'Bloqueo eliminado correctamente' });
   } catch (error) {
     console.error('Error al eliminar bloqueo:', error);

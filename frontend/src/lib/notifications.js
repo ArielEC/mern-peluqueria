@@ -1,10 +1,12 @@
 import useUIStore from '@/stores/uiStore';
 
+export const DEFAULT_NOTIFICATION_DURATION = 10000;
+
 export function notify({
   type = 'info',
   title,
   description = '',
-  duration,
+  duration = DEFAULT_NOTIFICATION_DURATION,
 }) {
   if (!title) return;
 
@@ -16,15 +18,15 @@ export function notify({
   });
 }
 
-export function notifySuccess(title, description = '', duration = 3200) {
+export function notifySuccess(title, description = '', duration = DEFAULT_NOTIFICATION_DURATION) {
   notify({ type: 'success', title, description, duration });
 }
 
-export function notifyError(title, description = '', duration = 4800) {
+export function notifyError(title, description = '', duration = DEFAULT_NOTIFICATION_DURATION) {
   notify({ type: 'error', title, description, duration });
 }
 
-export function notifyInfo(title, description = '', duration = 3600) {
+export function notifyInfo(title, description = '', duration = DEFAULT_NOTIFICATION_DURATION) {
   notify({ type: 'info', title, description, duration });
 }
 

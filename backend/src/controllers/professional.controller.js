@@ -2,6 +2,7 @@ import Appointment from '../models/Appointment.js';
 import Blocker from '../models/Blocker.js';
 import Professional from '../models/Professional.js';
 import Service from '../models/Service.js';
+import { emitQuerySync } from '../services/querySync.service.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 
@@ -64,6 +65,7 @@ export const createProfessional = async (req, res) => {
   try {
     const professional = new Professional(req.validatedBody);
     await professional.save();
+    emitQuerySync('professionals');
     
     res.status(201).json(professional);
   } catch (error) {
@@ -93,6 +95,7 @@ export const updateProfessional = async (req, res) => {
       return res.status(404).json({ error: 'Profesional no encontrado' });
     }
 
+    emitQuerySync('professionals');
     res.json(professional);
   } catch (error) {
     console.error('Error al actualizar profesional:', error);
@@ -135,6 +138,7 @@ export const deleteProfessional = async (req, res) => {
       Professional.deleteOne({ _id: req.params.id })
     ]);
 
+    emitQuerySync('professionals', 'services', 'blockers');
     res.json({
       message: 'Profesional eliminado correctamente',
       professionalId: req.params.id

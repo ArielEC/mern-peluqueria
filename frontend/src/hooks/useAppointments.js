@@ -3,6 +3,12 @@ import api from '@/lib/api';
 import { getErrorMessage, notifyError, notifySuccess } from '@/lib/notifications';
 import { getAutoSyncQueryOptions, invalidateAndSyncGroups } from '@/lib/querySync';
 
+const APPOINTMENT_STATE_ERROR_STATUS = new Set([400, 404, 409]);
+
+function shouldRefreshAppointmentState(error) {
+  return APPOINTMENT_STATE_ERROR_STATUS.has(error?.response?.status);
+}
+
 export const appointmentsKeys = {
   all: ['appointments'],
   list: (params) => [...appointmentsKeys.all, 'list', params],
@@ -20,7 +26,20 @@ export const useCreateAppointment = () => {
       invalidateAndSyncGroups(queryClient, 'appointments');
       notifySuccess('Cita creada con éxito');
     },
-    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido crear la cita')),
+    onError: (error) => {
+      if (shouldRefreshAppointmentState(error)) {
+        void invalidateAndSyncGroups(
+          queryClient,
+          'appointments',
+          'professionals',
+          'services',
+          'blockers',
+          'settings'
+        );
+      }
+
+      notifyError(getErrorMessage(error, 'No se ha podido crear la cita'));
+    },
   });
 };
 
@@ -50,6 +69,12 @@ export const useCancelAppointment = () => {
       invalidateAndSyncGroups(queryClient, 'appointments');
       notifySuccess('Cita cancelada con éxito');
     },
-    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido cancelar la cita')),
+    onError: (error) => {
+      if (shouldRefreshAppointmentState(error)) {
+        void invalidateAndSyncGroups(queryClient, 'appointments');
+      }
+
+      notifyError(getErrorMessage(error, 'No se ha podido cancelar la cita'));
+    },
   });
 };

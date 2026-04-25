@@ -1,6 +1,7 @@
 import TechnicalNote from '../models/TechnicalNote.js';
 import User from '../models/User.js';
 import Professional from '../models/Professional.js';
+import { emitQuerySync } from '../services/querySync.service.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 
@@ -133,6 +134,7 @@ export const createNote = async (req, res) => {
       await note.populate('cita', 'fechaHoraInicio fechaHoraFin estado');
     }
     
+    emitQuerySync('technicalNotes');
     res.status(201).json(note);
   } catch (error) {
     console.error('Error al crear nota técnica:', error);
@@ -174,6 +176,7 @@ export const updateNote = async (req, res) => {
       return res.status(404).json({ error: 'Nota técnica no encontrada' });
     }
 
+    emitQuerySync('technicalNotes');
     res.json(note);
   } catch (error) {
     console.error('Error al actualizar nota técnica:', error);
@@ -200,6 +203,7 @@ export const deleteNote = async (req, res) => {
       return res.status(404).json({ error: 'Nota técnica no encontrada' });
     }
 
+    emitQuerySync('technicalNotes');
     res.json({ message: 'Nota técnica eliminada correctamente' });
   } catch (error) {
     console.error('Error al eliminar nota técnica:', error);

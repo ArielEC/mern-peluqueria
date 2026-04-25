@@ -302,7 +302,7 @@ export default function ClientsPage() {
     <div className="flex flex-col gap-6 max-w-6xl">
       <AdminPageHeader
         title="Clientes"
-        subtitle="Consulta la base de clientes y pulse para ver sus notas técnicas"
+        subtitle="Consulta la base de clientes y pulsa para ver sus notas técnicas"
         searchValue={search}
         onSearch={setSearch}
         searchPlaceholder="Buscar por nombre, email o teléfono..."

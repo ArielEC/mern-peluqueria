@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { to: '/admin/clientes', icon: 'group', label: 'Clientes' },
 ];
 
-export default function AdminSidebar({ mobileOpen = false, onClose }) {
+export default function AdminSidebar({ mobileOpen = false, desktopOpen = true, onClose }) {
   const { user } = useAuthStore();
   const logout = useLogout();
 
@@ -24,7 +24,11 @@ export default function AdminSidebar({ mobileOpen = false, onClose }) {
   }
 
   return (
-    <aside className={`h-screen w-64 max-w-[85vw] left-0 top-0 fixed bg-[#f2f3ff] border-r border-[#6b38d4]/10 flex flex-col gap-2 p-4 z-50 transition-transform duration-200 overflow-y-auto ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+    <aside className={`h-screen w-64 max-w-[85vw] left-0 top-0 fixed bg-[#f2f3ff] border-r border-[#6b38d4]/10 flex flex-col gap-2 p-4 z-50 transition-transform duration-200 overflow-y-auto ${
+      mobileOpen ? 'translate-x-0' : '-translate-x-full'
+    } ${
+      desktopOpen ? 'lg:translate-x-0' : 'lg:-translate-x-full'
+    }`}>
       {/* Brand */}
       <div className="mb-8 px-2">
         <h1 className="text-lg font-black text-[#131b2e]">Atelier Admin</h1>
@@ -54,6 +58,7 @@ export default function AdminSidebar({ mobileOpen = false, onClose }) {
         <div className="mt-auto">
           <NavLink
             to="/admin/ajustes"
+            onClick={onClose}
             className={({ isActive }) =>
               isActive
                 ? 'flex items-center gap-3 px-3 py-2.5 bg-white text-[#6b38d4] font-semibold rounded-lg shadow-sm transition-all duration-200'

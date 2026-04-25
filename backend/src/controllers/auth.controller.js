@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import { generateToken } from '../middlewares/auth.middleware.js';
+import { emitQuerySync } from '../services/querySync.service.js';
 
 /**
  * GET /api/auth/clients
@@ -75,6 +76,7 @@ export const register = async (req, res) => {
     });
 
     await user.save();
+    emitQuerySync('clients');
 
     // Generar token JWT
     const token = generateToken(user._id);
@@ -185,6 +187,10 @@ export const updateProfile = async (req, res) => {
     if (telefono !== undefined) user.telefono = telefono;
 
     await user.save();
+
+    if (user.role === 'cliente') {
+      emitQuerySync('clients');
+    }
 
     res.json({
       message: 'Perfil actualizado correctamente',

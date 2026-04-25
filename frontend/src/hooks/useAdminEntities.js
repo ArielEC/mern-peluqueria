@@ -274,6 +274,7 @@ export function useAdminTechnicalNotes(clienteId) {
     },
     enabled: Boolean(clienteId),
     staleTime: 30 * 1000,
+    ...getAutoSyncQueryOptions(),
   });
 }
 
@@ -286,7 +287,7 @@ export function useAdminCreateNote() {
       return data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: notesAdminKeys.all });
+      invalidateAndSyncGroups(qc, 'technicalNotes');
       notifySuccess('Nota técnica creada con éxito');
     },
     onError: (error) => notifyMutationError(error, 'No se ha podido crear la nota técnica'),
@@ -302,7 +303,7 @@ export function useAdminUpdateNote() {
       return data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: notesAdminKeys.all });
+      invalidateAndSyncGroups(qc, 'technicalNotes');
       notifySuccess('Nota técnica actualizada con éxito');
     },
     onError: (error) => notifyMutationError(error, 'No se ha podido actualizar la nota técnica'),
@@ -318,7 +319,7 @@ export function useAdminDeleteNote() {
       return data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: notesAdminKeys.all });
+      invalidateAndSyncGroups(qc, 'technicalNotes');
       notifySuccess('Nota técnica eliminada con éxito');
     },
     onError: (error) => notifyMutationError(error, 'No se ha podido eliminar la nota técnica'),

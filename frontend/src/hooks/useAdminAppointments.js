@@ -3,6 +3,12 @@ import api from '@/lib/api';
 import { getErrorMessage, notifyError, notifySuccess } from '@/lib/notifications';
 import { getAutoSyncQueryOptions, invalidateAndSyncGroups } from '@/lib/querySync';
 
+const APPOINTMENT_STATE_ERROR_STATUS = new Set([400, 404, 409]);
+
+function shouldRefreshAppointmentState(error) {
+  return APPOINTMENT_STATE_ERROR_STATUS.has(error?.response?.status);
+}
+
 export const adminApptKeys = {
   all: ['admin', 'appointments'],
   range: (desde, hasta) => [...adminApptKeys.all, 'range', desde, hasta],
@@ -33,7 +39,20 @@ export function useAdminCreateAppointment() {
       invalidateAndSyncGroups(queryClient, 'appointments');
       notifySuccess('Cita creada con éxito');
     },
-    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido crear la cita')),
+    onError: (error) => {
+      if (shouldRefreshAppointmentState(error)) {
+        void invalidateAndSyncGroups(
+          queryClient,
+          'appointments',
+          'professionals',
+          'services',
+          'blockers',
+          'settings'
+        );
+      }
+
+      notifyError(getErrorMessage(error, 'No se ha podido crear la cita'));
+    },
   });
 }
 
@@ -49,7 +68,13 @@ export function useAdminUpdateAppointment() {
       invalidateAndSyncGroups(queryClient, 'appointments');
       notifySuccess('Cita actualizada con éxito');
     },
-    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido actualizar la cita')),
+    onError: (error) => {
+      if (shouldRefreshAppointmentState(error)) {
+        void invalidateAndSyncGroups(queryClient, 'appointments');
+      }
+
+      notifyError(getErrorMessage(error, 'No se ha podido actualizar la cita'));
+    },
   });
 }
 
@@ -67,6 +92,12 @@ export function useAdminCancelAppointment() {
       invalidateAndSyncGroups(queryClient, 'appointments');
       notifySuccess('Cita cancelada con éxito');
     },
-    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido cancelar la cita')),
+    onError: (error) => {
+      if (shouldRefreshAppointmentState(error)) {
+        void invalidateAndSyncGroups(queryClient, 'appointments');
+      }
+
+      notifyError(getErrorMessage(error, 'No se ha podido cancelar la cita'));
+    },
   });
 }

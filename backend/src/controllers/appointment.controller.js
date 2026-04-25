@@ -9,6 +9,7 @@ import {
   calcularOcupacionOperativa,
   construirMensajeRedondeoDuracion
 } from '../services/availability.service.js';
+import { emitQuerySync } from '../services/querySync.service.js';
 import { diferenciaDiasCeil, parsearFiltroFecha, resolverZonaHoraria } from '../utils/dateTime.js';
 
 const MAX_REINTENTOS_TRANSACCION = 3;
@@ -40,6 +41,32 @@ const construirPayloadError = (error, politicaDuracionFallback = null) => {
   return payload;
 };
 
+const completarCitasPasadasConfirmadas = async (now = new Date()) => {
+  await Appointment.updateMany(
+    {
+      estado: 'confirmada',
+      fechaHoraFin: { $lte: now }
+    },
+    {
+      $set: { estado: 'completada' }
+    }
+  );
+};
+
+const obtenerFinCita = (appointment) => (
+  appointment?.fechaHoraFinOperativa || appointment?.fechaHoraFin || appointment?.fechaHoraInicio || null
+);
+
+const haFinalizadoCita = (appointment, now = new Date()) => {
+  const fin = obtenerFinCita(appointment);
+
+  if (!fin) {
+    return false;
+  }
+
+  return new Date(fin) <= now;
+};
+
 /**
  * GET /api/appointments
  * Listar citas - Cliente ve sus citas, Admin ve todas
@@ -47,6 +74,8 @@ const construirPayloadError = (error, politicaDuracionFallback = null) => {
  */
 export const getAppointments = async (req, res) => {
   try {
+    await completarCitasPasadasConfirmadas();
+
     const { desde, hasta, estado, profesionalId, clienteId } = req.query;
     const filter = {};
 
@@ -117,6 +146,8 @@ export const getAppointments = async (req, res) => {
  */
 export const getAppointmentById = async (req, res) => {
   try {
+    await completarCitasPasadasConfirmadas();
+
     if (!OBJECT_ID_REGEX.test(req.params.id)) {
       return res.status(400).json({ error: 'id inválido' });
     }
@@ -418,6 +449,7 @@ export const createAppointment = async (req, res) => {
 
     const appointmentResponse = appointment.toObject();
     appointmentResponse.politicaDuracion = politicaDuracion;
+    emitQuerySync('appointments');
 
     res.status(201).json(appointmentResponse);
   } catch (error) {
@@ -440,8 +472,55 @@ export const createAppointment = async (req, res) => {
  */
 export const updateAppointment = async (req, res) => {
   try {
+    await completarCitasPasadasConfirmadas();
+
     if (!OBJECT_ID_REGEX.test(req.params.id)) {
       return res.status(400).json({ error: 'id inválido' });
+    }
+
+    const existingAppointment = await Appointment.findById(req.params.id);
+
+    if (!existingAppointment) {
+      return res.status(404).json({ error: 'Cita no encontrada' });
+    }
+
+    if (req.validatedBody.estado) {
+      const citaFinalizada = haFinalizadoCita(existingAppointment);
+      const estadoSolicitado = req.validatedBody.estado;
+
+      if (estadoSolicitado === 'cancelada') {
+        return res.status(400).json({
+          error: 'Para cancelar una cita usa la acción de cancelación'
+        });
+      }
+
+      if (citaFinalizada && estadoSolicitado === 'completada' && existingAppointment.estado !== 'completada') {
+        return res.status(400).json({
+          error: 'La cita se marca como completada automáticamente al finalizar'
+        });
+      }
+
+      if (
+        citaFinalizada
+        && estadoSolicitado !== 'no_presentado'
+        && estadoSolicitado !== existingAppointment.estado
+      ) {
+        return res.status(400).json({
+          error: 'Una cita finalizada solo puede marcarse manualmente como no presentado'
+        });
+      }
+
+      if (!citaFinalizada && estadoSolicitado === 'no_presentado') {
+        return res.status(400).json({
+          error: 'No se puede marcar una cita futura como no presentado'
+        });
+      }
+
+      if (!citaFinalizada && estadoSolicitado === 'completada') {
+        return res.status(400).json({
+          error: 'La cita solo puede completarse al finalizar'
+        });
+      }
     }
 
     const appointment = await Appointment.findByIdAndUpdate(
@@ -453,10 +532,7 @@ export const updateAppointment = async (req, res) => {
       .populate('profesional', 'nombre color especialidad')
       .populate('servicio', 'nombre duracion precio');
 
-    if (!appointment) {
-      return res.status(404).json({ error: 'Cita no encontrada' });
-    }
-
+    emitQuerySync('appointments');
     res.json(appointment);
   } catch (error) {
     console.error('Error al actualizar cita:', error);
@@ -521,6 +597,7 @@ export const cancelAppointment = async (req, res) => {
     await appointment.populate('profesional', 'nombre color especialidad');
     await appointment.populate('servicio', 'nombre duracion precio');
 
+    emitQuerySync('appointments');
     res.json({ message: 'Cita cancelada correctamente', appointment });
   } catch (error) {
     console.error('Error al cancelar cita:', error);

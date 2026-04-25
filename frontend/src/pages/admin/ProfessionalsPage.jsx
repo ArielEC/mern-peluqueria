@@ -142,7 +142,7 @@ function ProfModal({ open, onClose, initial }) {
           </FormField>
           <div className="flex items-center gap-3">
             <StatusToggle active={form.activo} onChange={(v) => set('activo', v)} />
-            <span className="text-[0.875rem] font-medium text-[#494454]">Profesional activo</span>
+            <span className="text-[0.875rem] font-medium text-[#494454]">Profesional activo (visible para reservas)</span>
           </div>
           {errors.api && <div className="bg-[#ffdad6] text-[#93000a] rounded-lg px-4 py-3 text-[0.8rem] font-medium">{errors.api}</div>}
         </div>
@@ -158,6 +158,7 @@ function ProfModal({ open, onClose, initial }) {
 export default function ProfessionalsPage() {
   const { data: professionals = [], isLoading } = useAdminProfessionals();
   const deleteMut = useAdminDeleteProfessional();
+  const updateMut = useAdminUpdateProfessional();
 
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(null);
@@ -183,7 +184,7 @@ export default function ProfessionalsPage() {
     {
       key: 'nombre', label: 'Profesional',
       render: (p) => (
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${p.activo === false ? 'opacity-50' : ''}`}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0"
             style={{ backgroundColor: p.color || '#6b38d4' }}>
             {p.nombre?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
@@ -203,9 +204,10 @@ export default function ProfessionalsPage() {
       key: 'activo', label: 'Estado', className: 'text-center',
       render: (p) => (
         <div className="flex justify-center">
-          <span className={`px-2.5 py-1 rounded-full text-[0.7rem] font-bold ${p.activo !== false ? 'bg-[#e9ddff] text-[#4e3b7c]' : 'bg-[#eaedff] text-[#494454]'}`}>
-            {p.activo !== false ? 'Activo' : 'Inactivo'}
-          </span>
+          <StatusToggle
+            active={p.activo !== false}
+            onChange={(v) => updateMut.mutate({ id: p._id, activo: v })}
+          />
         </div>
       ),
     },

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAdminServices, useAdminProfessionals, useAdminClients } from '@/hooks/useAdminEntities';
 import { useAdminCreateAppointment } from '@/hooks/useAdminAppointments';
+import { useAvailability } from '@/hooks/useAvailability';
 import { useSettings } from '@/hooks/useSettings';
 import { notifyValidationError } from '@/lib/notifications';
 
@@ -89,6 +90,32 @@ function timeToMinutes(time) {
   if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
 
   return (hours * 60) + minutes;
+}
+
+function getWeekdayKeyFromDatePart(datePart) {
+  if (!datePart) return null;
+
+  const [year, month, day] = datePart.split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  return String(new Date(Date.UTC(year, month - 1, day)).getUTCDay());
+}
+
+function getProfessionalScheduleForDate(professional, datePart) {
+  const weekdayKey = getWeekdayKeyFromDatePart(datePart);
+  if (!weekdayKey || !professional?.horarioSemanal) return null;
+
+  return professional.horarioSemanal[weekdayKey] ?? null;
+}
+
+function serviceSupportsProfessional(service, professionalId) {
+  if (!service || !professionalId) return true;
+
+  const capableIds = (service.profesionalesCapaces || []).map((professional) => (
+    typeof professional === 'object' ? professional._id : professional
+  ));
+
+  return capableIds.length === 0 || capableIds.includes(professionalId);
 }
 
 function getSlotBaseMinutes(datetimeLocalStr, professional) {
@@ -191,6 +218,10 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
 
   // Solo servicios activos para el select
   const activeServices = useMemo(() => services.filter((s) => s.activo !== false), [services]);
+  const filteredServices = useMemo(() => {
+    if (!form.profesionalId) return activeServices;
+    return activeServices.filter((service) => serviceSupportsProfessional(service, form.profesionalId));
+  }, [activeServices, form.profesionalId]);
   const selectedService = activeServices.find((s) => s._id === form.servicioId);
 
   // Filtrar profesionales capacitados y activos para el servicio seleccionado
@@ -206,11 +237,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     () => professionals.find((professional) => professional._id === form.profesionalId) ?? null,
     [form.profesionalId, professionals]
   );
-  const hourOptions = useMemo(
-    () => Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0')),
-    []
-  );
-  const minuteOptions = useMemo(() => {
+  const baseMinuteOptions = useMemo(() => {
     const totalOptions = Math.floor(60 / slotDurationMinutes);
     return Array.from({ length: totalOptions }, (_, index) => {
       const minute = index * slotDurationMinutes;
@@ -222,19 +249,201 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     [form.fechaHoraInicio, selectedProfessional, slotDurationMinutes]
   );
   const selectedDatePart = normalizedFechaHoraInicio ? normalizedFechaHoraInicio.slice(0, 10) : '';
-  const selectedHourPart = normalizedFechaHoraInicio ? normalizedFechaHoraInicio.slice(11, 13) : '00';
-  const selectedMinutePart = normalizedFechaHoraInicio ? normalizedFechaHoraInicio.slice(14, 16) : (minuteOptions[0] ?? '00');
+  const rawSelectedHourPart = normalizedFechaHoraInicio ? normalizedFechaHoraInicio.slice(11, 13) : '00';
+  const rawSelectedMinutePart = normalizedFechaHoraInicio ? normalizedFechaHoraInicio.slice(14, 16) : (baseMinuteOptions[0] ?? '00');
+  const selectedProfessionalSchedule = useMemo(
+    () => getProfessionalScheduleForDate(selectedProfessional, selectedDatePart),
+    [selectedProfessional, selectedDatePart]
+  );
+  const professionalWorksSelectedDay = Boolean(
+    !selectedProfessional
+    || (selectedProfessionalSchedule?.activo && selectedProfessionalSchedule?.inicio && selectedProfessionalSchedule?.fin)
+  );
+  const availabilityProfessionalId = !form.forceOverbook && form.profesionalId ? form.profesionalId : '';
+  const { data: availabilityData, isFetching: isAvailabilityLoading } = useAvailability(
+    selectedDatePart,
+    form.servicioId,
+    availabilityProfessionalId
+  );
+  const availableSlots = useMemo(
+    () => availabilityData?.slots ?? [],
+    [availabilityData]
+  );
+  const availableSlotTimes = useMemo(
+    () => availableSlots.map((slot) => slot.hora),
+    [availableSlots]
+  );
+  const availableSlotTimeSet = useMemo(
+    () => new Set(availableSlotTimes),
+    [availableSlotTimes]
+  );
+  const availableHourOptions = useMemo(
+    () => Array.from(new Set(availableSlots.map((slot) => slot.hora.slice(0, 2)))),
+    [availableSlots]
+  );
+  const resolvedRawTimeValue = useMemo(() => {
+    if (!selectedDatePart) return '';
+
+    const rawTimeValue = `${rawSelectedHourPart}:${rawSelectedMinutePart}`;
+
+    if (!form.forceOverbook && form.servicioId && availableSlots.length > 0) {
+      return availableSlotTimeSet.has(rawTimeValue)
+        ? rawTimeValue
+        : availableSlots[0].hora;
+    }
+
+    return rawTimeValue;
+  }, [
+    availableSlotTimeSet,
+    availableSlots,
+    form.forceOverbook,
+    form.servicioId,
+    rawSelectedHourPart,
+    rawSelectedMinutePart,
+    selectedDatePart,
+  ]);
+  const resolvedHourSeed = resolvedRawTimeValue ? resolvedRawTimeValue.slice(0, 2) : rawSelectedHourPart;
+  const resolvedMinuteSeed = resolvedRawTimeValue ? resolvedRawTimeValue.slice(3, 5) : rawSelectedMinutePart;
+  const availableMinuteOptions = useMemo(() => {
+    if (!resolvedHourSeed) return [];
+
+    return Array.from(
+      new Set(
+        availableSlots
+          .filter((slot) => slot.hora.startsWith(`${resolvedHourSeed}:`))
+          .map((slot) => slot.hora.slice(3, 5))
+      )
+    );
+  }, [availableSlots, resolvedHourSeed]);
+  const hourOptions = useMemo(() => {
+    if (!selectedDatePart || !form.servicioId) return [];
+    if (form.forceOverbook) {
+      return Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'));
+    }
+    return availableHourOptions;
+  }, [availableHourOptions, form.forceOverbook, form.servicioId, selectedDatePart]);
+  const minuteOptions = useMemo(() => {
+    if (!selectedDatePart || !form.servicioId) return [];
+    if (form.forceOverbook) {
+      const totalOptions = Math.floor(60 / slotDurationMinutes);
+      return Array.from({ length: totalOptions }, (_, index) => {
+        const minute = index * slotDurationMinutes;
+        return String(minute).padStart(2, '0');
+      });
+    }
+    return availableMinuteOptions;
+  }, [availableMinuteOptions, form.forceOverbook, form.servicioId, selectedDatePart, slotDurationMinutes]);
+  const selectedHourPart = hourOptions.includes(rawSelectedHourPart)
+    ? rawSelectedHourPart
+    : (hourOptions[0] ?? resolvedHourSeed);
+  const selectedMinutePart = minuteOptions.includes(rawSelectedMinutePart)
+    ? rawSelectedMinutePart
+    : (minuteOptions[0] ?? resolvedMinuteSeed);
+  const effectiveFechaHoraInicio = selectedDatePart
+    ? buildDatetimeLocal(
+      selectedDatePart,
+      selectedHourPart || rawSelectedHourPart || '00',
+      selectedMinutePart || rawSelectedMinutePart || baseMinuteOptions[0] || '00'
+    )
+    : normalizedFechaHoraInicio;
+  const isSelectedTimeAvailable = form.forceOverbook
+    || !form.servicioId
+    || !selectedDatePart
+    || availableSlotTimeSet.has(`${selectedHourPart}:${selectedMinutePart}`);
+  const timeSelectionDisabled = !selectedDatePart || !form.servicioId;
+  const availabilityHelperText = useMemo(() => {
+    if (form.forceOverbook) {
+      return `La hora sigue el horario configurado del negocio y los minutos disponibles van en tramos de ${slotDurationMinutes}: ${minuteOptions.join(', ')}.`;
+    }
+
+    if (!form.servicioId) {
+      return 'Selecciona un servicio para ver solo horarios válidos.';
+    }
+
+    if (!selectedDatePart) {
+      return 'Selecciona una fecha para consultar la disponibilidad.';
+    }
+
+    if (isAvailabilityLoading) {
+      return 'Consultando disponibilidad...';
+    }
+
+    if (selectedProfessional && !professionalWorksSelectedDay) {
+      return 'El profesional no trabaja este día.';
+    }
+
+    if (availableSlots.length === 0) {
+      return selectedProfessional
+        ? 'No hay huecos disponibles para este profesional en esa fecha.'
+        : 'No hay horarios disponibles para esa fecha.';
+    }
+
+    return 'Solo se muestran horarios válidos para la combinación seleccionada.';
+  }, [
+    availableSlots.length,
+    form.forceOverbook,
+    form.servicioId,
+    isAvailabilityLoading,
+    minuteOptions,
+    professionalWorksSelectedDay,
+    selectedDatePart,
+    selectedProfessional,
+    slotDurationMinutes,
+  ]);
 
   function updateFechaHora(nextDate, nextHour, nextMinute) {
     set('fechaHoraInicio', buildDatetimeLocal(nextDate, nextHour, nextMinute));
+  }
+
+  function handleServiceChange(nextServiceId) {
+    setForm((current) => ({
+      ...current,
+      servicioId: nextServiceId,
+    }));
+    setErrors((current) => ({
+      ...current,
+      servicioId: undefined,
+      fechaHoraInicio: undefined,
+    }));
+  }
+
+  function handleProfessionalChange(nextProfessionalId) {
+    const shouldClearService = (
+      Boolean(nextProfessionalId)
+      && Boolean(selectedService)
+      && !serviceSupportsProfessional(selectedService, nextProfessionalId)
+    );
+
+    setForm((current) => ({
+      ...current,
+      profesionalId: nextProfessionalId,
+      ...(shouldClearService ? { servicioId: '' } : {}),
+    }));
+    setErrors((current) => ({
+      ...current,
+      profesionalId: undefined,
+      servicioId: undefined,
+      fechaHoraInicio: undefined,
+    }));
   }
 
   function validate() {
     const errs = {};
     if (!form.servicioId) errs.servicioId = 'Selecciona un servicio';
     if (!form.clienteId) errs.clienteId = 'Selecciona un cliente';
-    if (!normalizedFechaHoraInicio) errs.fechaHoraInicio = 'Selecciona fecha y hora';
-    else if (new Date(buildFechaHoraAdmin(normalizedFechaHoraInicio, businessTimezone)) <= new Date()) {
+    if (!effectiveFechaHoraInicio) errs.fechaHoraInicio = 'Selecciona fecha y hora';
+    else if (!form.forceOverbook && selectedDatePart && form.servicioId) {
+      if (selectedProfessional && !professionalWorksSelectedDay) {
+        errs.fechaHoraInicio = 'El profesional no trabaja este día';
+      } else if (!availableSlots.length) {
+        errs.fechaHoraInicio = selectedProfessional
+          ? 'No hay huecos disponibles para este profesional en esa fecha'
+          : 'No hay horarios disponibles para esa fecha';
+      } else if (!isSelectedTimeAvailable) {
+        errs.fechaHoraInicio = 'Selecciona uno de los horarios disponibles';
+      }
+    }
+    if (new Date(buildFechaHoraAdmin(effectiveFechaHoraInicio, businessTimezone)) <= new Date()) {
       errs.fechaHoraInicio = 'La fecha debe ser futura';
     }
     return errs;
@@ -250,7 +459,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     }
 
     // Construir ISO con la TZ del negocio (no la del navegador)
-    const fechaHoraISO = buildFechaHoraAdmin(normalizedFechaHoraInicio, businessTimezone);
+    const fechaHoraISO = buildFechaHoraAdmin(effectiveFechaHoraInicio, businessTimezone);
     const payload = {
       servicioId: form.servicioId,
       fechaHoraInicio: fechaHoraISO,
@@ -346,11 +555,11 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
           <Field label="Servicio" error={errors.servicioId}>
             <select
               value={form.servicioId}
-              onChange={(e) => set('servicioId', e.target.value)}
+              onChange={(e) => handleServiceChange(e.target.value)}
               className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
             >
               <option value="">— Selecciona un servicio —</option>
-              {activeServices.map((s) => (
+              {filteredServices.map((s) => (
                 <option key={s._id} value={s._id}>
                   {s.nombre}{s.duracion ? ` (${s.duracion} min)` : ''}{s.precio != null ? ` — ${s.precio}€` : ''}
                 </option>
@@ -362,7 +571,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
           <Field label="Profesional">
             <select
               value={form.profesionalId}
-              onChange={(e) => set('profesionalId', e.target.value)}
+              onChange={(e) => handleProfessionalChange(e.target.value)}
               className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
             >
               <option value="">— Seleccione un profesional —</option>
@@ -380,7 +589,11 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
                 <input
                   type="date"
                   value={selectedDatePart}
-                  onChange={(e) => updateFechaHora(e.target.value, selectedHourPart, selectedMinutePart)}
+                  onChange={(e) => updateFechaHora(
+                    e.target.value,
+                    selectedHourPart || rawSelectedHourPart || '00',
+                    selectedMinutePart || rawSelectedMinutePart || baseMinuteOptions[0] || '00'
+                  )}
                   className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4]"
                 />
               </div>
@@ -388,33 +601,41 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
               <div className="flex flex-col gap-1">
                 <span className="text-[0.68rem] font-bold uppercase tracking-wider text-[#494454]">Hora</span>
                 <select
-                  value={selectedHourPart}
+                  value={hourOptions.length > 0 ? selectedHourPart : ''}
                   onChange={(e) => updateFechaHora(selectedDatePart, e.target.value, selectedMinutePart)}
-                  disabled={!selectedDatePart}
+                  disabled={timeSelectionDisabled || (!form.forceOverbook && hourOptions.length === 0)}
                   className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4] disabled:opacity-60"
                 >
-                  {hourOptions.map((hour) => (
-                    <option key={hour} value={hour}>{hour}</option>
-                  ))}
+                  {hourOptions.length > 0 ? (
+                    hourOptions.map((hour) => (
+                      <option key={hour} value={hour}>{hour}</option>
+                    ))
+                  ) : (
+                    <option value="">{isAvailabilityLoading ? '...' : '--'}</option>
+                  )}
                 </select>
               </div>
 
               <div className="flex flex-col gap-1">
                 <span className="text-[0.68rem] font-bold uppercase tracking-wider text-[#494454]">Minutos</span>
                 <select
-                  value={selectedMinutePart}
+                  value={minuteOptions.length > 0 ? selectedMinutePart : ''}
                   onChange={(e) => updateFechaHora(selectedDatePart, selectedHourPart, e.target.value)}
-                  disabled={!selectedDatePart}
+                  disabled={timeSelectionDisabled || (!form.forceOverbook && minuteOptions.length === 0)}
                   className="w-full bg-[#f2f3ff] border-0 rounded-lg px-3 py-2.5 text-base sm:text-[0.875rem] text-[#131b2e] outline-none focus:ring-2 focus:ring-[#6b38d4] disabled:opacity-60"
                 >
-                  {minuteOptions.map((minute) => (
-                    <option key={minute} value={minute}>{minute}</option>
-                  ))}
+                  {minuteOptions.length > 0 ? (
+                    minuteOptions.map((minute) => (
+                      <option key={minute} value={minute}>{minute}</option>
+                    ))
+                  ) : (
+                    <option value="">{isAvailabilityLoading ? '...' : '--'}</option>
+                  )}
                 </select>
               </div>
             </div>
             <p className="text-[0.65rem] text-[#494454]/60 mt-0.5">
-              La hora sigue el horario configurado del negocio y los minutos disponibles van en tramos de {slotDurationMinutes}: {minuteOptions.join(', ')}.
+              {availabilityHelperText}
             </p>
           </Field>
 
@@ -477,7 +698,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
           </button>
           <button
             onClick={handleSubmit}
-            disabled={createMutation.isPending}
+            disabled={createMutation.isPending || (!form.forceOverbook && Boolean(form.servicioId) && Boolean(selectedDatePart) && !isAvailabilityLoading && availableSlots.length === 0)}
             className="flex-1 py-3 rounded-lg bg-[#6b38d4] text-white font-bold text-[0.875rem] hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {createMutation.isPending ? (
