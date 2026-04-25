@@ -1,13 +1,17 @@
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const SYNC_CHANNEL_NAME = 'mern-peluqueria-query-sync';
 const SYNC_STORAGE_KEY = '__mern_peluqueria_query_sync__';
 const AUTO_SYNC_INTERVAL_MS = 15000;
+const SERVER_SYNC_URL = `${API_BASE_URL}/query-sync/stream`;
 
 const globalScope = typeof globalThis !== 'undefined' ? globalThis : {};
 const sharedSyncState = globalScope.__MERN_PELUQUERIA_QUERY_SYNC__ || {
   initialized: false,
   queryClient: null,
   channel: null,
+  eventSource: null,
   tabId: null,
+  serverSyncInitialized: false,
 };
 
 if (typeof globalThis !== 'undefined') {
@@ -47,6 +51,9 @@ const sharedQueryGroups = {
   ],
   clients: [
     ['admin', 'clients'],
+  ],
+  technicalNotes: [
+    ['admin', 'technical-notes'],
   ],
 };
 
@@ -97,21 +104,38 @@ function invalidateQueryKeys(queryClient, queryKeys) {
   );
 }
 
-function handleSyncPayload(payload) {
+function resolvePayloadQueryKeys(payload) {
+  if (!payload) {
+    return [];
+  }
+
+  if (Array.isArray(payload.queryKeys) && payload.queryKeys.length > 0) {
+    return dedupeQueryKeys(payload.queryKeys);
+  }
+
+  if (Array.isArray(payload.groupNames) && payload.groupNames.length > 0) {
+    return resolveQueryKeys(payload.groupNames);
+  }
+
+  return [];
+}
+
+function handleSyncPayload(payload, { ignoreOwnSource = true } = {}) {
   if (
     !payload
     || payload.type !== 'invalidate-queries'
-    || payload.sourceId === getTabId()
-    || !Array.isArray(payload.queryKeys)
-    || payload.queryKeys.length === 0
+    || (ignoreOwnSource && payload.sourceId === getTabId())
   ) {
     return;
   }
 
-  void invalidateQueryKeys(
-    sharedSyncState.queryClient,
-    dedupeQueryKeys(payload.queryKeys)
-  );
+  const queryKeys = resolvePayloadQueryKeys(payload);
+
+  if (queryKeys.length === 0) {
+    return;
+  }
+
+  void invalidateQueryKeys(sharedSyncState.queryClient, queryKeys);
 }
 
 function broadcastPayload(payload) {
@@ -126,6 +150,45 @@ function broadcastPayload(payload) {
   } catch {
     // Ignore storage errors.
   }
+}
+
+function connectServerSync() {
+  if (
+    !canUseBrowserSync()
+    || typeof window.EventSource === 'undefined'
+    || sharedSyncState.eventSource
+  ) {
+    return;
+  }
+
+  const eventSource = new window.EventSource(SERVER_SYNC_URL);
+  sharedSyncState.eventSource = eventSource;
+
+  const handleServerMessage = (event) => {
+    if (!event?.data) {
+      return;
+    }
+
+    try {
+      handleSyncPayload(JSON.parse(event.data), { ignoreOwnSource: false });
+    } catch {
+      // Ignore malformed events.
+    }
+  };
+
+  eventSource.addEventListener('invalidate-queries', handleServerMessage);
+  eventSource.onerror = () => {
+    if (sharedSyncState.eventSource !== eventSource) {
+      return;
+    }
+
+    // Dejamos que EventSource reintente la conexión automáticamente.
+    // Solo limpiamos la referencia si el stream se ha cerrado por completo.
+    if (eventSource.readyState === window.EventSource.CLOSED) {
+      sharedSyncState.eventSource = null;
+      connectServerSync();
+    }
+  };
 }
 
 export function setupCrossTabQuerySync(queryClient) {
@@ -161,6 +224,23 @@ export function setupCrossTabQuerySync(queryClient) {
   });
 }
 
+export function setupServerQuerySync(queryClient) {
+  if (!canUseBrowserSync()) {
+    return;
+  }
+
+  sharedSyncState.queryClient = queryClient;
+
+  if (sharedSyncState.serverSyncInitialized) {
+    return;
+  }
+
+  sharedSyncState.serverSyncInitialized = true;
+  connectServerSync();
+
+  window.addEventListener('online', connectServerSync);
+}
+
 export function invalidateAndSyncGroups(queryClient, ...groupNames) {
   const queryKeys = resolveQueryKeys(groupNames);
 
@@ -172,6 +252,7 @@ export function invalidateAndSyncGroups(queryClient, ...groupNames) {
     ? {
         type: 'invalidate-queries',
         sourceId: getTabId(),
+        groupNames,
         queryKeys,
         timestamp: Date.now(),
       }

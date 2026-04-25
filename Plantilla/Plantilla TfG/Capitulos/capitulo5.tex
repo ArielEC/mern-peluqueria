@@ -1,0 +1,101 @@
+% !TEX root = ../proyect.tex
+
+\chapter{Manual de Despliegue}\label{cap:manual-despliegue}
+
+Este cap\'itulo describe los requisitos y pasos necesarios para instalar y ejecutar el sistema en un entorno local de desarrollo, as\'i como las consideraciones para un despliegue en producci\'on.
+
+\section{Requisitos Previos}\label{sec:requisitos-previos}
+
+El cuadro~\ref{tab:requisitos-sw} lista el software necesario para ejecutar el sistema.
+
+\cuadro{|l|l|p{6cm}|}{Requisitos de software}{tab:requisitos-sw}{
+\textbf{Software} & \textbf{Versi\'on m\'inima} & \textbf{Prop\'osito} \\
+\hline
+Node.js & 18.x & Entorno de ejecuci\'on del servidor y herramientas de construcci\'on \\
+npm & 9.x & Gestor de paquetes (incluido con Node.js) \\
+MongoDB & 6.x & Base de datos (local o servicio en la nube como MongoDB Atlas) \\
+Git & 2.x & Control de versiones y clonado del repositorio \\
+}
+
+\section{Instalaci\'on en Entorno Local}\label{sec:instalacion-local}
+
+\subsection{Clonado del Repositorio}\label{subsec:clonado}
+
+\begin{verbatim}
+git clone <URL_DEL_REPOSITORIO> mern-peluqueria
+cd mern-peluqueria
+\end{verbatim}
+
+\subsection{Configuraci\'on del Backend}\label{subsec:config-backend}
+
+Desde la ra\'iz del proyecto, acceder al directorio del servidor e instalar las dependencias:
+
+\begin{verbatim}
+cd backend
+npm install
+\end{verbatim}
+
+Crear un archivo \texttt{.env} en el directorio \texttt{backend/} con las siguientes variables de entorno:
+
+\begin{verbatim}
+PORT=5000
+NODE_ENV=development
+MONGODB_URI=mongodb://localhost:27017/mern-peluqueria
+JWT_SECRET=<clave_secreta_de_al_menos_32_caracteres>
+JWT_EXPIRES_IN=30d
+FRONTEND_URL=http://localhost:5173
+ADMIN_EMAIL=admin@peluqueria.com
+ADMIN_PASSWORD=<contraseña_del_administrador>
+\end{verbatim}
+
+La variable \texttt{JWT\_SECRET} debe contener una cadena aleatoria de al menos 32 caracteres. El sistema valida esta longitud al arrancar y no permite iniciar con un secreto insuficiente. Las variables \texttt{ADMIN\_EMAIL} y \texttt{ADMIN\_PASSWORD} se utilizan para crear autom\'aticamente el primer usuario administrador si no existe.
+
+\subsection{Configuraci\'on del Frontend}\label{subsec:config-frontend}
+
+Acceder al directorio del cliente e instalar las dependencias:
+
+\begin{verbatim}
+cd frontend
+npm install
+\end{verbatim}
+
+Opcionalmente, crear un archivo \texttt{.env} en el directorio \texttt{frontend/} para sobrescribir la URL de la API:
+
+\begin{verbatim}
+VITE_API_URL=http://localhost:5000/api
+\end{verbatim}
+
+Si no se define esta variable, el cliente utiliza \texttt{http://localhost:5000/api} por defecto.
+
+\subsection{Inicio del Sistema}\label{subsec:inicio}
+
+Se requieren dos terminales para ejecutar el servidor y el cliente de forma simult\'anea.
+
+\textbf{Terminal 1 --- Backend:}
+\begin{verbatim}
+cd backend
+npm run dev
+\end{verbatim}
+
+El servidor arranca en el puerto configurado (por defecto 5000) en modo desarrollo con recarga autom\'atica mediante \texttt{nodemon}. Al primer arranque, verifica la conexi\'on con MongoDB, crea el usuario administrador inicial si no existe, e inicializa la configuraci\'on global del negocio.
+
+\textbf{Terminal 2 --- Frontend:}
+\begin{verbatim}
+cd frontend
+npm run dev
+\end{verbatim}
+
+Vite inicia un servidor de desarrollo en \texttt{http://localhost:5173} con recarga en caliente (\textit{Hot Module Replacement}). La aplicaci\'on es accesible desde el navegador en esa direcci\'on.
+
+\section{Consideraciones para Producci\'on}\label{sec:produccion}
+
+Para un despliegue en producci\'on se deben tener en cuenta los siguientes aspectos:
+
+\begin{itemize}
+    \item \textbf{Base de datos:} Utilizar un servicio gestionado como MongoDB Atlas, que proporciona copias de seguridad autom\'aticas, r\'eplicas y monitorizaci\'on. Configurar la variable \texttt{MONGODB\_URI} con la cadena de conexi\'on proporcionada por el servicio.
+    \item \textbf{Construcci\'on del frontend:} Ejecutar \texttt{npm run build} en el directorio \texttt{frontend/} para generar los archivos est\'aticos optimizados en la carpeta \texttt{dist/}. Estos archivos deben servirse mediante un servidor web como Nginx o mediante el propio Express.
+    \item \textbf{Variables de entorno:} Establecer \texttt{NODE\_ENV=production}, utilizar un \texttt{JWT\_SECRET} robusto y configurar \texttt{FRONTEND\_URL} con el dominio real para restringir CORS.
+    \item \textbf{Proceso del servidor:} Utilizar un gestor de procesos como PM2 para mantener el servidor activo, gestionar reinicios autom\'aticos y monitorizar el rendimiento.
+    \item \textbf{HTTPS:} Configurar un certificado SSL/TLS (por ejemplo, mediante Let's Encrypt) para cifrar las comunicaciones entre el cliente y el servidor.
+\end{itemize}
+

@@ -87,7 +87,7 @@ function UpcomingCard({ appointment, horasMinimas, onCancel, businessTz }) {
   const cancellable = canCancelAppointment(appointment, horasMinimas);
 
   return (
-    <div className="bg-card rounded-xl p-5 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 items-start md:items-center ambient-shadow border border-border/20">
+    <div className="bg-card rounded-xl p-4 sm:p-5 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 items-start md:items-center ambient-shadow border border-border/20">
       {/* Avatar */}
       <ProfAvatar nombre={prof?.nombre} color={prof?.color} />
 
@@ -99,7 +99,7 @@ function UpcomingCard({ appointment, horasMinimas, onCancel, businessTz }) {
             Ref: #{appointment._id.slice(-6).toUpperCase()}
           </span>
         </div>
-        <h3 className="text-base font-bold text-foreground truncate">{serv?.nombre}</h3>
+        <h3 className="text-base font-bold text-foreground break-words leading-snug">{serv?.nombre}</h3>
         <p className="text-sm text-muted-foreground">
           con <span className="font-semibold text-foreground">{prof?.nombre}</span>
           {serv?.duracion && <span className="text-muted-foreground"> · {formatDuration(serv.duracion)}</span>}
@@ -107,7 +107,7 @@ function UpcomingCard({ appointment, horasMinimas, onCancel, businessTz }) {
       </div>
 
       {/* Date + time + price */}
-      <div className="shrink-0 text-left md:text-right space-y-0.5">
+      <div className="w-full md:w-auto shrink-0 text-left md:text-right space-y-0.5">
         <div className="flex items-center md:justify-end gap-1.5 text-primary font-bold text-sm">
           <Calendar className="h-3.5 w-3.5 shrink-0" />
           <span className="capitalize">
@@ -164,13 +164,13 @@ function HistoryRow({ appointment, businessTz }) {
             {cfg.label}
           </span>
         </div>
-        <h4 className="font-bold text-foreground truncate">{serv?.nombre}</h4>
+        <h4 className="font-bold text-foreground break-words leading-snug">{serv?.nombre}</h4>
         <p className="text-xs text-muted-foreground">
           {formatDateInTz(inicio, businessTz)}
           {prof?.nombre && ` · ${prof.nombre}`}
         </p>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-3 shrink-0 w-full md:w-auto justify-between">
         <span className="text-muted-foreground font-bold text-sm">
           {formatPrice(appointment.precioFinal ?? serv?.precio)}
         </span>
@@ -200,7 +200,7 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending,
   const fin = appointment.fechaHoraFin ? new Date(appointment.fechaHoraFin) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
@@ -208,7 +208,7 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending,
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg bg-card rounded-xl ambient-shadow overflow-hidden flex flex-col z-10">
+      <div className="relative w-full max-w-lg max-h-[calc(100vh-1.5rem)] bg-card rounded-xl ambient-shadow overflow-y-auto flex flex-col z-10">
         {/* Header */}
         <div className="p-6 md:p-8 pb-0">
           <div className="flex items-center justify-between mb-6">
@@ -231,17 +231,17 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending,
 
           {/* Summary card */}
           <div className="bg-muted rounded-xl p-5 mb-6 space-y-4">
-            <div className="flex justify-between items-start">
-              <div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
+              <div className="min-w-0">
                 <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-1">Servicio</p>
-                <p className="text-foreground text-base font-semibold">{serv?.nombre}</p>
+                <p className="text-foreground text-base font-semibold break-words">{serv?.nombre}</p>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-1">Precio</p>
                 <p className="text-primary font-bold">{formatPrice(appointment.precioFinal ?? serv?.precio)}</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/20">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border/20">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
                 <div>
@@ -274,7 +274,7 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending,
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
                 placeholder="Cuéntanos el motivo para que podamos mejorar..."
-                className="w-full bg-primary/10 border-0 focus:ring-2 focus:ring-primary rounded-xl p-4 text-foreground placeholder:text-muted-foreground/50 text-sm transition-all resize-none outline-none"
+                className="w-full bg-primary/10 border-0 focus:ring-2 focus:ring-primary rounded-xl p-4 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/50 transition-all resize-none outline-none"
               />
             </div>
 
@@ -372,7 +372,7 @@ export default function MyAppointmentsPage() {
 
   return (
     <div className="bg-background min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-10 md:py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 md:py-12">
 
         {/* Page header */}
         <div className="mb-10">
@@ -392,7 +392,7 @@ export default function MyAppointmentsPage() {
 
           {/* Sidebar */}
           <aside className="lg:col-span-3">
-            <div className="bg-muted rounded-xl p-6 space-y-6 lg:sticky lg:top-24">
+            <div className="bg-muted rounded-xl p-5 sm:p-6 space-y-6 lg:sticky lg:top-24">
               {/* Stats */}
               <div>
                 <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest block mb-1">

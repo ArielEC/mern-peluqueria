@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { getErrorMessage, notifyError, notifySuccess } from '@/lib/notifications';
 import { getAutoSyncQueryOptions, invalidateAndSyncGroups } from '@/lib/querySync';
+
+function notifyMutationError(error, fallback) {
+  notifyError(getErrorMessage(error, fallback));
+}
 
 const servicesAdminKeys = {
   all: ['admin', 'services'],
@@ -27,7 +32,11 @@ export function useAdminCreateService() {
       const { data } = await api.post('/services', body);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(qc, 'services'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'services');
+      notifySuccess('Servicio creado con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido crear el servicio'),
   });
 }
 
@@ -39,7 +48,11 @@ export function useAdminUpdateService() {
       const { data } = await api.put(`/services/${id}`, body);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(qc, 'services'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'services');
+      notifySuccess('Servicio actualizado con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido actualizar el servicio'),
   });
 }
 
@@ -51,7 +64,11 @@ export function useAdminDeleteService() {
       const { data } = await api.delete(`/services/${id}`);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(qc, 'services'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'services');
+      notifySuccess('Servicio eliminado con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido eliminar el servicio'),
   });
 }
 
@@ -80,7 +97,11 @@ export function useAdminCreateProfessional() {
       const { data } = await api.post('/professionals', body);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(qc, 'professionals'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'professionals');
+      notifySuccess('Profesional creado con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido crear el profesional'),
   });
 }
 
@@ -92,7 +113,11 @@ export function useAdminUpdateProfessional() {
       const { data } = await api.put(`/professionals/${id}`, body);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(qc, 'professionals'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'professionals');
+      notifySuccess('Profesional actualizado con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido actualizar el profesional'),
   });
 }
 
@@ -104,7 +129,11 @@ export function useAdminDeleteProfessional() {
       const { data } = await api.delete(`/professionals/${id}`);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(qc, 'professionals'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'professionals');
+      notifySuccess('Profesional eliminado con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido eliminar el profesional'),
   });
 }
 
@@ -133,7 +162,11 @@ export function useAdminCreateBlocker() {
       const { data } = await api.post('/blockers', body);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(qc, 'blockers'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'blockers');
+      notifySuccess('Bloqueo creado con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido crear el bloqueo'),
   });
 }
 
@@ -145,7 +178,11 @@ export function useAdminUpdateBlocker() {
       const { data } = await api.put(`/blockers/${id}`, body);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(qc, 'blockers'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'blockers');
+      notifySuccess('Bloqueo actualizado con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido actualizar el bloqueo'),
   });
 }
 
@@ -157,7 +194,11 @@ export function useAdminDeleteBlocker() {
       const { data } = await api.delete(`/blockers/${id}`);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(qc, 'blockers'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'blockers');
+      notifySuccess('Bloqueo eliminado con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido eliminar el bloqueo'),
   });
 }
 
@@ -211,7 +252,11 @@ export function useAdminUpdateSettings() {
       const { data } = await api.put('/settings', body);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(qc, 'settings'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'settings');
+      notifySuccess('Ajustes guardados con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se han podido guardar los ajustes'),
   });
 }
 
@@ -229,6 +274,7 @@ export function useAdminTechnicalNotes(clienteId) {
     },
     enabled: Boolean(clienteId),
     staleTime: 30 * 1000,
+    ...getAutoSyncQueryOptions(),
   });
 }
 
@@ -240,7 +286,11 @@ export function useAdminCreateNote() {
       const { data } = await api.post('/technical-notes', body);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: notesAdminKeys.all }),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'technicalNotes');
+      notifySuccess('Nota técnica creada con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido crear la nota técnica'),
   });
 }
 
@@ -252,7 +302,11 @@ export function useAdminUpdateNote() {
       const { data } = await api.put(`/technical-notes/${id}`, body);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: notesAdminKeys.all }),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'technicalNotes');
+      notifySuccess('Nota técnica actualizada con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido actualizar la nota técnica'),
   });
 }
 
@@ -264,6 +318,10 @@ export function useAdminDeleteNote() {
       const { data } = await api.delete(`/technical-notes/${id}`);
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: notesAdminKeys.all }),
+    onSuccess: () => {
+      invalidateAndSyncGroups(qc, 'technicalNotes');
+      notifySuccess('Nota técnica eliminada con éxito');
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido eliminar la nota técnica'),
   });
 }

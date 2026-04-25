@@ -8,6 +8,7 @@ import {
   useAdminServices, useAdminCreateService, useAdminUpdateService, useAdminDeleteService,
   useAdminProfessionals,
 } from '@/hooks/useAdminEntities';
+import { notifyValidationError } from '@/lib/notifications';
 
 const EMPTY_FORM = { nombre: '', descripcion: '', duracion: 30, precio: 0, categoria: '', profesionalesCapaces: [], activo: true };
 
@@ -61,6 +62,7 @@ function ServiceModal({ open, onClose, initial, professionals }) {
     const e = validate();
     if (Object.keys(e).length) {
       setErrors(e);
+      notifyValidationError(e, 'Revisa los datos del servicio');
       return;
     }
 
@@ -96,7 +98,7 @@ function ServiceModal({ open, onClose, initial, professionals }) {
         <FormField label="Descripción" error={errors.descripcion}>
           <textarea className={textareaCls} rows={2} value={form.descripcion} onChange={(e) => set('descripcion', e.target.value)} placeholder="Descripción del servicio..." />
         </FormField>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="Duración (min)" error={errors.duracion} required>
             <input type="number" min={15} step={15} className={inputCls} value={form.duracion} onChange={(e) => set('duracion', e.target.value)} />
           </FormField>

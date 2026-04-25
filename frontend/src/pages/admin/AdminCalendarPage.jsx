@@ -21,9 +21,253 @@ function buildResources(professionals) {
   }));
 }
 
+function isVisibleCalendarAppointment(appointment) {
+  return appointment?.estado !== 'cancelada';
+}
+
+function timeStringToMinutes(time = '') {
+  const [hours, minutes] = time.split(':').map(Number);
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return null;
+  }
+
+  return (hours * 60) + minutes;
+}
+
+function minutesToCalendarTime(totalMinutes) {
+  const safeMinutes = Math.max(0, Math.min(24 * 60, totalMinutes));
+  const hours = Math.floor(safeMinutes / 60);
+  const minutes = safeMinutes % 60;
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
+}
+
+function roundDownToStep(totalMinutes, stepMinutes) {
+  return Math.floor(totalMinutes / stepMinutes) * stepMinutes;
+}
+
+function roundUpToStep(totalMinutes, stepMinutes) {
+  return Math.ceil(totalMinutes / stepMinutes) * stepMinutes;
+}
+
+function getScheduleDayKey(date, businessTimezone) {
+  return String(DateTime.fromJSDate(date, { zone: businessTimezone }).weekday % 7);
+}
+
+function getProfessionalWorkingWindow(professional, date, businessTimezone) {
+  const dayKey = getScheduleDayKey(date, businessTimezone);
+  const schedule = professional?.horarioSemanal?.[dayKey];
+
+  if (!schedule?.activo) {
+    return null;
+  }
+
+  const startMinutes = timeStringToMinutes(schedule.inicio);
+  const endMinutes = timeStringToMinutes(schedule.fin);
+
+  if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes) {
+    return null;
+  }
+
+  const breakStartMinutes = timeStringToMinutes(schedule.descansoInicio);
+  const breakEndMinutes = timeStringToMinutes(schedule.descansoFin);
+
+  return {
+    startMinutes,
+    endMinutes,
+    breakStartMinutes,
+    breakEndMinutes,
+  };
+}
+
+function createDateAtMinutes(date, totalMinutes, businessTimezone) {
+  return DateTime.fromJSDate(date, { zone: businessTimezone })
+    .startOf('day')
+    .plus({ minutes: totalMinutes })
+    .toJSDate();
+}
+
+function getCalendarTimeBounds({
+  professionals,
+  appointments,
+  visibleDates,
+  businessTimezone,
+  slotDurationMinutes,
+}) {
+  const fallbackMinMinutes = 8 * 60;
+  const fallbackMaxMinutes = 20 * 60;
+  const safeSlotDurationMinutes = Math.max(5, Number(slotDurationMinutes) || 15);
+  const scheduleStartCandidates = [];
+  const scheduleEndCandidates = [];
+  const appointmentStartCandidates = [];
+  const appointmentEndCandidates = [];
+
+  professionals.forEach((professional) => {
+    visibleDates.forEach((date) => {
+      const window = getProfessionalWorkingWindow(professional, date, businessTimezone);
+
+      if (!window) return;
+
+      scheduleStartCandidates.push(window.startMinutes);
+      scheduleEndCandidates.push(window.endMinutes);
+    });
+  });
+
+  appointments.forEach((appointment) => {
+    const appointmentStart = timeStringToMinutes(formatTimeInTz(appointment.fechaHoraInicio, businessTimezone));
+    const appointmentEnd = timeStringToMinutes(
+      formatTimeInTz(
+        appointment.fechaHoraFinOperativa || appointment.fechaHoraFin || appointment.fechaHoraInicio,
+        businessTimezone
+      )
+    );
+
+    if (appointmentStart !== null) {
+      appointmentStartCandidates.push(appointmentStart);
+    }
+
+    if (appointmentEnd !== null) {
+      appointmentEndCandidates.push(appointmentEnd);
+    }
+  });
+
+  let minMinutes = scheduleStartCandidates.length > 0
+    ? roundDownToStep(Math.min(...scheduleStartCandidates), safeSlotDurationMinutes)
+    : fallbackMinMinutes;
+  let maxMinutes = scheduleEndCandidates.length > 0
+    ? roundUpToStep(Math.max(...scheduleEndCandidates), safeSlotDurationMinutes)
+    : fallbackMaxMinutes;
+
+  if (appointmentStartCandidates.length > 0) {
+    minMinutes = Math.min(
+      minMinutes,
+      roundDownToStep(Math.min(...appointmentStartCandidates), safeSlotDurationMinutes)
+    );
+  }
+
+  if (appointmentEndCandidates.length > 0) {
+    maxMinutes = Math.max(
+      maxMinutes,
+      roundUpToStep(Math.max(...appointmentEndCandidates), safeSlotDurationMinutes)
+    );
+  }
+
+  minMinutes = Math.max(0, minMinutes);
+  maxMinutes = Math.min(24 * 60, maxMinutes);
+  const slotMaxMinutes = Math.min(
+    24 * 60,
+    Math.max(maxMinutes + 60, minMinutes + 60)
+  );
+
+  return {
+    minMinutes,
+    maxMinutes: slotMaxMinutes,
+    slotMinTime: minutesToCalendarTime(minMinutes),
+    slotMaxTime: minutesToCalendarTime(slotMaxMinutes),
+  };
+}
+
+function buildUnavailableBackgroundEvents({
+  professionals,
+  visibleDates,
+  businessTimezone,
+  minMinutes,
+  maxMinutes,
+  useResources,
+}) {
+  const events = [];
+
+  professionals.forEach((professional) => {
+    visibleDates.forEach((date) => {
+      const window = getProfessionalWorkingWindow(professional, date, businessTimezone);
+      const sharedProps = {
+        display: 'background',
+        interactive: false,
+        overlap: false,
+        classNames: ['admin-calendar-unavailable'],
+        ...(useResources ? { resourceId: professional._id } : {}),
+      };
+
+      if (!window) {
+        events.push({
+          ...sharedProps,
+          id: `off-${professional._id}-${date.toISOString()}`,
+          start: createDateAtMinutes(date, minMinutes, businessTimezone),
+          end: createDateAtMinutes(date, maxMinutes, businessTimezone),
+        });
+        return;
+      }
+
+      if (window.startMinutes > minMinutes) {
+        events.push({
+          ...sharedProps,
+          id: `before-${professional._id}-${date.toISOString()}`,
+          start: createDateAtMinutes(date, minMinutes, businessTimezone),
+          end: createDateAtMinutes(date, window.startMinutes, businessTimezone),
+        });
+      }
+
+      if (
+        window.breakStartMinutes !== null
+        && window.breakEndMinutes !== null
+        && window.breakEndMinutes > window.breakStartMinutes
+      ) {
+        events.push({
+          ...sharedProps,
+          id: `break-${professional._id}-${date.toISOString()}`,
+          start: createDateAtMinutes(date, window.breakStartMinutes, businessTimezone),
+          end: createDateAtMinutes(date, window.breakEndMinutes, businessTimezone),
+        });
+      }
+
+      if (window.endMinutes < maxMinutes) {
+        events.push({
+          ...sharedProps,
+          id: `after-${professional._id}-${date.toISOString()}`,
+          start: createDateAtMinutes(date, window.endMinutes, businessTimezone),
+          end: createDateAtMinutes(date, maxMinutes, businessTimezone),
+        });
+      }
+    });
+  });
+
+  return events;
+}
+
+function isSlotSelectable({
+  date,
+  professional,
+  businessTimezone,
+}) {
+  const window = getProfessionalWorkingWindow(professional, date, businessTimezone);
+
+  if (!window) {
+    return false;
+  }
+
+  const slotMinutes = (DateTime.fromJSDate(date, { zone: businessTimezone }).hour * 60)
+    + DateTime.fromJSDate(date, { zone: businessTimezone }).minute;
+
+  if (slotMinutes < window.startMinutes || slotMinutes >= window.endMinutes) {
+    return false;
+  }
+
+  if (
+    window.breakStartMinutes !== null
+    && window.breakEndMinutes !== null
+    && slotMinutes >= window.breakStartMinutes
+    && slotMinutes < window.breakEndMinutes
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 function buildEvents(appointments) {
   return appointments
-    .filter((appointment) => appointment.estado !== 'cancelada')
+    .filter(isVisibleCalendarAppointment)
     .map((appointment) => {
       const professionalColor = appointment.profesional?.color || '#6b38d4';
 
@@ -91,6 +335,18 @@ function getInitials(name = '') {
 function capitalizeText(value = '') {
   if (!value) return '';
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function getMobileAgendaDayLabels(date, businessTimezone) {
+  return {
+    weekdayLabel: capitalizeText(
+      formatInBusinessTz(date, businessTimezone, { weekday: 'long' }).replace('.', '')
+    ),
+    dateLabel: formatInBusinessTz(date, businessTimezone, {
+      day: 'numeric',
+      month: 'short',
+    }),
+  };
 }
 
 function getDayKey(date, businessTimezone) {
@@ -180,6 +436,22 @@ function DayHeaderContent({ date, businessTimezone }) {
   );
 }
 
+function MobileAgendaDayHeader({ date, businessTimezone, appointmentCount }) {
+  const { weekdayLabel, dateLabel } = getMobileAgendaDayLabels(date, businessTimezone);
+
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-[0.72rem] font-bold uppercase tracking-[0.18em] text-[#6b38d4]">{weekdayLabel}</p>
+        <p className="truncate text-[1rem] font-bold text-[#131b2e]">{dateLabel}</p>
+      </div>
+      <span className="rounded-full bg-[#f2f3ff] px-2.5 py-1 text-[0.72rem] font-bold text-[#494454]">
+        {appointmentCount} cita{appointmentCount === 1 ? '' : 's'}
+      </span>
+    </div>
+  );
+}
+
 function AppointmentEventContent({ timeText, appointment, spacious = false }) {
   const clientName = appointment?.cliente?.nombre || appointment?.nombreTercero || 'Cliente';
   const serviceName = appointment?.servicio?.nombre || '';
@@ -204,76 +476,41 @@ function AppointmentEventContent({ timeText, appointment, spacious = false }) {
 }
 
 function DesktopWeekProfessionalPicker({ resources, selectedResourceId, onSelect }) {
-  const scrollRef = useRef(null);
-
-  useEffect(() => {
-    const selectedButton = scrollRef.current?.querySelector(`[data-resource-id="${selectedResourceId}"]`);
-    selectedButton?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    });
-  }, [selectedResourceId]);
-
-  function scrollList(direction) {
-    scrollRef.current?.scrollBy({
-      left: direction * 220,
-      behavior: 'smooth',
-    });
-  }
+  const selectedResource = resources.find((resource) => resource.id === selectedResourceId) || resources[0];
 
   return (
-    <div className="hidden rounded-2xl border border-[#cbc3d7]/30 bg-[#f8f7ff] p-4 md:flex">
-      <div className="flex w-full items-center gap-4">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => scrollList(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#cbc3d7]/30 bg-white text-[#494454] shadow-sm transition-colors hover:bg-[#f2f3ff]"
-            aria-label="Desplazar profesionales a la izquierda"
-          >
-            <span className="material-symbols-outlined text-[20px]">chevron_left</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollList(1)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#cbc3d7]/30 bg-white text-[#494454] shadow-sm transition-colors hover:bg-[#f2f3ff]"
-            aria-label="Desplazar profesionales a la derecha"
-          >
-            <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-          </button>
-        </div>
+    <div className="hidden min-w-[16rem] items-center gap-3 rounded-xl border border-[#cbc3d7]/25 bg-white px-3 py-2 shadow-[0_10px_30px_-22px_rgba(19,27,46,0.35)] md:flex">
+      <span
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[0.72rem] font-bold text-white"
+        style={{ backgroundColor: selectedResource?.resourceColor || '#6b38d4' }}
+      >
+        {getInitials(selectedResource?.title || '')}
+      </span>
 
-        <div
-          ref={scrollRef}
-          className="flex min-w-0 flex-1 gap-2 overflow-x-auto rounded-xl border border-white/70 bg-white p-1 shadow-sm"
-        >
-          {resources.map((resource) => {
-            const isSelected = resource.id === selectedResourceId;
-
-            return (
-              <button
-                key={resource.id}
-                type="button"
-                data-resource-id={resource.id}
-                onClick={() => onSelect(resource.id)}
-                className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-left transition-all ${
-                  isSelected
-                    ? 'border-[#6b38d4] bg-[#ede5ff] text-[#6b38d4]'
-                    : 'border-[#cbc3d7]/30 bg-white text-[#494454]'
-                }`}
-              >
-                <span
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-[0.72rem] font-bold text-white"
-                  style={{ backgroundColor: resource.resourceColor || '#6b38d4' }}
-                >
-                  {getInitials(resource.title)}
-                </span>
-                <span className="max-w-[9rem] truncate text-[0.82rem] font-bold">{resource.title}</span>
-              </button>
-            );
-          })}
+      <div className="min-w-0 flex-1">
+        <p className="text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#6b38d4]">Profesional</p>
+        <div className="relative mt-0.5">
+          <select
+            value={selectedResourceId}
+            onChange={(event) => onSelect(event.target.value)}
+            aria-label="Seleccionar profesional"
+            className="w-full appearance-none bg-transparent pr-8 text-[0.85rem] font-bold text-[#131b2e] outline-none"
+          >
+            {resources.map((resource) => (
+              <option key={resource.id} value={resource.id}>
+                {resource.title}
+              </option>
+            ))}
+          </select>
+          <span className="pointer-events-none material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-[18px] text-[#6b38d4]">
+            expand_more
+          </span>
         </div>
+        {selectedResource?.especialidad && (
+          <p className="truncate text-[0.68rem] font-bold uppercase text-[#81768f]">
+            {selectedResource.especialidad}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -398,25 +635,15 @@ function MobileDayAgenda({ date, appointments, businessTimezone, onAppointmentCl
       .sort((left, right) => new Date(left.fechaHoraInicio) - new Date(right.fechaHoraInicio)),
     [appointments]
   );
-  const weekdayLabel = capitalizeText(
-    formatInBusinessTz(date, businessTimezone, { weekday: 'long' }).replace('.', '')
-  );
-  const dateLabel = formatInBusinessTz(date, businessTimezone, {
-    day: 'numeric',
-    month: 'short',
-  });
 
   return (
     <div className="flex flex-col gap-3 md:hidden">
       <section className="rounded-2xl border border-[#cbc3d7]/30 bg-white p-4 shadow-[0_12px_40px_-20px_rgba(19,27,46,0.15)]">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <p className="truncate text-[0.95rem] font-bold text-[#131b2e]">
-            {weekdayLabel}, {dateLabel}
-          </p>
-          <span className="rounded-full bg-[#f2f3ff] px-2.5 py-1 text-[0.72rem] font-bold text-[#494454]">
-            {sortedAppointments.length} cita{sortedAppointments.length === 1 ? '' : 's'}
-          </span>
-        </div>
+        <MobileAgendaDayHeader
+          date={date}
+          businessTimezone={businessTimezone}
+          appointmentCount={sortedAppointments.length}
+        />
 
         {sortedAppointments.length > 0 ? (
           <div className="space-y-2">
@@ -459,25 +686,14 @@ function MobileWeekAgenda({ days, appointments, businessTimezone, onAppointmentC
       {days.map((day) => {
         const dayKey = getDayKey(day, businessTimezone);
         const dayAppointments = appointmentsByDay.get(dayKey) || [];
-        const weekdayLabel = capitalizeText(
-          formatInBusinessTz(day, businessTimezone, { weekday: 'long' }).replace('.', '')
-        );
-        const dateLabel = formatInBusinessTz(day, businessTimezone, {
-          day: 'numeric',
-          month: 'short',
-        });
 
         return (
           <section key={dayKey} className="rounded-2xl border border-[#cbc3d7]/30 bg-white p-4 shadow-[0_12px_40px_-20px_rgba(19,27,46,0.15)]">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[0.72rem] font-bold uppercase tracking-[0.18em] text-[#6b38d4]">{weekdayLabel}</p>
-                <p className="text-[1rem] font-bold text-[#131b2e]">{dateLabel}</p>
-              </div>
-              <span className="rounded-full bg-[#f2f3ff] px-2.5 py-1 text-[0.72rem] font-bold text-[#494454]">
-                {dayAppointments.length} cita{dayAppointments.length === 1 ? '' : 's'}
-              </span>
-            </div>
+            <MobileAgendaDayHeader
+              date={day}
+              businessTimezone={businessTimezone}
+              appointmentCount={dayAppointments.length}
+            />
 
             {dayAppointments.length > 0 ? (
               <div className="space-y-2">
@@ -513,9 +729,14 @@ export default function AdminCalendarPage() {
   const [mobileProfessionalId, setMobileProfessionalId] = useState('');
   const [newModal, setNewModal] = useState(null);
   const [detailAppt, setDetailAppt] = useState(null);
+  const calendarRef = useRef(null);
+  const calendarContainerRef = useRef(null);
+  const resizeFrameRef = useRef(null);
 
   const { data: settings } = useSettings();
   const businessTimezone = settings?.zonaHoraria || 'Europe/Madrid';
+  const slotDurationMinutes = Number(settings?.duracionSlot) || 15;
+  const slotDurationValue = `00:${String(slotDurationMinutes).padStart(2, '0')}:00`;
   const isMobile = useIsMobileBreakpoint();
   const isDayView = view === 'resourceTimeGridDay';
   const isWeekView = view === 'timeGridWeek';
@@ -532,6 +753,10 @@ export default function AdminCalendarPage() {
   const { data: appointments = [], isLoading: loadingAppts } = useAdminAppointmentsRange(
     range.desde,
     range.hasta
+  );
+  const professionalsById = useMemo(
+    () => new Map(professionals.map((professional) => [professional._id, professional])),
+    [professionals]
   );
 
   const resources = useMemo(() => buildResources(professionals), [professionals]);
@@ -552,15 +777,25 @@ export default function AdminCalendarPage() {
   const visibleAppointments = useMemo(() => {
     if (isMobileDayView || isMobileWeekView) {
       if (!activeMobileProfessionalId) return [];
-      return appointments.filter((appointment) => appointment.profesional?._id === activeMobileProfessionalId);
+      return appointments.filter(
+        (appointment) => (
+          appointment.profesional?._id === activeMobileProfessionalId
+          && isVisibleCalendarAppointment(appointment)
+        )
+      );
     }
 
     if (isWeekView) {
       if (!activeWeekProfessionalId) return [];
-      return appointments.filter((appointment) => appointment.profesional?._id === activeWeekProfessionalId);
+      return appointments.filter(
+        (appointment) => (
+          appointment.profesional?._id === activeWeekProfessionalId
+          && isVisibleCalendarAppointment(appointment)
+        )
+      );
     }
 
-    return appointments;
+    return appointments.filter(isVisibleCalendarAppointment);
   }, [
     appointments,
     isMobileDayView,
@@ -569,14 +804,85 @@ export default function AdminCalendarPage() {
     isWeekView,
     activeWeekProfessionalId,
   ]);
-  const events = useMemo(() => buildEvents(visibleAppointments), [visibleAppointments]);
-  const headerLabel = buildHeaderLabel(isWeekView, range, currentDate, businessTimezone);
+  const calendarVisibleDates = useMemo(
+    () => (isWeekView ? range.days : [range.startDate]),
+    [isWeekView, range.days, range.startDate]
+  );
+  const visibleCalendarProfessionals = useMemo(() => {
+    if (isMobileDayView || isMobileWeekView) {
+      return [];
+    }
+
+    if (isWeekView) {
+      const professional = professionalsById.get(activeWeekProfessionalId);
+      return professional ? [professional] : [];
+    }
+
+    return professionals;
+  }, [
+    activeWeekProfessionalId,
+    isMobileDayView,
+    isMobileWeekView,
+    isWeekView,
+    professionals,
+    professionalsById,
+  ]);
+  const calendarTimeBounds = useMemo(
+    () => getCalendarTimeBounds({
+      professionals: visibleCalendarProfessionals,
+      appointments: visibleAppointments,
+      visibleDates: calendarVisibleDates,
+      businessTimezone,
+      slotDurationMinutes,
+    }),
+    [
+      visibleCalendarProfessionals,
+      visibleAppointments,
+      calendarVisibleDates,
+      businessTimezone,
+      slotDurationMinutes,
+    ]
+  );
+  const appointmentEvents = useMemo(() => buildEvents(visibleAppointments), [visibleAppointments]);
+  const unavailableBackgroundEvents = useMemo(
+    () => buildUnavailableBackgroundEvents({
+      professionals: visibleCalendarProfessionals,
+      visibleDates: calendarVisibleDates,
+      businessTimezone,
+      minMinutes: calendarTimeBounds.minMinutes,
+      maxMinutes: calendarTimeBounds.maxMinutes,
+      useResources: isDayView && !isMobileDayView,
+    }),
+    [
+      visibleCalendarProfessionals,
+      calendarVisibleDates,
+      businessTimezone,
+      calendarTimeBounds.minMinutes,
+      calendarTimeBounds.maxMinutes,
+      isDayView,
+      isMobileDayView,
+    ]
+  );
+  const events = useMemo(
+    () => [...unavailableBackgroundEvents, ...appointmentEvents],
+    [unavailableBackgroundEvents, appointmentEvents]
+  );
+  const headerLabel = isMobileDayView
+    ? `${capitalizeText(formatInBusinessTz(currentDate, businessTimezone, { weekday: 'long' }).replace('.', ''))}, ${
+      formatInBusinessTz(currentDate, businessTimezone, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    }`
+    : buildHeaderLabel(isWeekView, range, currentDate, businessTimezone);
   const showLegend = professionals.length > 0 && !isWeekView && !isMobileDayView;
   const calendarView = isMobileDayView ? 'timeGridDay' : view;
   const calendarRenderKey = [
     calendarView,
     currentDate.toISOString(),
     businessTimezone,
+    slotDurationMinutes,
     isDesktopWeekView ? activeWeekProfessionalId : 'all',
     isMobileDayView || isMobileWeekView ? activeMobileProfessionalId : 'all',
   ].join(':');
@@ -604,6 +910,15 @@ export default function AdminCalendarPage() {
       : isWeekView
         ? activeWeekProfessionalId
         : info.resource?.id || '';
+    const selectedProfessional = professionalsById.get(selectedProfessionalId);
+
+    if (selectedProfessional && !isSlotSelectable({
+      date: info.date,
+      professional: selectedProfessional,
+      businessTimezone,
+    })) {
+      return;
+    }
 
     setNewModal({
       date: info.dateStr,
@@ -612,15 +927,59 @@ export default function AdminCalendarPage() {
   }, [
     activeMobileProfessionalId,
     activeWeekProfessionalId,
+    businessTimezone,
     isMobileDayView,
     isMobileWeekView,
     isWeekView,
+    professionalsById,
   ]);
 
   const handleEventClick = useCallback((info) => {
     const appointment = info.event.extendedProps?.appointment;
     if (appointment) setDetailAppt(appointment);
   }, []);
+  const syncCalendarSize = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    if (resizeFrameRef.current) {
+      window.cancelAnimationFrame(resizeFrameRef.current);
+    }
+
+    resizeFrameRef.current = window.requestAnimationFrame(() => {
+      calendarRef.current?.getApi?.()?.updateSize();
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    if (isMobileDayView || isMobileWeekView) {
+      return undefined;
+    }
+
+    const container = calendarContainerRef.current;
+
+    if (!container || typeof ResizeObserver === 'undefined') {
+      syncCalendarSize();
+      return undefined;
+    }
+
+    const observer = new ResizeObserver(() => {
+      syncCalendarSize();
+    });
+
+    observer.observe(container);
+    syncCalendarSize();
+
+    return () => {
+      observer.disconnect();
+
+      if (resizeFrameRef.current) {
+        window.cancelAnimationFrame(resizeFrameRef.current);
+        resizeFrameRef.current = null;
+      }
+    };
+  }, [isMobileDayView, isMobileWeekView, syncCalendarSize]);
 
   const isLoading = loadingProfs || loadingAppts;
 
@@ -628,7 +987,9 @@ export default function AdminCalendarPage() {
     <div className="flex h-[calc(100vh-8rem)] flex-col gap-4">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2 md:gap-4">
-          <h2 className="truncate text-base font-bold capitalize text-[#131b2e] md:text-xl">{headerLabel}</h2>
+          <h2 className={`truncate font-bold capitalize text-[#131b2e] ${isMobileDayView ? 'text-[0.95rem] leading-tight' : 'text-base md:text-xl'}`}>
+            {headerLabel}
+          </h2>
           <div className="flex items-center gap-0.5 rounded-lg bg-[#f2f3ff] p-1">
             <button
               onClick={() => goTo('prev')}
@@ -677,6 +1038,14 @@ export default function AdminCalendarPage() {
             </button>
           </div>
 
+          {isDesktopWeekView && resources.length > 0 && (
+            <DesktopWeekProfessionalPicker
+              resources={resources}
+              selectedResourceId={activeWeekProfessionalId}
+              onSelect={setWeekProfessionalId}
+            />
+          )}
+
           <button
             onClick={() => setNewModal({ date: new Date().toISOString(), profesionalId: '' })}
             className="flex items-center gap-2 rounded-lg bg-[#6b38d4] px-4 py-2 text-[0.875rem] font-bold text-white shadow-sm transition-all hover:brightness-110 active:scale-95"
@@ -686,14 +1055,6 @@ export default function AdminCalendarPage() {
           </button>
         </div>
       </div>
-
-      {isWeekView && resources.length > 0 && !isMobileWeekView && (
-        <DesktopWeekProfessionalPicker
-          resources={resources}
-          selectedResourceId={activeWeekProfessionalId}
-          onSelect={setWeekProfessionalId}
-        />
-      )}
 
       {(isMobileDayView || isMobileWeekView) && resources.length > 0 && (
         <MobileProfessionalPicker
@@ -722,7 +1083,7 @@ export default function AdminCalendarPage() {
           />
         </div>
       ) : (
-        <div className={`relative min-h-0 flex-1 overflow-auto rounded-xl border border-[#cbc3d7]/20 bg-white ${
+        <div ref={calendarContainerRef} className={`relative min-h-0 flex-1 overflow-auto rounded-xl border border-[#cbc3d7]/20 bg-white ${
           isDesktopWeekView ? 'admin-calendar-desktop-week' : ''
         } ${
           isMobileDayView ? 'admin-calendar-mobile-day' : ''
@@ -734,6 +1095,7 @@ export default function AdminCalendarPage() {
           )}
 
           <FullCalendar
+            ref={calendarRef}
             key={calendarRenderKey}
             plugins={[resourceTimeGridPlugin, timeGridPlugin, interactionPlugin, luxon3Plugin]}
             initialView={calendarView}
@@ -741,10 +1103,11 @@ export default function AdminCalendarPage() {
             timeZone={businessTimezone}
             resources={isDayView && !isMobileDayView ? resources : []}
             events={events}
-            slotDuration="00:15:00"
+            slotDuration={slotDurationValue}
             slotLabelInterval="01:00:00"
-            slotMinTime="08:00:00"
-            slotMaxTime="21:00:00"
+            slotMinTime={calendarTimeBounds.slotMinTime}
+            slotMaxTime={calendarTimeBounds.slotMaxTime}
+            scrollTime={calendarTimeBounds.slotMinTime}
             locale="es"
             firstDay={1}
             allDaySlot={false}
@@ -765,20 +1128,54 @@ export default function AdminCalendarPage() {
                 businessTimezone={businessTimezone}
               />
             )}
-            eventContent={(arg) => (
-              <AppointmentEventContent
-                timeText={arg.timeText}
-                appointment={arg.event.extendedProps?.appointment}
-                spacious={isWeekView}
-              />
-            )}
-            eventClassNames={
-              isWeekView
-                ? 'cursor-pointer admin-calendar-week-event'
-                : isMobileDayView
-                  ? 'cursor-pointer admin-calendar-mobile-day-event'
-                  : 'cursor-pointer'
-            }
+            eventContent={(arg) => {
+              if (arg.event.display === 'background') {
+                return null;
+              }
+
+              return (
+                <AppointmentEventContent
+                  timeText={arg.timeText}
+                  appointment={arg.event.extendedProps?.appointment}
+                  spacious={isWeekView}
+                />
+              );
+            }}
+            eventDidMount={(arg) => {
+              const harness = arg.el.parentElement;
+
+              if (arg.event.display === 'background') {
+                arg.el.style.pointerEvents = 'none';
+
+                if (harness) {
+                  harness.style.pointerEvents = 'none';
+                }
+
+                return;
+              }
+
+              arg.el.style.pointerEvents = 'auto';
+
+              if (harness) {
+                harness.style.pointerEvents = 'auto';
+                harness.style.zIndex = '10';
+              }
+            }}
+            eventClassNames={(arg) => {
+              if (arg.event.display === 'background') {
+                return ['admin-calendar-unavailable'];
+              }
+
+              if (isWeekView) {
+                return ['cursor-pointer', 'admin-calendar-week-event'];
+              }
+
+              if (isMobileDayView) {
+                return ['cursor-pointer', 'admin-calendar-mobile-day-event'];
+              }
+
+              return ['cursor-pointer'];
+            }}
             slotLabelFormat={{
               hour: '2-digit',
               minute: '2-digit',
@@ -817,6 +1214,7 @@ export default function AdminCalendarPage() {
 
       {detailAppt && (
         <AppointmentDetailModal
+          key={`${detailAppt._id}-${detailAppt.estado}-${detailAppt.updatedAt || detailAppt.fechaHoraInicio}`}
           appointment={detailAppt}
           onClose={() => setDetailAppt(null)}
         />

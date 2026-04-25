@@ -10,36 +10,27 @@ const BREADCRUMB_MAP = {
   '/admin/ajustes': 'Ajustes',
 };
 
-export default function AdminHeader({ onToggleSidebar }) {
+export default function AdminHeader({ onToggleSidebar, sidebarVisible = true }) {
   const { pathname } = useLocation();
   const current = BREADCRUMB_MAP[pathname] ?? 'Admin';
+  const sidebarLabel = sidebarVisible ? 'Ocultar barra lateral' : 'Mostrar barra lateral';
 
   return (
-    <header className="h-16 px-8 flex items-center justify-between sticky top-0 bg-[#faf8ff]/80 backdrop-blur-xl z-40 border-b border-[#6b38d4]/5">
-      {/* Mobile hamburger + Breadcrumb */}
-      <div className="flex items-center gap-2 text-[0.75rem] font-medium tracking-tight">
+    <header className="sticky top-0 z-40 flex h-16 items-center gap-3 border-b border-[#6b38d4]/5 bg-[#faf8ff]/80 px-4 backdrop-blur-xl sm:px-6 md:px-8">
+      <div className="flex min-w-0 items-center gap-2 text-[0.75rem] font-medium tracking-tight">
         {onToggleSidebar && (
           <button
             onClick={onToggleSidebar}
-            className="lg:hidden p-2 rounded-lg hover:bg-[#eaedff] transition-colors text-[#494454] mr-1"
-            aria-label="Abrir menú"
+            className="mr-1 rounded-lg p-2 text-[#494454] transition-colors hover:bg-[#eaedff]"
+            aria-label={sidebarLabel}
+            title={sidebarLabel}
           >
             <span className="material-symbols-outlined text-[20px]">menu</span>
           </button>
         )}
         <span className="text-[#494454]">Admin</span>
         <span className="material-symbols-outlined text-[14px] text-[#cbc3d7]">chevron_right</span>
-        <span className="text-[#6b38d4] font-bold">{current}</span>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-2">
-        <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[#eaedff] transition-colors text-[#494454]">
-          <span className="material-symbols-outlined">notifications</span>
-        </button>
-        <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-[#eaedff] transition-colors text-[#494454]">
-          <span className="material-symbols-outlined">search</span>
-        </button>
+        <span className="truncate font-bold text-[#6b38d4]">{current}</span>
       </div>
     </header>
   );

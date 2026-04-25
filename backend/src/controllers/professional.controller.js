@@ -1,4 +1,8 @@
+import Appointment from '../models/Appointment.js';
+import Blocker from '../models/Blocker.js';
 import Professional from '../models/Professional.js';
+import Service from '../models/Service.js';
+import { emitQuerySync } from '../services/querySync.service.js';
 
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 
@@ -61,6 +65,7 @@ export const createProfessional = async (req, res) => {
   try {
     const professional = new Professional(req.validatedBody);
     await professional.save();
+    emitQuerySync('professionals');
     
     res.status(201).json(professional);
   } catch (error) {
@@ -90,6 +95,7 @@ export const updateProfessional = async (req, res) => {
       return res.status(404).json({ error: 'Profesional no encontrado' });
     }
 
+    emitQuerySync('professionals');
     res.json(professional);
   } catch (error) {
     console.error('Error al actualizar profesional:', error);
@@ -99,7 +105,7 @@ export const updateProfessional = async (req, res) => {
 
 /**
  * DELETE /api/professionals/:id
- * Eliminar un profesional (soft delete - desactivar)
+ * Eliminar un profesional definitivamente si no tiene citas asociadas
  * Acceso: Solo Admin
  */
 export const deleteProfessional = async (req, res) => {
@@ -108,17 +114,35 @@ export const deleteProfessional = async (req, res) => {
       return res.status(400).json({ error: 'id inválido' });
     }
 
-    const professional = await Professional.findByIdAndUpdate(
-      req.params.id,
-      { $set: { activo: false } },
-      { new: true }
-    );
+    const professional = await Professional.findById(req.params.id).select('_id nombre');
 
     if (!professional) {
       return res.status(404).json({ error: 'Profesional no encontrado' });
     }
 
-    res.json({ message: 'Profesional desactivado correctamente', professional });
+    const hasAppointments = await Appointment.exists({ profesional: req.params.id });
+
+    if (hasAppointments) {
+      return res.status(409).json({
+        error: 'No se puede eliminar un profesional con citas asociadas. Puedes dejarlo inactivo desde editar.',
+        code: 'PROFESSIONAL_HAS_APPOINTMENTS'
+      });
+    }
+
+    await Promise.all([
+      Service.updateMany(
+        { profesionalesCapaces: req.params.id },
+        { $pull: { profesionalesCapaces: req.params.id } }
+      ),
+      Blocker.deleteMany({ profesional: req.params.id }),
+      Professional.deleteOne({ _id: req.params.id })
+    ]);
+
+    emitQuerySync('professionals', 'services', 'blockers');
+    res.json({
+      message: 'Profesional eliminado correctamente',
+      professionalId: req.params.id
+    });
   } catch (error) {
     console.error('Error al eliminar profesional:', error);
     res.status(500).json({ error: 'Error al eliminar el profesional' });

@@ -1,11 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { rateLimit } from 'express-rate-limit';
 import connectDB from './config/db.js';
-
-// Cargar variables de entorno
-dotenv.config();
+import './config/loadEnv.js';
 
 // ─── Validaciones de entorno en startup (SEC-4, DEUDA-6) ───────────────────
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
@@ -88,6 +85,7 @@ import settingsRoutes from './routes/settings.routes.js';
 import blockerRoutes from './routes/blocker.routes.js';
 import technicalNoteRoutes from './routes/technicalNote.routes.js';
 import availabilityRoutes from './routes/availability.routes.js';
+import querySyncRoutes from './routes/querySync.routes.js';
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
@@ -98,6 +96,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/blockers', blockerRoutes);
 app.use('/api/technical-notes', technicalNoteRoutes);
 app.use('/api/availability', availabilityRoutes);
+app.use('/api/query-sync', querySyncRoutes);
 
 // Manejo de errores global (SEC-2: no exponer err.message en 5xx de producción)
 app.use((err, req, res, next) => {

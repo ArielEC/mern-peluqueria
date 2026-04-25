@@ -1,0 +1,179 @@
+\begin{thebibliography}{}
+
+\bibitem [\protect \citeauthoryear {%
+Karpov%
+}{%
+Karpov%
+}{%
+{\protect \APACyear {2024}}%
+}]{%
+mongoose_docs}
+\APACinsertmetastar {%
+mongoose_docs}%
+\begin{APACrefauthors}%
+Karpov, V.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+\APACrefbtitle {Mongoose {ODM} Documentation.} {Mongoose {ODM} documentation.}
+\newblock
+\begin{APACrefURL} \url{https://mongoosejs.com/docs/} \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Linsley%
+}{%
+Linsley%
+}{%
+{\protect \APACyear {2024}}%
+}]{%
+tanstack_query}
+\APACinsertmetastar {%
+tanstack_query}%
+\begin{APACrefauthors}%
+Linsley, T.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+\APACrefbtitle {{TanStack} Query --- Powerful asynchronous state management.}
+  {{TanStack} query --- powerful asynchronous state management.}
+\newblock
+\begin{APACrefURL} \url{https://tanstack.com/query/latest} \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+McDonnell%
+}{%
+McDonnell%
+}{%
+{\protect \APACyear {2024}}%
+}]{%
+zod_docs}
+\APACinsertmetastar {%
+zod_docs}%
+\begin{APACrefauthors}%
+McDonnell, C.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+\APACrefbtitle {Zod --- {TypeScript}-first schema validation with static type
+  inference.} {Zod --- {TypeScript}-first schema validation with static type
+  inference.}
+\newblock
+\begin{APACrefURL} \url{https://zod.dev/} \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+{MongoDB, Inc.}%
+}{%
+{MongoDB, Inc.}%
+}{%
+{\protect \APACyear {2024}}%
+{\protect \APACexlab {{\protect \BCnt {1}}}}}]{%
+mern_stack}
+\APACinsertmetastar {%
+mern_stack}%
+\begin{APACrefauthors}%
+{MongoDB, Inc.}%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024{\protect \BCnt {1}}}{}{}.
+\newblock
+\APACrefbtitle {{MERN} Stack Explained.} {{MERN} stack explained.}
+\newblock
+\begin{APACrefURL} \url{https://www.mongodb.com/resources/languages/mern-stack}
+  \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+{MongoDB, Inc.}%
+}{%
+{MongoDB, Inc.}%
+}{%
+{\protect \APACyear {2024}}%
+{\protect \APACexlab {{\protect \BCnt {2}}}}}]{%
+mongodb_docs}
+\APACinsertmetastar {%
+mongodb_docs}%
+\begin{APACrefauthors}%
+{MongoDB, Inc.}%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024{\protect \BCnt {2}}}{}{}.
+\newblock
+\APACrefbtitle {MongoDB Documentation.} {Mongodb documentation.}
+\newblock
+\begin{APACrefURL} \url{https://www.mongodb.com/docs/manual/} \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+{OWASP Foundation}%
+}{%
+{OWASP Foundation}%
+}{%
+{\protect \APACyear {2024}}%
+}]{%
+owasp_rate_limiting}
+\APACinsertmetastar {%
+owasp_rate_limiting}%
+\begin{APACrefauthors}%
+{OWASP Foundation}.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+\APACrefbtitle {Rate Limiting --- {OWASP} Cheat Sheet Series.} {Rate limiting
+  --- {OWASP} cheat sheet series.}
+\newblock
+\begin{APACrefURL}
+  \url{https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html}
+  \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Shaw%
+}{%
+Shaw%
+}{%
+{\protect \APACyear {2024}}%
+}]{%
+fullcalendar}
+\APACinsertmetastar {%
+fullcalendar}%
+\begin{APACrefauthors}%
+Shaw, A.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+\APACrefbtitle {{FullCalendar} --- Full-sized {JavaScript} Calendar.}
+  {{FullCalendar} --- full-sized {JavaScript} calendar.}
+\newblock
+\begin{APACrefURL} \url{https://fullcalendar.io/} \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\end{thebibliography}

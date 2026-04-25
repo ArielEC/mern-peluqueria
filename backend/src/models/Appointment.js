@@ -92,6 +92,7 @@ appointmentSchema.index({ profesional: 1, fechaHoraInicio: 1 });
 appointmentSchema.index({ fechaHoraInicio: 1, fechaHoraFin: 1 });
 appointmentSchema.index({ fechaHoraInicio: 1, fechaHoraFinOperativa: 1 });
 appointmentSchema.index({ estado: 1 });
+appointmentSchema.index({ estado: 1, fechaHoraFin: 1 });
 appointmentSchema.index({ profesional: 1, estado: 1, fechaHoraInicio: 1 });
 appointmentSchema.index({ profesional: 1, estado: 1, fechaHoraInicio: 1, fechaHoraFinOperativa: 1 });
 

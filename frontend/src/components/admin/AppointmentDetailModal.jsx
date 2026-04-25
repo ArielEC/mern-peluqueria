@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAdminUpdateAppointment, useAdminCancelAppointment } from '@/hooks/useAdminAppointments';
 import { useSettings } from '@/hooks/useSettings';
 import { formatTimeInTz, formatDateInTz } from '@/lib/utils';
@@ -10,9 +10,20 @@ const STATUS_OPTIONS = [
   { value: 'no_presentado', label: 'No presentado', color: 'bg-[#eaedff] text-[#494454]' },
 ];
 
+function getStatusOption(status) {
+  return STATUS_OPTIONS.find((option) => option.value === status) || STATUS_OPTIONS[0];
+}
+
 export default function AppointmentDetailModal({ appointment, onClose }) {
-  const [estado, setEstado] = useState(appointment?.estado || 'confirmada');
-  const [notasInternas, setNotasInternas] = useState(appointment?.notasInternas || '');
+  const initialFinBase = appointment?.fechaHoraFinOperativa || appointment?.fechaHoraFin || appointment?.fechaHoraInicio;
+  const initialHasAppointmentEnded = appointment?.estado !== 'cancelada'
+    && Boolean(initialFinBase && new Date(initialFinBase) <= new Date());
+  const initialResolvedStatus = appointment?.estado === 'confirmada' && initialHasAppointmentEnded
+    ? 'completada'
+    : appointment?.estado || 'confirmada';
+
+  const [estado, setEstado] = useState(() => initialResolvedStatus);
+  const [notasInternas, setNotasInternas] = useState(() => appointment?.notasInternas || '');
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [motivoCancelacion, setMotivoCancelacion] = useState('');
 
@@ -21,17 +32,44 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
   const { data: settings } = useSettings();
   const businessTz = settings?.zonaHoraria || 'Europe/Madrid';
 
-  if (!appointment) return null;
+  const prof = appointment?.profesional;
+  const serv = appointment?.servicio;
+  const client = appointment?.cliente;
+  const inicio = appointment ? new Date(appointment.fechaHoraInicio) : null;
+  const finBase = appointment?.fechaHoraFinOperativa || appointment?.fechaHoraFin || appointment?.fechaHoraInicio;
+  const fin = finBase ? new Date(finBase) : null;
+  const hasAppointmentEnded = appointment?.estado !== 'cancelada' && Boolean(fin && fin <= new Date());
+  const resolvedStatus = useMemo(() => {
+    if (appointment?.estado === 'confirmada' && hasAppointmentEnded) {
+      return 'completada';
+    }
 
-  const prof = appointment.profesional;
-  const serv = appointment.servicio;
-  const client = appointment.cliente;
-  const inicio = new Date(appointment.fechaHoraInicio);
-  const fin = appointment.fechaHoraFin ? new Date(appointment.fechaHoraFin) : null;
+    return appointment?.estado || 'confirmada';
+  }, [appointment?.estado, hasAppointmentEnded]);
+  const displayedStatus = estado === 'no_presentado' ? 'no_presentado' : resolvedStatus;
+  const displayedStatusOption = useMemo(
+    () => getStatusOption(displayedStatus),
+    [displayedStatus]
+  );
+  const canMarkNoShow = hasAppointmentEnded
+    && appointment?.estado !== 'cancelada'
+    && resolvedStatus !== 'no_presentado';
+  const canCancelAppointment = appointment?.estado !== 'cancelada' && !hasAppointmentEnded;
+
+  if (!appointment || !inicio) return null;
 
   function handleUpdate() {
+    const payload = {
+      id: appointment._id,
+      notasInternas,
+    };
+
+    if (estado === 'no_presentado' && appointment?.estado !== 'no_presentado') {
+      payload.estado = 'no_presentado';
+    }
+
     updateMutation.mutate(
-      { id: appointment._id, estado, notasInternas },
+      payload,
       { onSuccess: onClose }
     );
   }
@@ -44,23 +82,23 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div className="absolute inset-0 bg-[#131b2e]/30 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md bg-white rounded-xl shadow-2xl z-10 overflow-hidden">
         <div className="h-1 bg-[#6b38d4]" />
 
         {/* Header */}
-        <div className="p-5 border-b border-[#cbc3d7]/20 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-[#cbc3d7]/20 flex items-center justify-between gap-3">
           <h2 className="font-bold text-[#131b2e]">Detalle de Cita</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#f2f3ff] text-[#494454]">
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
 
-        <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-4 sm:p-5 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Info básica */}
           <div className="bg-[#f2f3ff] rounded-lg p-4 space-y-3">
-            <div className="flex justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#494454] mb-0.5">Servicio</p>
                 <p className="font-bold text-[#131b2e]">{serv?.nombre}</p>
@@ -71,7 +109,7 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#cbc3d7]/20">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#cbc3d7]/20">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#494454] mb-0.5">Fecha</p>
                 <p className="text-[0.8rem] font-bold text-[#131b2e] capitalize">
@@ -104,21 +142,26 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
           {/* Cambiar estado */}
           <div>
             <p className="text-[11px] font-bold uppercase tracking-widest text-[#494454] mb-2">Estado</p>
-            <div className="flex flex-wrap gap-2">
-              {STATUS_OPTIONS.map((opt) => (
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <span className={`px-3 py-1.5 rounded-full text-[0.75rem] font-bold ${displayedStatusOption.color}`}>
+                  {displayedStatusOption.label}
+                </span>
+              </div>
+
+              {canMarkNoShow && (
                 <button
-                  key={opt.value}
                   type="button"
-                  onClick={() => setEstado(opt.value)}
+                  onClick={() => setEstado((current) => (current === 'no_presentado' ? resolvedStatus : 'no_presentado'))}
                   className={`px-3 py-1.5 rounded-full text-[0.75rem] font-bold transition-all ${
-                    estado === opt.value
-                      ? opt.color + ' ring-2 ring-[#6b38d4]/40'
+                    estado === 'no_presentado'
+                      ? 'bg-[#eaedff] text-[#494454] ring-2 ring-[#6b38d4]/40'
                       : 'bg-[#eaedff] text-[#494454] hover:bg-[#e2e7ff]'
                   }`}
                 >
-                  {opt.label}
+                  Marcar como no presentado
                 </button>
-              ))}
+              )}
             </div>
           </div>
 
@@ -130,12 +173,12 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
               onChange={(e) => setNotasInternas(e.target.value)}
               rows={2}
               placeholder="Observaciones internas del admin..."
-              className="w-full bg-[#f2f3ff] rounded-lg px-3 py-2 text-[0.8rem] text-[#131b2e] placeholder:text-[#494454]/50 outline-none focus:ring-2 focus:ring-[#6b38d4] resize-none border-0"
+              className="w-full bg-[#f2f3ff] rounded-lg px-3 py-2 text-base sm:text-[0.8rem] text-[#131b2e] placeholder:text-[#494454]/50 outline-none focus:ring-2 focus:ring-[#6b38d4] resize-none border-0"
             />
           </div>
 
           {/* Cancelar cita */}
-          {appointment.estado !== 'cancelada' && (
+          {canCancelAppointment && (
             <div className="border-t border-[#cbc3d7]/20 pt-4">
               {!confirmCancel ? (
                 <button
@@ -156,7 +199,7 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
                     placeholder="Motivo (opcional)..."
                     className="w-full bg-white rounded-lg px-3 py-2 text-[0.8rem] outline-none focus:ring-2 focus:ring-red-400 resize-none border border-[#ffdad6]"
                   />
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       type="button"
                       onClick={() => setConfirmCancel(false)}
@@ -182,7 +225,7 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="p-5 pt-0 flex gap-3">
+        <div className="p-4 sm:p-5 pt-0 flex flex-col sm:flex-row gap-3">
           <button
             type="button"
             onClick={onClose}

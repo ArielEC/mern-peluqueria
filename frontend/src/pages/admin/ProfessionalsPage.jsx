@@ -8,6 +8,7 @@ import {
   useAdminProfessionals, useAdminCreateProfessional,
   useAdminUpdateProfessional, useAdminDeleteProfessional,
 } from '@/hooks/useAdminEntities';
+import { notifyValidationError } from '@/lib/notifications';
 
 const DIAS = [
   { key: '1', label: 'Lun' }, { key: '2', label: 'Mar' }, { key: '3', label: 'Mié' },
@@ -83,7 +84,12 @@ function ProfModal({ open, onClose, initial }) {
 
   function handleSubmit() {
     const e = validate();
-    if (Object.keys(e).length) { setErrors(e); setTab('info'); return; }
+    if (Object.keys(e).length) {
+      setErrors(e);
+      setTab('info');
+      notifyValidationError(e, 'Revisa los datos del profesional');
+      return;
+    }
     const mut = isEdit ? updateMut : createMut;
     const args = isEdit ? { id: initial._id, ...form } : form;
     mut.mutate(args, { onSuccess: onClose, onError: (err) => setErrors({ api: err?.response?.data?.error || 'Error' }) });
@@ -136,7 +142,7 @@ function ProfModal({ open, onClose, initial }) {
           </FormField>
           <div className="flex items-center gap-3">
             <StatusToggle active={form.activo} onChange={(v) => set('activo', v)} />
-            <span className="text-[0.875rem] font-medium text-[#494454]">Profesional activo</span>
+            <span className="text-[0.875rem] font-medium text-[#494454]">Profesional activo (visible para reservas)</span>
           </div>
           {errors.api && <div className="bg-[#ffdad6] text-[#93000a] rounded-lg px-4 py-3 text-[0.8rem] font-medium">{errors.api}</div>}
         </div>
@@ -152,10 +158,12 @@ function ProfModal({ open, onClose, initial }) {
 export default function ProfessionalsPage() {
   const { data: professionals = [], isLoading } = useAdminProfessionals();
   const deleteMut = useAdminDeleteProfessional();
+  const updateMut = useAdminUpdateProfessional();
 
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
 
   const filtered = useMemo(() => {
     if (!search) return professionals;
@@ -176,7 +184,7 @@ export default function ProfessionalsPage() {
     {
       key: 'nombre', label: 'Profesional',
       render: (p) => (
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${p.activo === false ? 'opacity-50' : ''}`}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0"
             style={{ backgroundColor: p.color || '#6b38d4' }}>
             {p.nombre?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()}
@@ -196,15 +204,24 @@ export default function ProfessionalsPage() {
       key: 'activo', label: 'Estado', className: 'text-center',
       render: (p) => (
         <div className="flex justify-center">
-          <span className={`px-2.5 py-1 rounded-full text-[0.7rem] font-bold ${p.activo !== false ? 'bg-[#e9ddff] text-[#4e3b7c]' : 'bg-[#eaedff] text-[#494454]'}`}>
-            {p.activo !== false ? 'Activo' : 'Inactivo'}
-          </span>
+          <StatusToggle
+            active={p.activo !== false}
+            onChange={(v) => updateMut.mutate({ id: p._id, activo: v })}
+          />
         </div>
       ),
     },
     {
       key: 'actions', label: 'Acciones', className: 'text-right',
-      render: (p) => <ActionButtons onEdit={() => setModal(p)} onDelete={() => setDeleteTarget(p)} />,
+      render: (p) => (
+        <ActionButtons
+          onEdit={() => setModal(p)}
+          onDelete={() => {
+            setDeleteError('');
+            setDeleteTarget(p);
+          }}
+        />
+      ),
     },
   ];
 
@@ -238,9 +255,21 @@ export default function ProfessionalsPage() {
       <ConfirmDeleteModal
         open={Boolean(deleteTarget)}
         title="Eliminar Profesional"
-        description={`¿Eliminar a "${deleteTarget?.nombre}"? Sus citas futuras no se verán afectadas.`}
-        onConfirm={() => deleteMut.mutate(deleteTarget._id, { onSuccess: () => setDeleteTarget(null) })}
-        onCancel={() => setDeleteTarget(null)}
+        description={`¿Eliminar "${deleteTarget?.nombre}"? Se borrará del sistema y se quitará de servicios y bloqueos si no tiene citas asociadas.`}
+        error={deleteError}
+        onConfirm={() => deleteMut.mutate(deleteTarget._id, {
+          onSuccess: () => {
+            setDeleteError('');
+            setDeleteTarget(null);
+          },
+          onError: (err) => {
+            setDeleteError(err?.response?.data?.error || 'No se pudo eliminar el profesional');
+          },
+        })}
+        onCancel={() => {
+          setDeleteError('');
+          setDeleteTarget(null);
+        }}
         isPending={deleteMut.isPending}
       />
     </div>

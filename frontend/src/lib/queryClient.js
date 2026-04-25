@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { setupCrossTabQuerySync } from '@/lib/querySync';
+import { setupCrossTabQuerySync, setupServerQuerySync } from '@/lib/querySync';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,5 +21,6 @@ const queryClient = new QueryClient({
 });
 
 setupCrossTabQuerySync(queryClient);
+setupServerQuerySync(queryClient);
 
 export default queryClient;

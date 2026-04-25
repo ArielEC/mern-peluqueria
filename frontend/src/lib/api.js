@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { notifyError } from '@/lib/notifications';
 import useAuthStore from '@/stores/authStore';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -35,6 +36,7 @@ api.interceptors.response.use(
       const isAuthRoute = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
       if (!isAuthRoute) {
         const { logout } = useAuthStore.getState();
+        notifyError('Tu sesión ha caducado', 'Vuelve a iniciar sesión para continuar.');
         logout();
         window.location.href = '/login';
       }

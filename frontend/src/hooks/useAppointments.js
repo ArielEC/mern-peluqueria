@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { getErrorMessage, notifyError, notifySuccess } from '@/lib/notifications';
 import { getAutoSyncQueryOptions, invalidateAndSyncGroups } from '@/lib/querySync';
+
+const APPOINTMENT_STATE_ERROR_STATUS = new Set([400, 404, 409]);
+
+function shouldRefreshAppointmentState(error) {
+  return APPOINTMENT_STATE_ERROR_STATUS.has(error?.response?.status);
+}
 
 export const appointmentsKeys = {
   all: ['appointments'],
@@ -15,7 +22,24 @@ export const useCreateAppointment = () => {
       const { data } = await api.post('/appointments', payload);
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(queryClient, 'appointments'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(queryClient, 'appointments');
+      notifySuccess('Cita creada con éxito');
+    },
+    onError: (error) => {
+      if (shouldRefreshAppointmentState(error)) {
+        void invalidateAndSyncGroups(
+          queryClient,
+          'appointments',
+          'professionals',
+          'services',
+          'blockers',
+          'settings'
+        );
+      }
+
+      notifyError(getErrorMessage(error, 'No se ha podido crear la cita'));
+    },
   });
 };
 
@@ -41,6 +65,16 @@ export const useCancelAppointment = () => {
       });
       return data;
     },
-    onSuccess: () => invalidateAndSyncGroups(queryClient, 'appointments'),
+    onSuccess: () => {
+      invalidateAndSyncGroups(queryClient, 'appointments');
+      notifySuccess('Cita cancelada con éxito');
+    },
+    onError: (error) => {
+      if (shouldRefreshAppointmentState(error)) {
+        void invalidateAndSyncGroups(queryClient, 'appointments');
+      }
+
+      notifyError(getErrorMessage(error, 'No se ha podido cancelar la cita'));
+    },
   });
 };

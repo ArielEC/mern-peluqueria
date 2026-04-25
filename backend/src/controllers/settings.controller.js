@@ -1,4 +1,5 @@
 import Settings from '../models/Settings.js';
+import { emitQuerySync } from '../services/querySync.service.js';
 
 /**
  * GET /api/settings
@@ -23,6 +24,7 @@ export const getSettings = async (req, res) => {
 export const updateSettings = async (req, res) => {
   try {
     const settings = await Settings.updateGlobal(req.validatedBody);
+    emitQuerySync('settings');
     res.json(settings);
   } catch (error) {
     console.error('Error al actualizar settings:', error);

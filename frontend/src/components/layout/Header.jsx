@@ -26,15 +26,15 @@ export default function Header() {
 
   return (
     <header className="w-full top-0 sticky z-50 bg-background border-b border-border/40">
-      <div className="flex justify-between items-center px-6 md:px-8 h-16 w-full max-w-7xl mx-auto">
+      <div className="flex justify-between items-center px-4 sm:px-6 md:px-8 h-16 w-full max-w-7xl mx-auto gap-3">
 
         {/* Logo */}
         <Link
           to="/"
-          className="text-xl font-bold tracking-display text-foreground flex items-center gap-2 shrink-0"
+          className="text-lg sm:text-xl font-bold tracking-display text-foreground flex items-center gap-2 min-w-0 flex-1 md:flex-none"
         >
           <Scissors className="h-5 w-5 text-primary" />
-          {businessName}
+          <span className="truncate">{businessName}</span>
         </Link>
 
         {/* Nav desktop */}
@@ -98,7 +98,7 @@ export default function Header() {
 
         {/* Hamburger mobile */}
         <button
-          className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground"
+          className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground shrink-0"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Abrir menú"
         >
@@ -108,7 +108,7 @@ export default function Header() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-border/40 bg-background px-6 pb-5 pt-3">
+        <div className="md:hidden border-t border-border/40 bg-background px-4 sm:px-6 pb-5 pt-3">
           <nav className="flex flex-col gap-1">
             {[...navLinks, ...(isAuthenticated ? authLinks : [])].map(({ to, label }) => (
               <NavLink

@@ -6,68 +6,81 @@
 
 La digitalizaci\'on de los peque\~nos negocios locales se ha convertido en una necesidad en la econom\'ia actual. Los salones de belleza, barber\'ias y peluquer\'ias operan mayoritariamente bajo modelos de gesti\'on tradicionales: agenda f\'isica, llamadas telef\'onicas y la memoria del profesional. Sin embargo, los clientes actuales esperan poder reservar en cualquier momento sin realizar llamadas, recibir recordatorios autom\'aticos y gestionar sus citas desde dispositivos m\'oviles.
 
-Este proyecto nace de una necesidad real: la peluquer\'ia familiar de los autores carec\'ia de herramientas digitales adaptadas a su flujo de trabajo. Las soluciones comerciales existentes presentan dos problemas fundamentales: un coste recurrente elevado (entre 200 y 400 euros anuales en suscripciones) y una complejidad excesiva con funcionalidades innecesarias.
+Este proyecto nace de una necesidad real: la peluquer\'ia familiar de los autores carec\'ia de herramientas digitales adaptadas a su flujo de trabajo. Las soluciones comerciales existentes presentan dos problemas fundamentales: un coste recurrente elevado (entre 200 y 400 euros anuales en suscripciones) y una complejidad excesiva con funcionalidades innecesarias que dificultan la adopci\'on por parte de usuarios no t\'ecnicos.
 
-La asignatura de Complementos de Bases de Datos ofrece el marco id\'oneo para abordar este reto, ya que el n\'ucleo del sistema reside en el dise\~no e implementaci\'on de una base de datos relacional que soporte eficientemente todas las operaciones del negocio.
+La asignatura de Complementos de Bases de Datos ofrece el marco id\'oneo para abordar este reto, ya que el n\'ucleo del sistema reside en el dise\~no e implementaci\'on de una base de datos que soporte eficientemente todas las operaciones del negocio: gesti\'on de citas con control de solapamientos, historial t\'ecnico de clientes, configuraci\'on de horarios y bloqueos temporales.
 
 \section{Descripci\'on del Problema}\label{sec:problema}
 
 La gesti\'on tradicional de citas en peque\~nos negocios locales presenta las siguientes deficiencias:
 
-\textbf{P\'erdida de tiempo productivo:} Las interrupciones por llamadas telef\'onicas o mensajes de WhatsApp para agendar, modificar o cancelar citas suponen una distracci\'on continua. El profesional debe elegir entre ignorar la llamada o interrumpir el servicio que est\'a prestando, afectando negativamente a la experiencia del cliente.
+\textbf{P\'erdida de tiempo productivo:} Las interrupciones por llamadas telef\'onicas o mensajes de WhatsApp para agendar, modificar o cancelar citas suponen una distracci\'on continua. El profesional debe elegir entre ignorar la llamada o interrumpir el servicio que est\'a prestando, afectando negativamente a la experiencia del cliente actual.
 
 \textbf{Descontrol del historial:} Sin un sistema centralizado, resulta dif\'icil recordar qu\'e servicio se le realiz\'o a un cliente hace meses. Informaci\'on cr\'itica como f\'ormulas de color, preferencias de corte o alergias se pierde o queda dispersa en notas f\'isicas.
 
-\textbf{Falta de m\'etricas:} La ausencia de datos estructurados impide obtener una visi\'on clara del rendimiento del negocio. Preguntas como ``\textquestiondown cu\'ales son los servicios m\'as demandados?'' carecen de respuesta inmediata.
+\textbf{Falta de m\'etricas:} La ausencia de datos estructurados impide obtener una visi\'on clara del rendimiento del negocio. Preguntas como ``\textquestiondown cu\'ales son los servicios m\'as demandados?'' o ``\textquestiondown cu\'al es la facturaci\'on mensual?'' carecen de respuesta inmediata.
 
-\textbf{Errores humanos:} La gesti\'on manual es propensa a solapamientos de citas (\textit{overbooking}) o huecos vac\'ios innecesarios, con impacto econ\'omico directo.
+\textbf{Errores humanos:} La gesti\'on manual es propensa a solapamientos de citas (\textit{overbooking}) o huecos vac\'ios innecesarios, con impacto econ\'omico directo en la rentabilidad del negocio.
 
 \section{Objetivos del Proyecto}\label{sec:objetivos}
 
-El objetivo general es desarrollar una plataforma web integral que digitalice la gesti\'on de una barber\'ia o peluquer\'ia. Los objetivos espec\'ificos son:
+El objetivo general es desarrollar una plataforma web integral que digitalice la gesti\'on completa de una barber\'ia o peluquer\'ia. Los objetivos espec\'ificos son:
 
 \begin{enumerate}
-    \item Dise\~nar e implementar una base de datos relacional que modele clientes, profesionales, servicios, citas y configuraciones del negocio.
-    
-    \item Desarrollar un portal p\'ublico de reservas accesible desde dispositivos m\'oviles que permita consultar servicios, visualizar disponibilidad y realizar reservas 24/7.
-    
-    \item Desarrollar un panel de administraci\'on con calendario visual, fichas de cliente con historial t\'ecnico, y gesti\'on de horarios y servicios.
-    
-    \item Garantizar la integridad de los datos mediante restricciones, triggers y procedimientos almacenados que eviten solapamientos de citas.
-    
-    \item Implementar una arquitectura \textit{single-tenant} donde el negocio sea propietario absoluto de sus datos.
+    \item Dise\~nar e implementar una base de datos en MongoDB que modele las entidades del dominio: clientes, profesionales, servicios, citas, bloqueos temporales, notas t\'ecnicas y configuraci\'on del negocio.
+
+    \item Desarrollar un portal p\'ublico de reservas accesible desde dispositivos m\'oviles que permita consultar servicios, visualizar disponibilidad en tiempo real y realizar reservas de forma aut\'onoma.
+
+    \item Desarrollar un panel de administraci\'on privado con calendario visual interactivo, fichas de cliente con historial t\'ecnico (CRM), gesti\'on de horarios por profesional y administraci\'on del cat\'alogo de servicios.
+
+    \item Implementar un motor de disponibilidad que calcule los huecos libres considerando horarios semanales, descansos, bloqueos y citas existentes, evitando solapamientos.
+
+    \item Construir una arquitectura \textit{single-tenant} donde el negocio sea propietario absoluto de sus datos, sin dependencia de plataformas de terceros.
 \end{enumerate}
 
 \section{Alcance del Proyecto}\label{sec:alcance}
 
-El sistema se estructura en dos m\'odulos:
+El sistema se estructura en dos m\'odulos principales:
 
-\textbf{Portal de Reservas (Cliente):} Aplicaci\'on web responsive donde los clientes pueden explorar el cat\'alogo de servicios, ver disponibilidad en tiempo real, realizar reservas, y gestionar sus citas desde un \'area personal.
+\textbf{Portal de Reservas (Cliente):} Aplicaci\'on web \textit{responsive} donde los clientes pueden explorar el cat\'alogo de servicios con precios y duraciones, ver la disponibilidad en tiempo real, realizar reservas mediante un flujo guiado en tres pasos, y consultar o cancelar sus citas desde un \'area personal protegida.
 
-\textbf{Panel de Administraci\'on (Negocio):} Herramienta privada con calendario de citas, sistema de fichas de cliente para notas t\'ecnicas, gesti\'on de horarios y vacaciones, y administraci\'on del cat\'alogo de servicios.
+\textbf{Panel de Administraci\'on (Negocio):} Herramienta privada que incluye un \textit{dashboard} con indicadores clave (citas del d\'ia, facturaci\'on semanal y mensual), un calendario interactivo con vista por profesional basado en FullCalendar, un sistema de fichas de cliente con notas t\'ecnicas categorizadas (color, tratamiento, alergia, preferencia), gesti\'on de horarios semanales por profesional con descansos, administraci\'on de bloqueos temporales (vacaciones, festivos, mantenimiento) y configuraci\'on general del negocio.
 
-\textbf{Funcionalidades excluidas:} Sistema de pagos online, marketing automatizado, gesti\'on de inventario y aplicaci\'on m\'ovil nativa.
+\textbf{Funcionalidades excluidas del alcance:} Sistema de pagos \textit{online}, marketing automatizado, gesti\'on de inventario, notificaciones por correo electr\'onico o SMS, y aplicaci\'on m\'ovil nativa.
 
 \section{Tecnolog\'ias Utilizadas}\label{sec:tecnologias}
 
-Para el desarrollo del proyecto se han seleccionado las siguientes tecnolog\'ias:
+Para el desarrollo del proyecto se ha seleccionado el \textit{stack} MERN, un conjunto de tecnolog\'ias JavaScript ampliamente adoptado en la industria para el desarrollo de aplicaciones web modernas~\cite{mern_stack}. El cuadro~\ref{tab:tecnologias} resume las tecnolog\'ias principales junto con su versi\'on y prop\'osito.
 
-\begin{itemize}
-    \item \textbf{Base de datos:} PostgreSQL, por su robustez y soporte avanzado de restricciones e integridad referencial.
-    \item \textbf{Backend:} Node.js con Express, proporcionando una API REST para la comunicaci\'on con el frontend.
-    \item \textbf{Frontend:} React con TypeScript, para interfaces de usuario modernas y mantenibles.
-    \item \textbf{Estilos:} Tailwind CSS, para un dise\~no responsive y consistente.
-\end{itemize}
+\cuadro{|l|l|p{7cm}|}{Tecnolog\'ias principales del proyecto}{tab:tecnologias}{
+\textbf{Tecnolog\'ia} & \textbf{Versi\'on} & \textbf{Prop\'osito} \\
+\hline
+MongoDB & 7.x & Base de datos NoSQL orientada a documentos \\
+Express.js & 4.21 & \textit{Framework} para la API REST del servidor \\
+React & 19.x & Biblioteca para la interfaz de usuario \\
+Node.js & 20.x & Entorno de ejecuci\'on del servidor \\
+\hline
+Mongoose & 8.6 & ODM para modelado de datos en MongoDB \\
+Tailwind CSS & 4.2 & \textit{Framework} CSS de utilidades \\
+Vite & 8.0 & Herramienta de construcci\'on del \textit{frontend} \\
+TanStack Query & 5.x & Gesti\'on de cach\'e y estado del servidor \\
+FullCalendar & 6.1 & Componente de calendario interactivo \\
+Zustand & 5.x & Gesti\'on de estado global ligera \\
+Zod & 3.x / 4.x & Validaci\'on de esquemas en cliente y servidor \\
+JSON Web Token & 9.x & Autenticaci\'on basada en \textit{tokens} \\
+}
+
+Adicionalmente, se emplean bibliotecas complementarias como Radix UI para componentes accesibles, Lucide React para iconograf\'ia, Day.js y date-fns para el manejo de fechas con soporte de zonas horarias, y Axios como cliente HTTP.
 
 \section{Estructura de la Memoria}\label{sec:estructura}
 
 La memoria se organiza de la siguiente forma:
 
 \begin{itemize}
-    \item \textbf{Cap\'itulo 2:} Dise\~no de la Base de Datos --- Modelo conceptual, l\'ogico y f\'isico.
-    \item \textbf{Cap\'itulo 3:} Implementaci\'on --- Scripts SQL, triggers y procedimientos almacenados.
-    \item \textbf{Cap\'itulo 4:} Manual de Usuario --- Gu\'ia de uso del sistema.
-    \item \textbf{Cap\'itulo 5:} Manual de Despliegue --- Instrucciones de instalaci\'on.
-    \item \textbf{Cap\'itulo 6:} Conclusiones --- Objetivos alcanzados y trabajo futuro.
+    \item \textbf{Cap\'itulo 2 --- Dise\~no de la Base de Datos:} Modelo de datos en MongoDB, descripci\'on de las colecciones, \'indices y relaciones entre documentos.
+    \item \textbf{Cap\'itulo 3 --- Implementaci\'on:} Arquitectura del sistema, API REST, l\'ogica de disponibilidad, autenticaci\'on e interfaz de usuario.
+    \item \textbf{Cap\'itulo 4 --- Manual de Usuario:} Gu\'ia de uso del portal de reservas y del panel de administraci\'on.
+    \item \textbf{Cap\'itulo 5 --- Manual de Despliegue:} Instrucciones de instalaci\'on y configuraci\'on del entorno.
+    \item \textbf{Cap\'itulo 6 --- Conclusiones:} Objetivos alcanzados, dificultades encontradas y l\'ineas de trabajo futuro.
 \end{itemize}
 
