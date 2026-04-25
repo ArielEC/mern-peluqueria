@@ -140,7 +140,7 @@ El panel de administraci\'on se compone de las siguientes secciones:
 
 La seguridad del sistema se aborda en varias capas:
 
-\textbf{Autenticaci\'on:} Basada en JSON Web Tokens (JWT) con un periodo de validez de 30 d\'ias. El \textit{token} se env\'ia en la cabecera \texttt{Authorization} con el esquema \texttt{Bearer}. Al cambiar la contrase\~na, se actualiza el campo \texttt{passwordChangedAt} del usuario, invalidando todos los \textit{tokens} emitidos con anterioridad.
+\textbf{Autenticaci\'on:} Basada en JSON Web Tokens (JWT)~\cite{jwt_rfc} con un periodo de validez de 30 d\'ias. El \textit{token} se env\'ia en la cabecera \texttt{Authorization} con el esquema \texttt{Bearer}. Al cambiar la contrase\~na, se actualiza el campo \texttt{passwordChangedAt} del usuario, invalidando todos los \textit{tokens} emitidos con anterioridad.
 
 \textbf{Cifrado de contrase\~nas:} Las contrase\~nas se almacenan cifradas con bcrypt y un factor de coste de 10 rondas. El campo \texttt{password} se excluye de las consultas por defecto para evitar su exposici\'on.
 
