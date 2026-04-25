@@ -24,7 +24,7 @@ router.post('/', authenticateToken, requireAdmin, validate(createProfessionalSch
 // PUT /api/professionals/:id - Solo Admin
 router.put('/:id', authenticateToken, requireAdmin, validate(updateProfessionalSchema), updateProfessional);
 
-// DELETE /api/professionals/:id - Solo Admin (soft delete)
+// DELETE /api/professionals/:id - Solo Admin
 router.delete('/:id', authenticateToken, requireAdmin, deleteProfessional);
 
 export default router;

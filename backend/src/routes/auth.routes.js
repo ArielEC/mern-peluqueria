@@ -1,12 +1,14 @@
 import { Router } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import {
   register,
   login,
   getProfile,
   updateProfile,
-  changePassword
+  changePassword,
+  listClients
 } from '../controllers/auth.controller.js';
-import { authenticateToken } from '../middlewares/auth.middleware.js';
+import { authenticateToken, requireAdmin } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
 import {
   registerSchema,
@@ -17,15 +19,24 @@ import {
 
 const router = Router();
 
+// Rate limiter específico para endpoints de autenticación (más estricto que el global)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  limit: 15,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos de acceso. Intenta de nuevo en 15 minutos.' }
+});
+
 // ============================================
 // Rutas públicas (sin autenticación)
 // ============================================
 
 // POST /api/auth/register
-router.post('/register', validate(registerSchema), register);
+router.post('/register', authLimiter, validate(registerSchema), register);
 
 // POST /api/auth/login
-router.post('/login', validate(loginSchema), login);
+router.post('/login', authLimiter, validate(loginSchema), login);
 
 // ============================================
 // Rutas protegidas (requieren autenticación)
@@ -39,5 +50,8 @@ router.put('/me', authenticateToken, validate(updateProfileSchema), updateProfil
 
 // PUT /api/auth/change-password
 router.put('/change-password', authenticateToken, validate(changePasswordSchema), changePassword);
+
+// GET /api/auth/clients — Solo Admin
+router.get('/clients', authenticateToken, requireAdmin, listClients);
 
 export default router;

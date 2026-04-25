@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { getErrorMessage, notifyError, notifySuccess } from '@/lib/notifications';
 import useAuthStore from '@/stores/authStore';
+import { invalidateAndSyncGroups } from '@/lib/querySync';
 
 // Keys para React Query
 export const authKeys = {
@@ -19,13 +21,16 @@ export const useLogin = () => {
     },
     onSuccess: (data) => {
       setAuth(data.user, data.token);
+      notifySuccess('Sesión iniciada con éxito');
     },
+    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido iniciar sesión')),
   });
 };
 
 // Hook para registro
 export const useRegister = () => {
   const { setAuth } = useAuthStore();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (userData) => {
@@ -34,7 +39,10 @@ export const useRegister = () => {
     },
     onSuccess: (data) => {
       setAuth(data.user, data.token);
+      notifySuccess('Cuenta creada con éxito');
+      return invalidateAndSyncGroups(queryClient, 'clients');
     },
+    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido crear la cuenta')),
   });
 };
 
@@ -52,7 +60,7 @@ export const useMe = () => {
   });
 };
 
-// Hook para logout
+// Hook para logout — limpia estado, caché y redirige a /login sin `from` state
 export const useLogout = () => {
   const { logout } = useAuthStore();
   const queryClient = useQueryClient();
@@ -60,5 +68,8 @@ export const useLogout = () => {
   return () => {
     logout();
     queryClient.clear();
+    // Redirigir a login sin state.from para que el próximo login
+    // no vuelva a la ruta del rol anterior
+    window.location.replace('/login');
   };
 };

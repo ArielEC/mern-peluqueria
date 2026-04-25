@@ -8,14 +8,15 @@ import {
 } from '../controllers/blocker.controller.js';
 import { authenticateToken, requireAdmin } from '../middlewares/auth.middleware.js';
 import { validate } from '../middlewares/validate.middleware.js';
+import { loadSettings } from '../middlewares/settings.middleware.js';
 import { createBlockerSchema, updateBlockerSchema } from '../validators/blocker.validator.js';
 
 const router = express.Router();
 
 // Todas las rutas de blockers requieren autenticación y rol admin
 
-// GET /api/blockers
-router.get('/', authenticateToken, requireAdmin, getAllBlockers);
+// GET /api/blockers — loadSettings necesario para TZ-aware date filtering
+router.get('/', authenticateToken, requireAdmin, loadSettings, getAllBlockers);
 
 // GET /api/blockers/:id
 router.get('/:id', authenticateToken, requireAdmin, getBlockerById);

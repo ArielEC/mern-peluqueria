@@ -23,17 +23,27 @@ export const authenticateToken = async (req, res, next) => {
 
     // Buscar el usuario en la base de datos para asegurar que sigue existiendo y está activo
     const user = await User.findById(decoded.id).select('-password');
-    
+
     if (!user) {
-      return res.status(401).json({ 
-        error: 'Usuario no encontrado.' 
+      return res.status(401).json({
+        error: 'Usuario no encontrado.'
       });
     }
 
     if (!user.activo) {
-      return res.status(401).json({ 
-        error: 'Cuenta desactivada. Contacta con el administrador.' 
+      return res.status(401).json({
+        error: 'Cuenta desactivada. Contacta con el administrador.'
       });
+    }
+
+    // Invalidar tokens emitidos antes del último cambio de contraseña (SEC-3)
+    if (user.passwordChangedAt) {
+      const tokenIssuedAtMs = decoded.iat * 1000; // JWT iat está en segundos
+      if (user.passwordChangedAt.getTime() > tokenIssuedAtMs) {
+        return res.status(401).json({
+          error: 'Sesión inválida. Tu contraseña fue modificada. Inicia sesión de nuevo.'
+        });
+      }
     }
 
     // Adjuntar usuario a la request para uso en siguientes middlewares/controladores
@@ -120,10 +130,13 @@ export const optionalAuth = async (req, res, next) => {
       req.user = user;
     }
   } catch (error) {
-    // Ignorar errores esperables de token y registrar errores inesperados
+    // Los errores JWT son esperados (token inválido/expirado) → continúa sin usuario.
+    // Otros errores (e.g. DB timeout en User.findById) se registran pero NO bloquean
+    // la request, ya que optionalAuth nunca debe impedir el acceso a rutas públicas.
     if (error.name !== 'JsonWebTokenError' && error.name !== 'TokenExpiredError') {
-      console.error('Error en optionalAuth:', error);
+      console.error('[optionalAuth] Error inesperado al verificar token:', error.message);
     }
+    // req.user permanece undefined — la ruta continúa como usuario anónimo
   }
   next();
 };

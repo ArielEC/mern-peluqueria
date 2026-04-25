@@ -8,7 +8,10 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test:ab05": "node src/scripts/test.ab05.rounding.js",
-    "test:ab06": "node src/scripts/test.ab06.admin-third-party.js"
+    "test:ab06": "node src/scripts/test.ab06.admin-third-party.js",
+    "test:ab08": "node src/scripts/test.ab08.timezone.js",
+    "test:ab09": "node src/scripts/test.ab09.validate.js",
+    "test:ab10": "node src/scripts/test.ab10.settings-cache.js"
   },
   "keywords": [
     "mern",

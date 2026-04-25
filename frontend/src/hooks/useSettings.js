@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { getAutoSyncQueryOptions } from '@/lib/querySync';
 
 export const settingsKeys = {
   all: ['settings'],
@@ -14,5 +15,6 @@ export const useSettings = () => {
       return data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
+    ...getAutoSyncQueryOptions(),
   });
 };

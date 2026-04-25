@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pdflatex -interaction=nonstopmode proyect.tex)",
+      "PowerShell(Get-Command pdflatex -ErrorAction SilentlyContinue; Get-Command latexmk -ErrorAction SilentlyContinue; Get-Command xelatex -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\texlive\" -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\Program Files\\\\MiKTeX\" -ErrorAction SilentlyContinue; Get-ChildItem \"$env:LOCALAPPDATA\\\\Programs\\\\MiKTeX\" -ErrorAction SilentlyContinue)",
+      "PowerShell($miktexBin = \"$env:LOCALAPPDATA\\\\Programs\\\\MiKTeX\\\\miktex\\\\bin\\\\x64\"; $env:PATH = \"$miktexBin;$env:PATH\"; Set-Location \"c:\\\\Users\\\\qinoc\\\\OneDrive\\\\Escritorio\\\\Proyecto cbd\\\\mern-peluqueria\\\\Plantilla\\\\Plantilla TfG\"; & \"$miktexBin\\\\pdflatex.exe\" -interaction=nonstopmode proyect.tex 2>&1 | Select-Object -Last 40)",
+      "PowerShell($miktexBin = \"$env:LOCALAPPDATA\\\\Programs\\\\MiKTeX\\\\miktex\\\\bin\\\\x64\"; Set-Location \"c:\\\\Users\\\\qinoc\\\\OneDrive\\\\Escritorio\\\\Proyecto cbd\\\\mern-peluqueria\\\\Plantilla\\\\Plantilla TfG\"; & \"$miktexBin\\\\bibtex.exe\" proyect 2>&1)",
+      "PowerShell($miktexBin = \"$env:LOCALAPPDATA\\\\Programs\\\\MiKTeX\\\\miktex\\\\bin\\\\x64\"; Set-Location \"c:\\\\Users\\\\qinoc\\\\OneDrive\\\\Escritorio\\\\Proyecto cbd\\\\mern-peluqueria\\\\Plantilla\\\\Plantilla TfG\"; & \"$miktexBin\\\\pdflatex.exe\" -interaction=nonstopmode proyect.tex 2>&1 | Select-Object -Last 5; & \"$miktexBin\\\\pdflatex.exe\" -interaction=nonstopmode proyect.tex 2>&1 | Select-Object -Last 5)"
+    ]
+  }
+}

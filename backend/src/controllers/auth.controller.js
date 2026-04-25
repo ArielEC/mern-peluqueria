@@ -1,5 +1,53 @@
 import User from '../models/User.js';
 import { generateToken } from '../middlewares/auth.middleware.js';
+import { emitQuerySync } from '../services/querySync.service.js';
+
+/**
+ * GET /api/auth/clients
+ * Lista todos los clientes (solo admin).
+ * Query params: search (nombre/email), activo (true/false)
+ */
+export const listClients = async (req, res) => {
+  try {
+    const { search, activo } = req.query;
+    const filter = { role: 'cliente' };
+
+    if (activo !== undefined) {
+      filter.activo = activo === 'true';
+    }
+    if (search) {
+      // Escapar metacaracteres antes de crear el RegExp para evitar ReDoS
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'i');
+      filter.$or = [{ nombre: regex }, { email: regex }, { telefono: regex }];
+    }
+
+    // Paginación básica para evitar respuestas sin límite
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+    const skip = (page - 1) * limit;
+
+    const [clients, total] = await Promise.all([
+      User.find(filter)
+        .select('nombre email telefono activo createdAt')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(filter)
+    ]);
+
+    res.json({
+      clients,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
+  } catch (error) {
+    console.error('Error al listar clientes:', error);
+    res.status(500).json({ error: 'Error al listar clientes.' });
+  }
+};
 
 /**
  * POST /api/auth/register
@@ -28,6 +76,7 @@ export const register = async (req, res) => {
     });
 
     await user.save();
+    emitQuerySync('clients');
 
     // Generar token JWT
     const token = generateToken(user._id);
@@ -139,6 +188,10 @@ export const updateProfile = async (req, res) => {
 
     await user.save();
 
+    if (user.role === 'cliente') {
+      emitQuerySync('clients');
+    }
+
     res.json({
       message: 'Perfil actualizado correctamente',
       user: user.toPublicJSON()
@@ -179,7 +232,9 @@ export const changePassword = async (req, res) => {
     }
 
     // Actualizar contraseña (se hasheará automáticamente por el middleware pre-save)
+    // Registrar fecha de cambio para invalidar tokens anteriores (SEC-3)
     user.password = newPassword;
+    user.passwordChangedAt = new Date();
     await user.save();
 
     // Notificación placeholder

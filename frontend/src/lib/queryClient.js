@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
+import { setupCrossTabQuerySync, setupServerQuerySync } from '@/lib/querySync';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -9,8 +10,8 @@ const queryClient = new QueryClient({
       gcTime: 1000 * 60 * 30, // 30 minutos (antes cacheTime)
       // Reintentos en caso de error
       retry: 1,
-      // No refetch automático en focus para mejor UX
-      refetchOnWindowFocus: false,
+      // Refetch en focus para sincronizar estado admin-cliente
+      refetchOnWindowFocus: true,
     },
     mutations: {
       // Reintentos para mutaciones
@@ -18,5 +19,8 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+setupCrossTabQuerySync(queryClient);
+setupServerQuerySync(queryClient);
 
 export default queryClient;

@@ -1,9 +1,6 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import User from '../models/User.js';
-
-// Cargar variables de entorno
-dotenv.config();
+import '../config/loadEnv.js';
 
 /**
  * Script para crear el usuario administrador inicial.

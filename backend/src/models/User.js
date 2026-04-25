@@ -35,6 +35,11 @@ const userSchema = new mongoose.Schema({
   activo: {
     type: Boolean,
     default: true
+  },
+  // Fecha del último cambio de contraseña. Permite invalidar tokens emitidos antes del cambio.
+  passwordChangedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true // createdAt, updatedAt automáticos

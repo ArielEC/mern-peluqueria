@@ -1,8 +1,7 @@
 import { useLocation, Link, Navigate } from 'react-router-dom';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { CheckCircle, Calendar, Clock, ArrowRight, MapPin } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
+import { formatTimeInTz, formatFullDateInTz } from '@/lib/utils';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -37,6 +36,7 @@ export default function BookingConfirmedPage() {
 
   const businessName = settings?.nombreNegocio || 'Peluquería';
   const businessAddress = settings?.direccion || '';
+  const businessTz = settings?.zonaHoraria || 'Europe/Madrid';
 
   // Parse appointment data
   const servicioNombre = appointment.servicio?.nombre ?? 'Servicio';
@@ -60,18 +60,18 @@ export default function BookingConfirmedPage() {
     : null;
 
   const dateLabel = fechaInicio
-    ? format(fechaInicio, "EEEE, d 'de' MMMM", { locale: es })
+    ? formatFullDateInTz(fechaInicio, businessTz)
     : '';
-  const timeStart = fechaInicio ? format(fechaInicio, 'HH:mm') : '';
-  const timeEnd = fechaFin ? format(fechaFin, 'HH:mm') : '';
+  const timeStart = fechaInicio ? formatTimeInTz(fechaInicio, businessTz) : '';
+  const timeEnd = fechaFin ? formatTimeInTz(fechaFin, businessTz) : '';
 
   return (
-    <div className="bg-muted text-foreground min-h-screen flex flex-col items-center justify-center p-6 sm:p-12">
-      <main className="w-full max-w-xl">
+    <div className="bg-muted text-foreground min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-12">
+      <main className="w-full max-w-xl pb-6 sm:pb-0">
 
         {/* Success header */}
-        <div className="flex flex-col items-center text-center mb-12">
-          <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-8 relative">
+        <div className="flex flex-col items-center text-center mb-10 sm:mb-12">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6 sm:mb-8 relative">
             <div className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary animate-spin" style={{ animationDuration: '3s' }} />
             <CheckCircle
               className="h-12 w-12 text-primary"
@@ -79,18 +79,18 @@ export default function BookingConfirmedPage() {
               style={{ fill: 'none' }}
             />
           </div>
-          <h1 className="text-foreground text-4xl md:text-5xl font-extrabold tracking-display mb-4">
+          <h1 className="text-foreground text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-display mb-4">
             ¡Reserva confirmada!
           </h1>
-          <p className="text-muted-foreground font-medium text-lg max-w-md">
+          <p className="text-muted-foreground font-medium text-base sm:text-lg max-w-md">
             Tu cita está agendada. Te esperamos en {businessName}.
           </p>
         </div>
 
         {/* Appointment summary card */}
         <div className="bg-primary/5 rounded-xl p-1 overflow-hidden ambient-shadow mb-4">
-          <div className="bg-card rounded-lg p-6 md:p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-card rounded-lg p-5 sm:p-6 md:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
 
               {/* Service + Professional */}
               <div className="space-y-6">
@@ -151,6 +151,9 @@ export default function BookingConfirmedPage() {
                         {timeStart}{timeEnd ? ` — ${timeEnd}` : ''}
                       </p>
                     </div>
+                    <p className="text-[0.6rem] text-muted-foreground/60 mt-1 ml-8">
+                      Zona horaria: {businessTz}
+                    </p>
                   </div>
                 )}
 
@@ -167,14 +170,14 @@ export default function BookingConfirmedPage() {
 
         {/* Address mini-card */}
         {businessAddress && (
-          <div className="bg-muted/80 rounded-xl p-4 flex items-center justify-between border border-border/20 mb-8">
-            <div className="flex items-center gap-4">
+          <div className="bg-muted/80 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-border/20 mb-8">
+            <div className="flex items-center gap-4 min-w-0">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                 <MapPin className="h-5 w-5 text-primary" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h4 className="text-sm font-bold text-foreground">{businessName}</h4>
-                <p className="text-xs text-muted-foreground">{businessAddress}</p>
+                <p className="text-xs text-muted-foreground break-words">{businessAddress}</p>
               </div>
             </div>
           </div>
@@ -204,7 +207,7 @@ export default function BookingConfirmedPage() {
       </main>
 
       {/* Floating brand footer */}
-      <footer className="fixed bottom-6 text-center">
+      <footer className="mt-8 text-center sm:fixed sm:bottom-6 sm:left-1/2 sm:-translate-x-1/2">
         <span className="text-xs font-black tracking-widest text-primary/20 uppercase">{businessName}</span>
       </footer>
     </div>

@@ -15,6 +15,7 @@ const authLinks = [
   { to: '/appointments', label: 'Mis citas' },
 ];
 
+
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { data: settings } = useSettings();
@@ -25,15 +26,15 @@ export default function Header() {
 
   return (
     <header className="w-full top-0 sticky z-50 bg-background border-b border-border/40">
-      <div className="flex justify-between items-center px-6 md:px-8 h-16 w-full max-w-7xl mx-auto">
+      <div className="flex justify-between items-center px-4 sm:px-6 md:px-8 h-16 w-full max-w-7xl mx-auto gap-3">
 
         {/* Logo */}
         <Link
           to="/"
-          className="text-xl font-bold tracking-display text-foreground flex items-center gap-2 shrink-0"
+          className="text-lg sm:text-xl font-bold tracking-display text-foreground flex items-center gap-2 min-w-0 flex-1 md:flex-none"
         >
           <Scissors className="h-5 w-5 text-primary" />
-          {businessName}
+          <span className="truncate">{businessName}</span>
         </Link>
 
         {/* Nav desktop */}
@@ -72,6 +73,15 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-3">
           {isAuthenticated ? (
             <>
+              {user?.role === 'admin' && (
+                <Link
+                  to="/admin"
+                  className="text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
+                  Panel Admin
+                </Link>
+              )}
               <span className="text-sm text-muted-foreground">
                 {user?.nombre || user?.email}
               </span>
@@ -88,7 +98,7 @@ export default function Header() {
 
         {/* Hamburger mobile */}
         <button
-          className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground"
+          className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground shrink-0"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Abrir menú"
         >
@@ -98,7 +108,7 @@ export default function Header() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-border/40 bg-background px-6 pb-5 pt-3">
+        <div className="md:hidden border-t border-border/40 bg-background px-4 sm:px-6 pb-5 pt-3">
           <nav className="flex flex-col gap-1">
             {[...navLinks, ...(isAuthenticated ? authLinks : [])].map(({ to, label }) => (
               <NavLink
@@ -120,12 +130,23 @@ export default function Header() {
           </nav>
           <div className="mt-4 flex flex-col gap-2">
             {isAuthenticated ? (
-              <Button
-                variant="outline"
-                onClick={() => { logout(); setMenuOpen(false); }}
-              >
-                Cerrar sesión
-              </Button>
+              <>
+                {user?.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMenuOpen(false)}
+                    className="block rounded-md px-3 py-2 text-sm font-bold text-primary bg-primary/10 text-center"
+                  >
+                    Panel Admin
+                  </Link>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => { logout(); setMenuOpen(false); }}
+                >
+                  Cerrar sesión
+                </Button>
+              </>
             ) : (
               <Button asChild onClick={() => setMenuOpen(false)}>
                 <Link to="/login">Login</Link>

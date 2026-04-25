@@ -5,6 +5,7 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
 }
 
@@ -14,6 +15,213 @@
   }
   .tracking-display {
     letter-spacing: -0.02em;
+  }
+}
+
+/* ── FullCalendar violet-slate overrides ── */
+.fc {
+  font-family: 'Inter', sans-serif;
+  --fc-border-color: rgba(203, 195, 215, 0.2);
+  --fc-today-bg-color: rgba(107, 56, 212, 0.04);
+  --fc-now-indicator-color: #ba1a1a;
+  --fc-event-border-color: transparent;
+  --fc-page-bg-color: #ffffff;
+  --fc-neutral-bg-color: #f2f3ff;
+  --fc-list-event-hover-bg-color: #f2f3ff;
+}
+
+.fc .fc-timegrid-slot {
+  height: 1.75rem;
+}
+
+.fc .fc-timegrid-slot-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #494454;
+}
+
+.fc .fc-col-header-cell {
+  background: #f2f3ff;
+  border-bottom: 1px solid rgba(203, 195, 215, 0.3);
+}
+
+.fc .fc-col-header-cell-cushion {
+  color: #494454;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.fc .fc-event {
+  border-left-width: 3px !important;
+  border-radius: 0.375rem;
+  padding: 2px 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fc .fc-event-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc .fc-bg-event.admin-calendar-unavailable {
+  background:
+    linear-gradient(180deg, rgba(226, 221, 235, 0.72), rgba(242, 239, 249, 0.86)) !important;
+  opacity: 1;
+  pointer-events: none !important;
+}
+
+.fc .admin-calendar-unavailable,
+.fc .admin-calendar-unavailable * {
+  pointer-events: none !important;
+}
+
+.fc .fc-scrollgrid {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.fc .fc-resource-timeline-divider {
+  background: rgba(203, 195, 215, 0.2);
+}
+
+.fc-direction-ltr .fc-timegrid-col-events {
+  margin: 0 2px;
+}
+
+.fc .admin-calendar-week-event {
+  min-height: 58px;
+  padding: 0;
+}
+
+.fc .admin-calendar-week-event .fc-event-main {
+  height: 100%;
+}
+
+.admin-calendar-desktop-week .fc .fc-timegrid-slot {
+  height: 2.4rem;
+}
+
+.admin-calendar-desktop-week .fc .fc-timegrid-slot-label {
+  font-size: 0.78rem;
+}
+
+.admin-calendar-desktop-week .fc .fc-col-header-cell-cushion {
+  padding: 0;
+}
+
+.admin-calendar-desktop-week .fc .admin-calendar-week-event {
+  min-height: 76px;
+}
+
+.admin-calendar-desktop-week .fc .fc-event-main-frame,
+.admin-calendar-desktop-week .fc .fc-event-main {
+  height: 100%;
+}
+
+.admin-calendar-mobile-day .fc .fc-timegrid-slot {
+  height: 1.6rem;
+}
+
+.admin-calendar-mobile-day .fc .fc-timegrid-slot-label {
+  font-size: 0.72rem;
+}
+
+.admin-calendar-mobile-day .fc .fc-col-header-cell-cushion {
+  padding: 0;
+}
+
+.admin-calendar-mobile-day .fc .admin-calendar-mobile-day-event {
+  min-height: 64px;
+  padding: 0;
+}
+
+.admin-calendar-mobile-day .fc .fc-event-main-frame,
+.admin-calendar-mobile-day .fc .fc-event-main {
+  height: 100%;
+}
+
+/* ── Calendar responsive: vista semana en móvil ── */
+@media (max-width: 768px) {
+  /* Reducir ancho mínimo de cada columna de recurso/día */
+  .fc .fc-timegrid-col {
+    min-width: 80px;
+  }
+
+  /* Cabeceras de días más compactas */
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.6rem;
+    padding: 4px 2px;
+    letter-spacing: -0.02em;
+  }
+
+  /* Resource header más compacto en móvil */
+  .fc .fc-datagrid-cell-cushion,
+  .fc .fc-resource-timeline-divider {
+    padding: 2px;
+  }
+
+  /* Slots más compactos */
+  .fc .fc-timegrid-slot {
+    height: 1.25rem;
+  }
+
+  .fc .fc-timegrid-slot-label {
+    font-size: 0.6rem;
+    padding: 0 2px;
+  }
+
+  /* Eventos más pequeños */
+  .fc .fc-event {
+    font-size: 0.6rem;
+    padding: 1px 2px;
+    border-left-width: 2px !important;
+  }
+
+  /* Separación clara entre columnas con borde visible */
+  .fc .fc-timegrid-col {
+    border-right: 1px solid rgba(203, 195, 215, 0.4) !important;
+  }
+
+  /* Indicador de "hoy" más visible */
+  .fc .fc-day-today {
+    background-color: rgba(107, 56, 212, 0.06) !important;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-timegrid-axis,
+  .admin-calendar-mobile-week .fc .fc-timegrid-axis-frame {
+    width: 64px !important;
+    min-width: 64px !important;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-timegrid-col {
+    min-width: 104px;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-col-header-cell-cushion {
+    padding: 0;
+    font-size: 0.72rem;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-timegrid-slot {
+    height: 1.6rem;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-event {
+    min-height: 46px;
+    padding: 0;
+    border-left-width: 3px !important;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-event-main {
+    height: 100%;
+  }
+
+  .admin-calendar-mobile-week .fc .fc-scrollgrid {
+    border-radius: 1rem;
   }
 }
 
@@ -50,26 +258,4 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
-@media (prefers-color-scheme: dark) {
-  @theme {
-    --color-background: hsl(240 10% 3.9%);
-    --color-foreground: hsl(0 0% 98%);
-    --color-card: hsl(240 10% 3.9%);
-    --color-card-foreground: hsl(0 0% 98%);
-    --color-popover: hsl(240 10% 3.9%);
-    --color-popover-foreground: hsl(0 0% 98%);
-    --color-primary: hsl(263 70% 50%);
-    --color-primary-foreground: hsl(0 0% 100%);
-    --color-secondary: hsl(240 3.7% 15.9%);
-    --color-secondary-foreground: hsl(0 0% 98%);
-    --color-muted: hsl(240 3.7% 15.9%);
-    --color-muted-foreground: hsl(240 5% 64.9%);
-    --color-accent: hsl(240 3.7% 15.9%);
-    --color-accent-foreground: hsl(0 0% 98%);
-    --color-destructive: hsl(0 62.8% 30.6%);
-    --color-destructive-foreground: hsl(0 0% 98%);
-    --color-border: hsl(240 3.7% 15.9%);
-    --color-input: hsl(240 3.7% 15.9%);
-    --color-ring: hsl(263 70% 50%);
-  }
-}
+/* Dark mode eliminado — la app usa siempre modo claro */

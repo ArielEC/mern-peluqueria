@@ -4,6 +4,7 @@ import useAuthStore from '@/stores/authStore';
 /**
  * Protege rutas que requieren autenticación.
  * - adminOnly: además exige rol ADMIN.
+ * - Si el usuario es admin e intenta acceder a rutas de cliente, redirige al panel admin.
  * Guarda la ruta de origen en state para redirigir de vuelta tras el login.
  */
 export default function ProtectedRoute({ adminOnly = false }) {
@@ -16,6 +17,11 @@ export default function ProtectedRoute({ adminOnly = false }) {
 
   if (adminOnly && user?.role !== 'admin') {
     return <Navigate to="/" replace />;
+  }
+
+  // Admin autenticado intentando acceder a rutas de cliente → redirigir al panel admin
+  if (!adminOnly && user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
   }
 
   return <Outlet />;

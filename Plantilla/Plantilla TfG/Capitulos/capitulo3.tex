@@ -1,0 +1,154 @@
+% !TEX root = ../proyect.tex
+
+\chapter{Implementaci\'on}\label{cap:implementacion}
+
+Este cap\'itulo describe la arquitectura del sistema y los aspectos m\'as relevantes de su implementaci\'on, organizados en tres bloques: el servidor (\textit{backend}), la interfaz de usuario (\textit{frontend}) y los mecanismos transversales de seguridad y sincronizaci\'on.
+
+\section{Arquitectura General}\label{sec:arquitectura}
+
+El sistema sigue una arquitectura cliente-servidor de tres capas, tal como se muestra en la figura~\ref{fig:arquitectura}:
+
+\figura{0.8}{img/arquitectura}{Arquitectura general del sistema}{fig:arquitectura}{}
+
+\begin{enumerate}
+    \item \textbf{Capa de presentaci\'on:} Aplicaci\'on React servida como SPA (\textit{Single Page Application}) mediante Vite. Se comunica con el servidor exclusivamente a trav\'es de peticiones HTTP a la API REST.
+    \item \textbf{Capa de l\'ogica de negocio:} Servidor Node.js con Express que expone una API REST. Contiene los controladores, servicios de disponibilidad, validaciones con Zod y \textit{middleware} de autenticaci\'on.
+    \item \textbf{Capa de datos:} Base de datos MongoDB accedida mediante Mongoose. Los esquemas definen validaciones, \'indices y m\'etodos a nivel de documento.
+\end{enumerate}
+
+\section{Implementaci\'on del Backend}\label{sec:backend}
+
+\subsection{Estructura del Proyecto}\label{subsec:estructura-backend}
+
+El c\'odigo del servidor se organiza siguiendo el patr\'on MVC (\textit{Model-View-Controller}) adaptado a una API REST, donde la ``vista'' es la respuesta JSON. La estructura de directorios es la siguiente:
+
+\begin{itemize}
+    \item \texttt{models/} --- Esquemas Mongoose (7 modelos).
+    \item \texttt{controllers/} --- L\'ogica de negocio de cada recurso.
+    \item \texttt{routes/} --- Definici\'on de rutas y asociaci\'on con controladores y \textit{middleware}.
+    \item \texttt{middlewares/} --- Autenticaci\'on, autorizaci\'on, validaci\'on y carga de configuraci\'on.
+    \item \texttt{validators/} --- Esquemas Zod para validaci\'on de entrada.
+    \item \texttt{services/} --- L\'ogica compleja extra\'ida de los controladores (disponibilidad, sincronizaci\'on de cach\'e).
+    \item \texttt{utils/} --- Funciones auxiliares de manejo de fechas y zonas horarias.
+\end{itemize}
+
+\subsection{API REST}\label{subsec:api-rest}
+
+La API expone nueve grupos de rutas, resumidos en el cuadro~\ref{tab:api-rutas}. Todas las rutas est\'an prefijadas con \texttt{/api}.
+
+\cuadro{|l|l|l|p{4cm}|}{Principales rutas de la API REST}{tab:api-rutas}{
+\textbf{Recurso} & \textbf{M\'etodo} & \textbf{Ruta} & \textbf{Acceso} \\
+\hline
+Autenticaci\'on & POST & /auth/register & P\'ublico (limitado) \\
+ & POST & /auth/login & P\'ublico (limitado) \\
+ & GET & /auth/me & Autenticado \\
+ & PUT & /auth/me & Autenticado \\
+\hline
+Citas & GET & /appointments & Autenticado \\
+ & POST & /appointments & Autenticado \\
+ & PUT & /appointments/:id & Admin \\
+ & DELETE & /appointments/:id & Autenticado \\
+\hline
+Disponibilidad & GET & /availability & P\'ublico \\
+\hline
+Profesionales & GET/POST/PUT/DELETE & /professionals & Admin (GET p\'ublico) \\
+Servicios & GET/POST/PUT/DELETE & /services & Admin (GET p\'ublico) \\
+Bloqueos & GET/POST/PUT/DELETE & /blockers & Admin \\
+Notas t\'ecnicas & GET/POST/PUT/DELETE & /technical-notes & Admin \\
+Configuraci\'on & GET/PUT & /settings & Admin (GET p\'ublico) \\
+Clientes & GET & /auth/clients & Admin \\
+}
+
+Cada ruta pasa por una cadena de \textit{middleware} que puede incluir: autenticaci\'on (\texttt{authenticateToken}), autorizaci\'on (\texttt{requireAdmin}), validaci\'on (\texttt{validate(schema)}) y carga de ajustes (\texttt{loadSettings}).
+
+\subsection{Motor de Disponibilidad}\label{subsec:disponibilidad}
+
+El servicio de disponibilidad (\texttt{availability.service.js}) es el componente m\'as complejo del \textit{backend}. Dado un servicio, una fecha y opcionalmente un profesional, calcula los \textit{slots} horarios disponibles. El algoritmo sigue los siguientes pasos:
+
+\begin{enumerate}
+    \item Obtener los profesionales capaces de realizar el servicio solicitado.
+    \item Para cada profesional, recuperar su horario semanal del d\'ia consultado.
+    \item Generar los \textit{slots} te\'oricos seg\'un la rejilla configurada (15 o 30 minutos), excluyendo los periodos de descanso.
+    \item Consultar los bloqueos activos (tanto del profesional como globales) y eliminar los \textit{slots} que se solapen.
+    \item Consultar las citas existentes del profesional en ese d\'ia y eliminar los \textit{slots} que se solapen, considerando la duraci\'on operativa redondeada.
+    \item Devolver los \textit{slots} disponibles agrupados por profesional.
+\end{enumerate}
+
+Este proceso tiene en cuenta la zona horaria del negocio (configurable en \texttt{settings}) mediante las utilidades de \texttt{dayjs} con los \textit{plugins} \texttt{utc}, \texttt{timezone} y \texttt{customParseFormat}. Todas las fechas se almacenan en UTC y se convierten a la zona horaria local exclusivamente para el c\'alculo de \textit{slots} y la presentaci\'on al usuario.
+
+\subsection{Validaci\'on de Datos}\label{subsec:validacion}
+
+Cada ruta que recibe datos del cliente pasa por un \textit{middleware} de validaci\'on basado en Zod~\cite{zod_docs}. Los esquemas se definen en archivos dedicados dentro de \texttt{validators/} y validan los campos del cuerpo de la petici\'on (\texttt{body}), los par\'ametros de ruta (\texttt{params}) y los par\'ametros de consulta (\texttt{query}). Si la validaci\'on falla, se devuelve un error 400 con los mensajes de error espec\'ificos de cada campo, sin que la petici\'on llegue al controlador.
+
+\section{Implementaci\'on del Frontend}\label{sec:frontend}
+
+\subsection{Estructura del Proyecto}\label{subsec:estructura-frontend}
+
+La aplicaci\'on cliente se construye con React 19, Vite como \textit{bundler} y Tailwind CSS para los estilos. La estructura de directorios sigue una organizaci\'on por responsabilidad:
+
+\begin{itemize}
+    \item \texttt{pages/} --- Componentes de p\'agina, cada uno asociado a una ruta.
+    \item \texttt{components/} --- Componentes reutilizables: \texttt{ui/} (botones, formularios, modales basados en Radix UI), \texttt{admin/} (componentes del panel de administraci\'on), \texttt{layout/} (cabecera, pie, \textit{sidebar}).
+    \item \texttt{hooks/} --- \textit{Custom hooks} que encapsulan las llamadas a la API mediante TanStack React Query.
+    \item \texttt{stores/} --- Almacenes de estado global con Zustand.
+    \item \texttt{lib/} --- Configuraci\'on de Axios, React Query, notificaciones y utilidades.
+\end{itemize}
+
+\subsection{Gesti\'on de Estado}\label{subsec:estado}
+
+El estado de la aplicaci\'on se gestiona en dos niveles:
+
+\textbf{Estado del servidor:} Gestionado por TanStack React Query~\cite{tanstack_query}, que mantiene una cach\'e autom\'atica de las respuestas de la API con un tiempo de caducidad configurable (\textit{stale time}). Las mutaciones (creaci\'on, actualizaci\'on, eliminaci\'on) invalidan autom\'aticamente las consultas relacionadas mediante un sistema de grupos de sincronizaci\'on (\texttt{querySync}). Esto garantiza que todos los componentes reflejen datos actualizados sin necesidad de recargar la p\'agina.
+
+\textbf{Estado local:} Gestionado por Zustand, una biblioteca minimalista que almacena dos \textit{stores}: \texttt{authStore} (usuario autenticado, \textit{token} JWT, funciones de \textit{login}/\textit{logout}) y \texttt{uiStore} (estado del \textit{sidebar}, modales, tema visual, notificaciones). El \texttt{authStore} se persiste autom\'aticamente en \texttt{localStorage} para mantener la sesi\'on entre recargas.
+
+\subsection{Sistema de Rutas}\label{subsec:rutas}
+
+La navegaci\'on se implementa con React Router DOM, definiendo tres niveles de acceso:
+
+\begin{itemize}
+    \item \textbf{Rutas p\'ublicas:} P\'agina de inicio, \textit{login} y registro. Accesibles sin autenticaci\'on.
+    \item \textbf{Rutas protegidas:} Reservas, listado de citas propias y confirmaci\'on. Requieren autenticaci\'on.
+    \item \textbf{Rutas de administraci\'on:} \textit{Dashboard}, calendario, gesti\'on de servicios, profesionales, bloqueos, clientes y ajustes. Requieren rol \texttt{admin}.
+\end{itemize}
+
+El componente \texttt{ProtectedRoute} act\'ua como guardia de rutas, verificando el estado de autenticaci\'on y el rol del usuario. Si el acceso no est\'a autorizado, redirige a la p\'agina de \textit{login} almacenando la ubicaci\'on original para redirigir de vuelta tras la autenticaci\'on.
+
+\subsection{Flujo de Reserva}\label{subsec:flujo-reserva}
+
+El proceso de reserva se implementa como un asistente de tres pasos en la p\'agina \texttt{BookingPage}:
+
+\begin{enumerate}
+    \item \textbf{Selecci\'on de servicio:} El cliente explora el cat\'alogo filtrable por categor\'ia, visualizando nombre, duraci\'on y precio de cada servicio.
+    \item \textbf{Selecci\'on de fecha y hora:} Se presenta un calendario para elegir la fecha y, a continuaci\'on, los \textit{slots} disponibles calculados por el motor de disponibilidad. Los \textit{slots} se muestran agrupados por profesional con su color identificativo.
+    \item \textbf{Confirmaci\'on:} Se muestra un resumen de la reserva (servicio, profesional, fecha, hora, precio) con un campo opcional para notas. Al confirmar, se crea la cita y se redirige a una p\'agina de confirmaci\'on.
+\end{enumerate}
+
+\subsection{Panel de Administraci\'on}\label{subsec:panel-admin}
+
+El panel de administraci\'on se compone de las siguientes secciones:
+
+\textbf{Dashboard:} Muestra tarjetas con indicadores clave de rendimiento (KPI): citas del d\'ia, citas de la semana, facturaci\'on mensual y tasa de conversi\'on (citas completadas sobre el total). Incluye un \textit{widget} de calendario mensual y un listado de las citas m\'as recientes.
+
+\textbf{Calendario:} Implementado con FullCalendar~\cite{fullcalendar}, ofrece vistas de mes, semana y d\'ia con soporte para vista por recursos (cada profesional es una columna). Permite crear citas manualmente, visualizar bloqueos y consultar los detalles de cada cita mediante un modal.
+
+\textbf{Gesti\'on de entidades:} Las p\'aginas de servicios, profesionales, bloqueos y clientes comparten un componente de tabla reutilizable (\texttt{AdminTable}) con funcionalidad de b\'usqueda, creaci\'on, edici\'on y eliminaci\'on. La p\'agina de profesionales incluye adem\'as un editor de horario semanal integrado.
+
+\textbf{Configuraci\'on:} Permite modificar los par\'ametros globales del negocio (nombre, contacto, zona horaria, pol\'itica de cancelaci\'on, rejilla de \textit{slots}) desde un formulario centralizado.
+
+\section{Seguridad}\label{sec:seguridad}
+
+La seguridad del sistema se aborda en varias capas:
+
+\textbf{Autenticaci\'on:} Basada en JSON Web Tokens (JWT) con un periodo de validez de 30 d\'ias. El \textit{token} se env\'ia en la cabecera \texttt{Authorization} con el esquema \texttt{Bearer}. Al cambiar la contrase\~na, se actualiza el campo \texttt{passwordChangedAt} del usuario, invalidando todos los \textit{tokens} emitidos con anterioridad.
+
+\textbf{Cifrado de contrase\~nas:} Las contrase\~nas se almacenan cifradas con bcrypt y un factor de coste de 10 rondas. El campo \texttt{password} se excluye de las consultas por defecto para evitar su exposici\'on.
+
+\textbf{Limitaci\'on de tasa:} Se aplica un l\'imite global de 500 peticiones cada 15 minutos por IP, y un l\'imite espec\'ifico de 15 peticiones cada 15 minutos en las rutas de autenticaci\'on (\textit{login} y registro) para mitigar ataques de fuerza bruta~\cite{owasp_rate_limiting}.
+
+\textbf{Cabeceras HTTP:} Se configuran cabeceras de seguridad como \texttt{X-Content-Type-Options: nosniff}, \texttt{X-Frame-Options: DENY} y se elimina la cabecera \texttt{X-Powered-By} para reducir la superficie de ataque.
+
+\textbf{Validaci\'on de entrada:} Todas las entradas del usuario se validan con esquemas Zod antes de llegar al controlador, previniendo inyecciones y datos malformados. El tama\~no del cuerpo de las peticiones se limita a 10~KB.
+
+\textbf{CORS:} Se configura una lista blanca de or\'igenes permitidos, restringiendo en producci\'on las peticiones al dominio del \textit{frontend}.
+

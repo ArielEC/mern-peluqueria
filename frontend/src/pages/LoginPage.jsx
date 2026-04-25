@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { createElement, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Scissors } from 'lucide-react';
 import { z } from 'zod';
 import { useLogin } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
-import useAuthStore from '@/stores/authStore';
+import { notifyValidationError } from '@/lib/notifications';
 
 // ─── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ const loginSchema = z.object({
     .email('Introduce un email válido'),
   password: z
     .string()
-    .min(6, 'La contraseña debe tener al menos 6 caracteres'),
+    .min(1, 'La contraseña es obligatoria'),
 });
 
 // ─── Field component ─────────────────────────────────────────────────────────
@@ -34,12 +34,16 @@ function Field({ label, error, children }) {
   );
 }
 
-function IconInput({ icon: Icon, error, rightSlot, ...props }) {
+function IconInput({ icon, error, rightSlot, ...props }) {
+  const inputRightPadding = rightSlot ? 'pr-10' : 'pr-4';
+
   return (
     <div className="relative">
-      <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+      {createElement(icon, {
+        className: 'absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none',
+      })}
       <input
-        className={`w-full pl-10 pr-${rightSlot ? '10' : '4'} py-3 bg-muted border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`w-full pl-10 ${inputRightPadding} py-3 bg-muted border rounded-lg text-base sm:text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
           error ? 'border-destructive' : 'border-border/30'
         }`}
         {...props}
@@ -57,9 +61,7 @@ function IconInput({ icon: Icon, error, rightSlot, ...props }) {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { data: settings } = useSettings();
-  const { isAdmin } = useAuthStore();
   const loginMutation = useLogin();
 
   const [fields, setFields] = useState({ email: '', password: '' });
@@ -67,8 +69,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const businessName = settings?.nombreNegocio || 'Peluquería';
-  const from = location.state?.from?.pathname;
-
   function handleChange(e) {
     const { name, value } = e.target;
     setFields((prev) => ({ ...prev, [name]: value }));
@@ -83,23 +83,27 @@ export default function LoginPage() {
     const result = loginSchema.safeParse(fields);
     if (!result.success) {
       const errors = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         errors[err.path[0]] = err.message;
       });
       setFieldErrors(errors);
+      notifyValidationError(errors, 'Revisa tus credenciales');
       return;
     }
 
     loginMutation.mutate(result.data, {
-      onSuccess: () => {
-        const redirect = from || (isAdmin() ? '/admin' : '/book');
+      onSuccess: (data) => {
+        const userIsAdmin = data.user?.role === 'admin';
+        // Siempre redirigir según rol: admin → Dashboard, cliente → Home.
+        // Ignora la ruta anterior para evitar que se quede en la última ruta del rol previo.
+        const redirect = userIsAdmin ? '/admin' : '/';
         navigate(redirect, { replace: true });
       },
     });
   }
 
   return (
-    <div className="bg-muted text-foreground min-h-screen flex items-center justify-center p-6">
+    <div className="bg-muted text-foreground min-h-screen flex items-center justify-center px-4 py-6 sm:p-6">
       <main className="w-full max-w-md">
 
         {/* Brand */}
@@ -113,7 +117,7 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-card border border-border/20 ambient-shadow rounded-xl overflow-hidden p-8 md:p-10">
+        <div className="bg-card border border-border/20 ambient-shadow rounded-xl overflow-hidden p-5 sm:p-8 md:p-10">
           <div className="mb-8">
             <h2 className="text-xl font-bold text-foreground">Bienvenido de nuevo</h2>
           </div>
@@ -162,7 +166,8 @@ export default function LoginPage() {
             {/* API error */}
             {loginMutation.isError && (
               <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3 font-medium">
-                {loginMutation.error?.response?.data?.message ||
+                {loginMutation.error?.response?.data?.error ||
+                  loginMutation.error?.response?.data?.message ||
                   'Credenciales incorrectas. Inténtalo de nuevo.'}
               </p>
             )}

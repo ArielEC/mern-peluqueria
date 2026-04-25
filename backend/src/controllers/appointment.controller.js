@@ -9,24 +9,12 @@ import {
   calcularOcupacionOperativa,
   construirMensajeRedondeoDuracion
 } from '../services/availability.service.js';
-import { diferenciaDiasCeil, diferenciaHoras } from '../utils/dateTime.js';
+import { emitQuerySync } from '../services/querySync.service.js';
+import { diferenciaDiasCeil, parsearFiltroFecha, resolverZonaHoraria } from '../utils/dateTime.js';
 
 const MAX_REINTENTOS_TRANSACCION = 3;
 const OBJECT_ID_REGEX = /^[a-fA-F0-9]{24}$/;
 const ESTADOS_CITA_VALIDOS = new Set(['confirmada', 'completada', 'cancelada', 'no_presentado']);
-
-const parsearFechaFiltro = (value) => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const fecha = new Date(value);
-  if (Number.isNaN(fecha.getTime())) {
-    return null;
-  }
-
-  return fecha;
-};
 
 const construirPoliticaDuracion = (ocupacion) => ({
   ...ocupacion,
@@ -53,6 +41,32 @@ const construirPayloadError = (error, politicaDuracionFallback = null) => {
   return payload;
 };
 
+const completarCitasPasadasConfirmadas = async (now = new Date()) => {
+  await Appointment.updateMany(
+    {
+      estado: 'confirmada',
+      fechaHoraFin: { $lte: now }
+    },
+    {
+      $set: { estado: 'completada' }
+    }
+  );
+};
+
+const obtenerFinCita = (appointment) => (
+  appointment?.fechaHoraFinOperativa || appointment?.fechaHoraFin || appointment?.fechaHoraInicio || null
+);
+
+const haFinalizadoCita = (appointment, now = new Date()) => {
+  const fin = obtenerFinCita(appointment);
+
+  if (!fin) {
+    return false;
+  }
+
+  return new Date(fin) <= now;
+};
+
 /**
  * GET /api/appointments
  * Listar citas - Cliente ve sus citas, Admin ve todas
@@ -60,6 +74,8 @@ const construirPayloadError = (error, politicaDuracionFallback = null) => {
  */
 export const getAppointments = async (req, res) => {
   try {
+    await completarCitasPasadasConfirmadas();
+
     const { desde, hasta, estado, profesionalId, clienteId } = req.query;
     const filter = {};
 
@@ -90,8 +106,10 @@ export const getAppointments = async (req, res) => {
       filter.estado = estado;
     }
     if (desde || hasta) {
-      const desdeDate = desde ? parsearFechaFiltro(desde) : null;
-      const hastaDate = hasta ? parsearFechaFiltro(hasta) : null;
+      // Usar TZ del negocio para interpretar fechas simples "YYYY-MM-DD" correctamente
+      const tz = resolverZonaHoraria(req.settings);
+      const desdeDate = desde ? parsearFiltroFecha(desde, false, tz) : null;
+      const hastaDate = hasta ? parsearFiltroFecha(hasta, true, tz) : null;
 
       if (desde && !desdeDate) {
         return res.status(400).json({ error: 'Parámetro desde inválido' });
@@ -109,7 +127,7 @@ export const getAppointments = async (req, res) => {
     }
 
     const appointments = await Appointment.find(filter)
-      .populate('cliente', 'nombre email telefono')
+      .populate('cliente', 'nombre email telefono role')
       .populate('profesional', 'nombre color especialidad')
       .populate('servicio', 'nombre duracion precio')
       .sort({ fechaHoraInicio: -1 });
@@ -128,12 +146,14 @@ export const getAppointments = async (req, res) => {
  */
 export const getAppointmentById = async (req, res) => {
   try {
+    await completarCitasPasadasConfirmadas();
+
     if (!OBJECT_ID_REGEX.test(req.params.id)) {
       return res.status(400).json({ error: 'id inválido' });
     }
 
     const appointment = await Appointment.findById(req.params.id)
-      .populate('cliente', 'nombre email telefono')
+      .populate('cliente', 'nombre email telefono role')
       .populate('profesional', 'nombre color especialidad')
       .populate('servicio', 'nombre duracion precio');
 
@@ -176,6 +196,12 @@ export const createAppointment = async (req, res) => {
       return res.status(403).json({ error: 'Solo administradores pueden especificar clienteId' });
     }
 
+    if (esAdmin && !clienteId) {
+      return res.status(400).json({
+        error: 'clienteId es obligatorio para crear citas manuales desde administración'
+      });
+    }
+
     let clienteReservaId = req.user._id;
 
     if (clienteId) {
@@ -206,19 +232,21 @@ export const createAppointment = async (req, res) => {
     // Settings ya cargado por el middleware loadSettings
     const settings = req.settings;
     const ahora = new Date();
+
+    // Validar rango temporal: primero pasado, luego máximo de días (BUG-3)
+    if (fechaInicio <= ahora) {
+      return res.status(400).json({ error: 'No se puede reservar en el pasado' });
+    }
+
     const diasHastaReserva = diferenciaDiasCeil(ahora, fechaInicio);
     const ocupacionServicio = calcularOcupacionOperativa(servicio.duracion, settings?.duracionSlot);
     const politicaDuracion = construirPoliticaDuracion(ocupacionServicio);
     politicaDuracionContext = politicaDuracion;
-    
-    if (diasHastaReserva > settings.diasMaximosReserva) {
-      return res.status(400).json({ 
-        error: `No se puede reservar con más de ${settings.diasMaximosReserva} días de antelación` 
-      });
-    }
 
-    if (fechaInicio <= ahora) {
-      return res.status(400).json({ error: 'No se puede reservar en el pasado' });
+    if (diasHastaReserva > settings.diasMaximosReserva) {
+      return res.status(400).json({
+        error: `No se puede reservar con más de ${settings.diasMaximosReserva} días de antelación`
+      });
     }
 
     // Calcular fecha fin
@@ -415,12 +443,13 @@ export const createAppointment = async (req, res) => {
     }
 
     // Poblar referencias antes de devolver
-    await appointment.populate('cliente', 'nombre email telefono');
+    await appointment.populate('cliente', 'nombre email telefono role');
     await appointment.populate('profesional', 'nombre color especialidad');
     await appointment.populate('servicio', 'nombre duracion precio');
 
     const appointmentResponse = appointment.toObject();
     appointmentResponse.politicaDuracion = politicaDuracion;
+    emitQuerySync('appointments');
 
     res.status(201).json(appointmentResponse);
   } catch (error) {
@@ -443,8 +472,55 @@ export const createAppointment = async (req, res) => {
  */
 export const updateAppointment = async (req, res) => {
   try {
+    await completarCitasPasadasConfirmadas();
+
     if (!OBJECT_ID_REGEX.test(req.params.id)) {
       return res.status(400).json({ error: 'id inválido' });
+    }
+
+    const existingAppointment = await Appointment.findById(req.params.id);
+
+    if (!existingAppointment) {
+      return res.status(404).json({ error: 'Cita no encontrada' });
+    }
+
+    if (req.validatedBody.estado) {
+      const citaFinalizada = haFinalizadoCita(existingAppointment);
+      const estadoSolicitado = req.validatedBody.estado;
+
+      if (estadoSolicitado === 'cancelada') {
+        return res.status(400).json({
+          error: 'Para cancelar una cita usa la acción de cancelación'
+        });
+      }
+
+      if (citaFinalizada && estadoSolicitado === 'completada' && existingAppointment.estado !== 'completada') {
+        return res.status(400).json({
+          error: 'La cita se marca como completada automáticamente al finalizar'
+        });
+      }
+
+      if (
+        citaFinalizada
+        && estadoSolicitado !== 'no_presentado'
+        && estadoSolicitado !== existingAppointment.estado
+      ) {
+        return res.status(400).json({
+          error: 'Una cita finalizada solo puede marcarse manualmente como no presentado'
+        });
+      }
+
+      if (!citaFinalizada && estadoSolicitado === 'no_presentado') {
+        return res.status(400).json({
+          error: 'No se puede marcar una cita futura como no presentado'
+        });
+      }
+
+      if (!citaFinalizada && estadoSolicitado === 'completada') {
+        return res.status(400).json({
+          error: 'La cita solo puede completarse al finalizar'
+        });
+      }
     }
 
     const appointment = await Appointment.findByIdAndUpdate(
@@ -452,14 +528,11 @@ export const updateAppointment = async (req, res) => {
       { $set: req.validatedBody },
       { new: true, runValidators: true }
     )
-      .populate('cliente', 'nombre email telefono')
+      .populate('cliente', 'nombre email telefono role')
       .populate('profesional', 'nombre color especialidad')
       .populate('servicio', 'nombre duracion precio');
 
-    if (!appointment) {
-      return res.status(404).json({ error: 'Cita no encontrada' });
-    }
-
+    emitQuerySync('appointments');
     res.json(appointment);
   } catch (error) {
     console.error('Error al actualizar cita:', error);
@@ -520,10 +593,11 @@ export const cancelAppointment = async (req, res) => {
     await appointment.save();
 
     // Poblar referencias
-    await appointment.populate('cliente', 'nombre email telefono');
+    await appointment.populate('cliente', 'nombre email telefono role');
     await appointment.populate('profesional', 'nombre color especialidad');
     await appointment.populate('servicio', 'nombre duracion precio');
 
+    emitQuerySync('appointments');
     res.json({ message: 'Cita cancelada correctamente', appointment });
   } catch (error) {
     console.error('Error al cancelar cita:', error);

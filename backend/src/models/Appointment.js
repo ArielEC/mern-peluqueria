@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { diferenciaHoras, esMismoDia } from '../utils/dateTime.js';
+import { diferenciaHoras, esMismoDia, TIMEZONE_DEFAULT } from '../utils/dateTime.js';
 
 const appointmentSchema = new mongoose.Schema({
   // Cliente que reserva la cita
@@ -92,6 +92,7 @@ appointmentSchema.index({ profesional: 1, fechaHoraInicio: 1 });
 appointmentSchema.index({ fechaHoraInicio: 1, fechaHoraFin: 1 });
 appointmentSchema.index({ fechaHoraInicio: 1, fechaHoraFinOperativa: 1 });
 appointmentSchema.index({ estado: 1 });
+appointmentSchema.index({ estado: 1, fechaHoraFin: 1 });
 appointmentSchema.index({ profesional: 1, estado: 1, fechaHoraInicio: 1 });
 appointmentSchema.index({ profesional: 1, estado: 1, fechaHoraInicio: 1, fechaHoraFinOperativa: 1 });
 
@@ -116,9 +117,12 @@ appointmentSchema.virtual('esPasada').get(function() {
   return this.fechaHoraFin < new Date();
 });
 
-// Virtual para verificar si la cita es hoy (comparación timezone-safe)
+// Virtual para verificar si la cita es hoy.
+// NOTA: Usa TIMEZONE_DEFAULT ('Europe/Madrid') ya que los virtuals no tienen
+// acceso al contexto de Settings. Si el negocio cambia zonaHoraria, este virtual
+// puede no reflejar la medianoche local correcta. Evaluar en la capa de presentación.
 appointmentSchema.virtual('esHoy').get(function() {
-  return esMismoDia(this.fechaHoraInicio, new Date());
+  return esMismoDia(this.fechaHoraInicio, new Date(), TIMEZONE_DEFAULT);
 });
 
 // Virtual para obtener la duración en minutos

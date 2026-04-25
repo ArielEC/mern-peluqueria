@@ -472,7 +472,7 @@ export const verificarDisponibilidadSlot = async (
   if (!horarioDia || !horarioDia.activo) {
     return {
       disponible: false,
-      razon: `El profesional no trabaja este día. ${mensajeOcupacion}`,
+      razon: 'El profesional no trabaja este día',
       ocupacion
     };
   }
@@ -555,7 +555,15 @@ export const verificarDisponibilidadSlot = async (
 };
 
 /**
- * Encuentra el primer profesional disponible para un servicio en un slot específico
+ * Encuentra el profesional disponible con menor carga del día para un servicio.
+ *
+ * Criterio de asignación automática (determinista):
+ * 1. Solo profesionales activos y capaces para el servicio.
+ * 2. Se verifica disponibilidad en el slot solicitado.
+ * 3. Entre los disponibles, se elige el que tenga MENOS citas confirmadas ese día.
+ * 4. En caso de empate, se ordena alfabéticamente por nombre.
+ * 5. Si sigue habiendo empate, se desempata por _id (estable e inmutable).
+ *
  * @param {String} servicioId - ID del servicio
  * @param {Date} fechaHoraInicio - Fecha y hora deseada
  * @param {Object} context - Contexto opcional (settings)
@@ -575,13 +583,37 @@ export const encontrarProfesionalDisponible = async (servicioId, fechaHoraInicio
     return null;
   }
 
-  const profesionales = servicio.profesionalesCapaces.length > 0 
-    ? servicio.profesionalesCapaces 
+  const profesionales = servicio.profesionalesCapaces.length > 0
+    ? servicio.profesionalesCapaces
     : await Professional.find({ activo: true });
 
+  // Calcular inicio y fin del día para contar carga
+  const tz = resolverZonaHoraria(settings);
+  const inicioDia = construirFechaEnTZ(fechaHoraInicio, 0, tz);
+  const finDia = construirFechaEnTZ(fechaHoraInicio, 24 * 60 - 1, tz);
+
+  // Obtener conteo de citas confirmadas por profesional para el día
+  const profIds = profesionales.filter((p) => p.activo).map((p) => p._id);
+  const citasDelDia = await Appointment.aggregate([
+    {
+      $match: {
+        profesional: { $in: profIds },
+        estado: 'confirmada',
+        fechaHoraInicio: { $gte: inicioDia, $lte: finDia },
+      },
+    },
+    { $group: { _id: '$profesional', count: { $sum: 1 } } },
+  ]);
+  const cargaPorProfesional = new Map();
+  for (const { _id, count } of citasDelDia) {
+    cargaPorProfesional.set(_id.toString(), count);
+  }
+
+  // Verificar disponibilidad y recoger candidatos
+  const candidatos = [];
   for (const profesional of profesionales) {
     if (!profesional.activo) continue;
-    
+
     const resultado = await verificarDisponibilidadSlot(
       profesional._id,
       fechaHoraInicio,
@@ -591,11 +623,24 @@ export const encontrarProfesionalDisponible = async (servicioId, fechaHoraInicio
     );
 
     if (resultado.disponible) {
-      return profesional;
+      candidatos.push({
+        profesional,
+        carga: cargaPorProfesional.get(profesional._id.toString()) || 0,
+      });
     }
   }
 
-  return null;
+  if (candidatos.length === 0) return null;
+
+  // Ordenar: menor carga → alfabético por nombre → menor _id
+  candidatos.sort((a, b) => {
+    if (a.carga !== b.carga) return a.carga - b.carga;
+    const nameCompare = a.profesional.nombre.localeCompare(b.profesional.nombre);
+    if (nameCompare !== 0) return nameCompare;
+    return a.profesional._id.toString().localeCompare(b.profesional._id.toString());
+  });
+
+  return candidatos[0].profesional;
 };
 
 export default {

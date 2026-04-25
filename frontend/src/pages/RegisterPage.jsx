@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { createElement, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, Lock, ShieldCheck, ArrowRight, Eye, EyeOff, Scissors } from 'lucide-react';
 import { z } from 'zod';
 import { useRegister } from '@/hooks/useAuth';
 import { useSettings } from '@/hooks/useSettings';
+import { notifyValidationError } from '@/lib/notifications';
 
 // ─── Zod schema ───────────────────────────────────────────────────────────────
 
@@ -43,12 +44,16 @@ function Field({ label, error, children }) {
   );
 }
 
-function IconInput({ icon: Icon, error, rightSlot, ...props }) {
+function IconInput({ icon, error, rightSlot, ...props }) {
+  const inputRightPadding = rightSlot ? 'pr-10' : 'pr-4';
+
   return (
     <div className="relative">
-      <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70 pointer-events-none" />
+      {createElement(icon, {
+        className: 'absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70 pointer-events-none',
+      })}
       <input
-        className={`block w-full pl-10 pr-${rightSlot ? '10' : '4'} py-3 bg-primary/10 border rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
+        className={`block w-full pl-10 ${inputRightPadding} py-3 bg-primary/10 border rounded-lg text-base sm:text-sm text-foreground placeholder:text-muted-foreground/60 font-medium transition-all outline-none focus:ring-2 focus:ring-primary focus:border-primary ${
           error ? 'border-destructive' : 'border-border/30'
         }`}
         {...props}
@@ -96,18 +101,20 @@ export default function RegisterPage() {
     const result = registerSchema.safeParse(fields);
     if (!result.success) {
       const errors = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         errors[err.path[0]] = err.message;
       });
       setFieldErrors(errors);
+      notifyValidationError(errors, 'Revisa los datos del registro');
       return;
     }
 
-    const { confirmPassword, ...payload } = result.data;
+    const payload = { ...result.data };
+    delete payload.confirmPassword;
     if (!payload.telefono) delete payload.telefono;
 
     registerMutation.mutate(payload, {
-      onSuccess: () => navigate('/book', { replace: true }),
+      onSuccess: () => navigate('/', { replace: true }),
     });
   }
 
@@ -116,12 +123,12 @@ export default function RegisterPage() {
 
       {/* Minimal fixed header */}
       <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/20">
-        <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
-          <Link to="/" className="flex items-center gap-2">
+        <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 py-4 gap-3">
+          <Link to="/" className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
               <Scissors className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="text-base font-black tracking-display text-foreground uppercase">
+            <span className="text-base font-black tracking-display text-foreground uppercase truncate max-w-[12rem] sm:max-w-none">
               {businessName}
             </span>
           </Link>
@@ -135,8 +142,8 @@ export default function RegisterPage() {
       </header>
 
       {/* Main content */}
-      <main className="flex-grow flex items-center justify-center px-4 pt-28 pb-12">
-        <div className="w-full max-w-xl bg-card rounded-xl p-8 md:p-12 ambient-shadow border border-border/20">
+      <main className="flex-grow flex items-center justify-center px-4 sm:px-6 pt-24 sm:pt-28 pb-10 sm:pb-12">
+        <div className="w-full max-w-xl bg-card rounded-xl p-5 sm:p-8 md:p-12 ambient-shadow border border-border/20">
 
           {/* Form header */}
           <div className="text-center mb-10">
@@ -284,10 +291,10 @@ export default function RegisterPage() {
       </main>
 
       {/* Minimal footer */}
-      <footer className="py-8 border-t border-border/20">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">
+      <footer className="py-6 sm:py-8 border-t border-border/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60 text-center">
           <p>© {new Date().getFullYear()} {businessName}. Todos los derechos reservados.</p>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
             <Link to="/privacidad" className="hover:text-primary transition-colors">Privacidad</Link>
             <Link to="/condiciones" className="hover:text-primary transition-colors">Términos</Link>
             <Link to="/soporte" className="hover:text-primary transition-colors">Soporte</Link>
