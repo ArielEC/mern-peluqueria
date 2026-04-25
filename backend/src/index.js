@@ -21,6 +21,7 @@ if (isProd && !process.env.FRONTEND_URL) {
 connectDB();
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
 // Rate limiter global
