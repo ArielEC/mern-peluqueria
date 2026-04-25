@@ -1,6 +1,36 @@
 \begin{thebibliography}{}
 
 \bibitem [\protect \citeauthoryear {%
+Jones%
+, Bradley%
+\BCBL {}\ \BBA {} Sakimura%
+}{%
+Jones%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2015}}%
+}]{%
+jwt_rfc}
+\APACinsertmetastar {%
+jwt_rfc}%
+\begin{APACrefauthors}%
+Jones, M.%
+, Bradley, J.%
+\BCBL {}\ \BBA {} Sakimura, N.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2015}{}{}.
+\newblock
+\APACrefbtitle {{JSON} Web Token ({JWT}) --- {RFC} 7519.} {{JSON} web token
+  ({JWT}) --- {RFC} 7519.}
+\newblock
+\begin{APACrefURL} \url{https://datatracker.ietf.org/doc/html/rfc7519}
+  \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
 Karpov%
 }{%
 Karpov%
@@ -76,6 +106,31 @@ McDonnell, C.%
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
+{Meta Platforms, Inc.}%
+}{%
+{Meta Platforms, Inc.}%
+}{%
+{\protect \APACyear {2024}}%
+}]{%
+react_docs}
+\APACinsertmetastar {%
+react_docs}%
+\begin{APACrefauthors}%
+{Meta Platforms, Inc.}%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+\APACrefbtitle {React --- The library for web and native user interfaces.}
+  {React --- the library for web and native user interfaces.}
+\newblock
+\begin{APACrefURL} \url{https://react.dev/} \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
 {MongoDB, Inc.}%
 }{%
 {MongoDB, Inc.}%
@@ -107,6 +162,31 @@ mern_stack}%
 }{%
 {\protect \APACyear {2024}}%
 {\protect \APACexlab {{\protect \BCnt {2}}}}}]{%
+atlas_docs}
+\APACinsertmetastar {%
+atlas_docs}%
+\begin{APACrefauthors}%
+{MongoDB, Inc.}%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024{\protect \BCnt {2}}}{}{}.
+\newblock
+\APACrefbtitle {MongoDB Atlas --- Cloud Database Service.} {Mongodb atlas ---
+  cloud database service.}
+\newblock
+\begin{APACrefURL} \url{https://www.mongodb.com/docs/atlas/} \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+{MongoDB, Inc.}%
+}{%
+{MongoDB, Inc.}%
+}{%
+{\protect \APACyear {2024}}%
+{\protect \APACexlab {{\protect \BCnt {3}}}}}]{%
 mongodb_docs}
 \APACinsertmetastar {%
 mongodb_docs}%
@@ -115,11 +195,37 @@ mongodb_docs}%
 \end{APACrefauthors}%
 \unskip\
 \newblock
-\APACrefYearMonthDay{2024{\protect \BCnt {2}}}{}{}.
+\APACrefYearMonthDay{2024{\protect \BCnt {3}}}{}{}.
 \newblock
 \APACrefbtitle {MongoDB Documentation.} {Mongodb documentation.}
 \newblock
 \begin{APACrefURL} \url{https://www.mongodb.com/docs/manual/} \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+{OpenJS Foundation}%
+}{%
+{OpenJS Foundation}%
+}{%
+{\protect \APACyear {2024}}%
+}]{%
+express_docs}
+\APACinsertmetastar {%
+express_docs}%
+\begin{APACrefauthors}%
+{OpenJS Foundation}.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+\APACrefbtitle {Express.js --- Fast, unopinionated, minimalist web framework
+  for {Node.js}.} {Express.js --- fast, unopinionated, minimalist web framework
+  for {Node.js}.}
+\newblock
+\begin{APACrefURL} \url{https://expressjs.com/} \end{APACrefURL}
 \newblock
 \APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
@@ -152,6 +258,31 @@ owasp_rate_limiting}%
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
+{Render, Inc.}%
+}{%
+{Render, Inc.}%
+}{%
+{\protect \APACyear {2024}}%
+}]{%
+render_docs}
+\APACinsertmetastar {%
+render_docs}%
+\begin{APACrefauthors}%
+{Render, Inc.}%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+\APACrefbtitle {Render --- Cloud Application Hosting for Developers.} {Render
+  --- cloud application hosting for developers.}
+\newblock
+\begin{APACrefURL} \url{https://docs.render.com/} \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
 Shaw%
 }{%
 Shaw%
@@ -172,6 +303,57 @@ Shaw, A.%
   {{FullCalendar} --- full-sized {JavaScript} calendar.}
 \newblock
 \begin{APACrefURL} \url{https://fullcalendar.io/} \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Wathan%
+}{%
+Wathan%
+}{%
+{\protect \APACyear {2024}}%
+}]{%
+tailwind_docs}
+\APACinsertmetastar {%
+tailwind_docs}%
+\begin{APACrefauthors}%
+Wathan, A.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+\APACrefbtitle {Tailwind {CSS} --- Rapidly build modern websites without ever
+  leaving your {HTML}.} {Tailwind {CSS} --- rapidly build modern websites
+  without ever leaving your {HTML}.}
+\newblock
+\begin{APACrefURL} \url{https://tailwindcss.com/} \end{APACrefURL}
+\newblock
+\APACrefnote{Fecha de consulta: 20 de abril de 2025}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+You%
+}{%
+You%
+}{%
+{\protect \APACyear {2024}}%
+}]{%
+vite_docs}
+\APACinsertmetastar {%
+vite_docs}%
+\begin{APACrefauthors}%
+You, E.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+\APACrefbtitle {Vite --- Next Generation Frontend Tooling.} {Vite --- next
+  generation frontend tooling.}
+\newblock
+\begin{APACrefURL} \url{https://vite.dev/} \end{APACrefURL}
 \newblock
 \APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}

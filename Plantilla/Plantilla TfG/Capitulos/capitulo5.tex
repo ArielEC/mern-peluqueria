@@ -87,15 +87,43 @@ npm run dev
 
 Vite inicia un servidor de desarrollo en \texttt{http://localhost:5173} con recarga en caliente (\textit{Hot Module Replacement}). La aplicaci\'on es accesible desde el navegador en esa direcci\'on.
 
-\section{Consideraciones para Producci\'on}\label{sec:produccion}
+\section{Despliegue en Producci\'on}\label{sec:produccion}
 
-Para un despliegue en producci\'on se deben tener en cuenta los siguientes aspectos:
+El sistema se ha desplegado en producci\'on utilizando servicios gratuitos en la nube: Render~\cite{render_docs} para el alojamiento de la aplicaci\'on y MongoDB Atlas~\cite{atlas_docs} para la base de datos. Esta combinaci\'on permite mantener el sistema accesible de forma permanente sin coste. El cuadro~\ref{tab:despliegue} resume la infraestructura utilizada.
+
+\cuadro{|l|l|p{5.5cm}|}{Infraestructura de despliegue en producci\'on}{tab:despliegue}{
+\textbf{Componente} & \textbf{Servicio} & \textbf{Configuraci\'on} \\
+\hline
+Frontend & Render Static Site & Directorio ra\'iz: \texttt{frontend}, comando de construcci\'on: \texttt{npm run build}, directorio de publicaci\'on: \texttt{dist} \\
+Backend & Render Web Service & Directorio ra\'iz: \texttt{backend}, comando de arranque: \texttt{node src/index.js}, entorno Node.js \\
+Base de datos & MongoDB Atlas & Cluster compartido (M0 Free), regi\'on Europa \\
+}
+
+\subsection{Configuraci\'on de MongoDB Atlas}\label{subsec:config-atlas}
+
+El primer paso consiste en crear un cluster gratuito en MongoDB Atlas. Se configura un usuario de base de datos con permisos de lectura y escritura, y se a\~nade la direcci\'on IP \texttt{0.0.0.0/0} a la lista de acceso de red para permitir conexiones desde los servidores de Render, cuyas direcciones IP son din\'amicas. Atlas proporciona una cadena de conexi\'on con el formato:
+
+\begin{verbatim}
+mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net
+    /<nombre-bd>?retryWrites=true&w=majority
+\end{verbatim}
+
+\subsection{Despliegue del Backend en Render}\label{subsec:deploy-backend}
+
+Se crea un servicio de tipo \textit{Web Service} en Render vinculado al repositorio de GitHub. Se configura el directorio ra\'iz como \texttt{backend}, el comando de construcci\'on como \texttt{npm install} y el comando de arranque como \texttt{node src/index.js}. Las variables de entorno necesarias se configuran en el panel de Render:
 
 \begin{itemize}
-    \item \textbf{Base de datos:} Utilizar un servicio gestionado como MongoDB Atlas, que proporciona copias de seguridad autom\'aticas, r\'eplicas y monitorizaci\'on. Configurar la variable \texttt{MONGODB\_URI} con la cadena de conexi\'on proporcionada por el servicio.
-    \item \textbf{Construcci\'on del frontend:} Ejecutar \texttt{npm run build} en el directorio \texttt{frontend/} para generar los archivos est\'aticos optimizados en la carpeta \texttt{dist/}. Estos archivos deben servirse mediante un servidor web como Nginx o mediante el propio Express.
-    \item \textbf{Variables de entorno:} Establecer \texttt{NODE\_ENV=production}, utilizar un \texttt{JWT\_SECRET} robusto y configurar \texttt{FRONTEND\_URL} con el dominio real para restringir CORS.
-    \item \textbf{Proceso del servidor:} Utilizar un gestor de procesos como PM2 para mantener el servidor activo, gestionar reinicios autom\'aticos y monitorizar el rendimiento.
-    \item \textbf{HTTPS:} Configurar un certificado SSL/TLS (por ejemplo, mediante Let's Encrypt) para cifrar las comunicaciones entre el cliente y el servidor.
+    \item \texttt{MONGODB\_URI}: Cadena de conexi\'on de Atlas con el nombre de la base de datos.
+    \item \texttt{JWT\_SECRET}: Clave secreta de al menos 32 caracteres.
+    \item \texttt{FRONTEND\_URL}: URL del \textit{frontend} desplegado, para la configuraci\'on de CORS.
+    \item \texttt{NODE\_ENV}: \texttt{production}.
 \end{itemize}
+
+Un aspecto relevante es la configuraci\'on de \texttt{trust proxy} en Express. Render, como la mayor\'ia de plataformas PaaS, sit\'ua un \textit{proxy} inverso delante del servidor. Sin la directiva \texttt{app.set('trust proxy', 1)}, la biblioteca \texttt{express-rate-limit} rechaza las peticiones al detectar la cabecera \texttt{X-Forwarded-For} sin la configuraci\'on de confianza correspondiente.
+
+\subsection{Despliegue del Frontend en Render}\label{subsec:deploy-frontend}
+
+Se crea un servicio de tipo \textit{Static Site} en Render vinculado al mismo repositorio. Se configura el directorio ra\'iz como \texttt{frontend}, el comando de construcci\'on como \texttt{npm install \&\& npm run build} y el directorio de publicaci\'on como \texttt{dist}. Como variable de entorno se define \texttt{VITE\_API\_URL} con la URL del \textit{backend} desplegado (por ejemplo, \texttt{https://nombre-api.onrender.com/api}).
+
+Render asigna autom\'aticamente un certificado SSL y un dominio \texttt{.onrender.com} a cada servicio, proporcionando HTTPS sin configuraci\'on adicional. Adem\'as, Render redespliega autom\'aticamente la aplicaci\'on cada vez que se detecta un nuevo \textit{commit} en la rama principal del repositorio.
 
