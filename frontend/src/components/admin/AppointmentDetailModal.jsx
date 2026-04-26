@@ -175,6 +175,9 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
               placeholder="Observaciones internas del admin..."
               className="w-full bg-[#f2f3ff] rounded-lg px-3 py-2 text-base sm:text-[0.8rem] text-[#131b2e] placeholder:text-[#494454]/50 outline-none focus:ring-2 focus:ring-[#6b38d4] resize-none border-0"
             />
+            <p className="mt-2 text-[0.7rem] text-[#494454]">
+              Esta nota tambien se guardara en las notas tecnicas del cliente y quedara vinculada a esta cita.
+            </p>
           </div>
 
           {/* Cancelar cita */}
