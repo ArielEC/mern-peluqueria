@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+const NOTIFICATION_DURATION_MS = 5000;
+
 const useUIStore = create((set) => ({
   // Sidebar
   sidebarOpen: true,
@@ -34,8 +36,8 @@ const useUIStore = create((set) => ({
         {
           id: notification.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           type: notification.type ?? 'info',
-          duration: notification.duration ?? 10000,
           ...notification,
+          duration: NOTIFICATION_DURATION_MS,
         },
       ],
     })),
