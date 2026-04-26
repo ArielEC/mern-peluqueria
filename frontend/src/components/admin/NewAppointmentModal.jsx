@@ -249,6 +249,11 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     [form.fechaHoraInicio, selectedProfessional, slotDurationMinutes]
   );
   const selectedDatePart = normalizedFechaHoraInicio ? normalizedFechaHoraInicio.slice(0, 10) : '';
+  const todayDatePart = useMemo(
+    () => formatDatetimeLocalInTz(new Date(), businessTimezone).slice(0, 10),
+    [businessTimezone]
+  );
+  const isPastSelectedDate = Boolean(selectedDatePart) && selectedDatePart < todayDatePart;
   const rawSelectedHourPart = normalizedFechaHoraInicio ? normalizedFechaHoraInicio.slice(11, 13) : '00';
   const rawSelectedMinutePart = normalizedFechaHoraInicio ? normalizedFechaHoraInicio.slice(14, 16) : (baseMinuteOptions[0] ?? '00');
   const selectedProfessionalSchedule = useMemo(
@@ -263,7 +268,8 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
   const { data: availabilityData, isFetching: isAvailabilityLoading } = useAvailability(
     selectedDatePart,
     form.servicioId,
-    availabilityProfessionalId
+    availabilityProfessionalId,
+    businessTimezone
   );
   const availableSlots = useMemo(
     () => availabilityData?.slots ?? [],
@@ -364,6 +370,10 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
       return 'Selecciona una fecha para consultar la disponibilidad.';
     }
 
+    if (isPastSelectedDate) {
+      return 'La fecha debe ser futura para consultar la disponibilidad.';
+    }
+
     if (isAvailabilityLoading) {
       return 'Consultando disponibilidad...';
     }
@@ -384,6 +394,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     form.forceOverbook,
     form.servicioId,
     isAvailabilityLoading,
+    isPastSelectedDate,
     minuteOptions,
     professionalWorksSelectedDay,
     selectedDatePart,
@@ -432,6 +443,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
     if (!form.servicioId) errs.servicioId = 'Selecciona un servicio';
     if (!form.clienteId) errs.clienteId = 'Selecciona un cliente';
     if (!effectiveFechaHoraInicio) errs.fechaHoraInicio = 'Selecciona fecha y hora';
+    else if (isPastSelectedDate) errs.fechaHoraInicio = 'La fecha debe ser futura';
     else if (!form.forceOverbook && selectedDatePart && form.servicioId) {
       if (selectedProfessional && !professionalWorksSelectedDay) {
         errs.fechaHoraInicio = 'El profesional no trabaja este día';
