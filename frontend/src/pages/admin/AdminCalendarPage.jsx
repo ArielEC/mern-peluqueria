@@ -883,6 +883,8 @@ export default function AdminCalendarPage() {
     currentDate.toISOString(),
     businessTimezone,
     slotDurationMinutes,
+    calendarTimeBounds.slotMinTime,
+    calendarTimeBounds.slotMaxTime,
     isDesktopWeekView ? activeWeekProfessionalId : 'all',
     isMobileDayView || isMobileWeekView ? activeMobileProfessionalId : 'all',
   ].join(':');
@@ -980,6 +982,31 @@ export default function AdminCalendarPage() {
       }
     };
   }, [isMobileDayView, isMobileWeekView, syncCalendarSize]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    if (isMobileDayView || isMobileWeekView) return undefined;
+
+    const frameId = window.requestAnimationFrame(() => {
+      const api = calendarRef.current?.getApi?.();
+
+      if (!api?.scrollToTime) {
+        return;
+      }
+
+      api.scrollToTime(calendarTimeBounds.slotMinTime);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [
+    activeWeekProfessionalId,
+    calendarTimeBounds.slotMinTime,
+    isMobileDayView,
+    isMobileWeekView,
+    view,
+  ]);
 
   const isLoading = loadingProfs || loadingAppts;
 
@@ -1108,6 +1135,7 @@ export default function AdminCalendarPage() {
             slotMinTime={calendarTimeBounds.slotMinTime}
             slotMaxTime={calendarTimeBounds.slotMaxTime}
             scrollTime={calendarTimeBounds.slotMinTime}
+            scrollTimeReset
             locale="es"
             firstDay={1}
             allDaySlot={false}
