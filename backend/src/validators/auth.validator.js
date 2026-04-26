@@ -9,7 +9,7 @@ export const registerSchema = z.object({
 
   email: z
     .string({ required_error: 'El email es obligatorio' })
-    .email('El email no es válido')
+    .email('El email no es valido')
     .toLowerCase()
     .trim(),
 
@@ -27,7 +27,7 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: z
     .string({ required_error: 'El email es obligatorio' })
-    .email('El email no es válido')
+    .email('El email no es valido')
     .toLowerCase()
     .trim(),
 
@@ -59,4 +59,8 @@ export const changePasswordSchema = z.object({
     .string({ required_error: 'La nueva contraseña es obligatoria' })
     .min(6, 'La nueva contraseña debe tener al menos 6 caracteres')
     .max(100, 'La nueva contraseña no puede exceder 100 caracteres')
+});
+
+export const updateClientStatusSchema = z.object({
+  activo: z.boolean({ required_error: 'El estado activo es obligatorio' })
 });

@@ -165,7 +165,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
   const [clientSearchInput, setClientSearchInput] = useState('');
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const { data: clients = [], isFetching: clientsLoading } = useAdminClients(debouncedSearch);
+  const { data: clients = [], isFetching: clientsLoading } = useAdminClients(debouncedSearch, { activo: true });
   const createMutation = useAdminCreateAppointment();
 
   // Debounce de 300ms para la búsqueda de clientes en la API

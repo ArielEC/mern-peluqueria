@@ -50,6 +50,43 @@ export const listClients = async (req, res) => {
 };
 
 /**
+ * PUT /api/auth/clients/:id/status
+ * Activa o desactiva una cuenta de cliente (solo admin).
+ */
+export const updateClientStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { activo } = req.validatedBody;
+
+    const client = await User.findOne({ _id: id, role: 'cliente' });
+
+    if (!client) {
+      return res.status(404).json({ error: 'Cliente no encontrado.' });
+    }
+
+    client.activo = activo;
+    await client.save();
+    emitQuerySync('clients');
+
+    res.json({
+      message: `Cliente ${activo ? 'activado' : 'desactivado'} correctamente`,
+      client: {
+        _id: client._id,
+        nombre: client.nombre,
+        email: client.email,
+        telefono: client.telefono,
+        role: client.role,
+        activo: client.activo,
+        createdAt: client.createdAt,
+      }
+    });
+  } catch (error) {
+    console.error('Error al actualizar estado de cliente:', error);
+    res.status(500).json({ error: 'Error al actualizar el estado del cliente.' });
+  }
+};
+
+/**
  * POST /api/auth/register
  * Registra un nuevo cliente en el sistema.
  * Solo se pueden registrar clientes por esta vía (el admin se crea por seed).
