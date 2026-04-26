@@ -8,75 +8,216 @@ Este cap\'itulo describe el uso del sistema desde la perspectiva de los dos tipo
 
 \subsection{Registro e Inicio de Sesi\'on}\label{subsec:registro}
 
-Para utilizar el sistema de reservas, el cliente debe crear una cuenta accediendo a la p\'agina de registro. Se solicitan los siguientes datos: nombre completo, correo electr\'onico, contrase\~na (m\'inimo 6 caracteres) y tel\'efono de contacto (opcional). Una vez registrado, el sistema redirige autom\'aticamente al \'area de reservas.
+Para utilizar el sistema de reservas, el cliente debe crear una cuenta accediendo a la p\'agina de registro (Figura~\ref{fig:client-register}). Se solicitan los siguientes datos: nombre completo, correo electr\'onico, contrase\~na y tel\'efono de contacto.
 
-Para sesiones posteriores, el cliente accede mediante la p\'agina de \textit{login} introduciendo su correo electr\'onico y contrase\~na. La sesi\'on se mantiene activa durante 30 d\'ias sin necesidad de volver a autenticarse.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/client_register.png}
+    \caption{Pantalla de registro de nuevos usuarios.}
+    \label{fig:client-register}
+\end{figure}
+
+Para sesiones posteriores, el cliente accede mediante la p\'agina de \textit{login} (Figura~\ref{fig:client-login}) introduciendo sus credenciales.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/client_login.png}
+    \caption{Pantalla de inicio de sesi\'on para clientes registrados.}
+    \label{fig:client-login}
+\end{figure}
+
+Tras autenticarse, el sistema muestra la pantalla principal del portal (Figura~\ref{fig:client-home}), donde el usuario puede ver un resumen de su actividad.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/client_home.png}
+    \caption{Interfaz principal del portal de clientes tras el inicio de sesi\'on.}
+    \label{fig:client-home}
+\end{figure}
 
 \subsection{Proceso de Reserva}\label{subsec:proceso-reserva}
 
 La reserva de una cita se realiza en tres pasos guiados:
 
-\textbf{Paso 1 --- Selecci\'on de servicio:} Se muestra el cat\'alogo completo de servicios disponibles, organizado por categor\'ias. Cada servicio indica su nombre, duraci\'on estimada y precio. El cliente selecciona el servicio deseado pulsando sobre \'el.
+\textbf{Paso 1 --- Selecci\'on de servicio:} Se muestra el cat\'alogo de servicios (Figura~\ref{fig:client-step1}). El cliente selecciona el servicio deseado.
 
-\textbf{Paso 2 --- Selecci\'on de fecha y hora:} Se presenta un calendario donde el cliente elige la fecha deseada. A continuaci\'on se muestran los huecos disponibles, calculados en tiempo real considerando la agenda de todos los profesionales capacitados para el servicio seleccionado. Cada \textit{slot} horario indica el profesional asignado, identificado por su color. El cliente selecciona el hueco que prefiera.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/client_step1_services.png}
+    \caption{Paso 1: Selecci\'on del servicio a reservar.}
+    \label{fig:client-step1}
+\end{figure}
 
-\textbf{Paso 3 --- Confirmaci\'on:} Se muestra un resumen con el servicio, profesional, fecha, hora y precio. El cliente puede a\~nadir notas opcionales (por ejemplo, «quiero el mismo corte que la \'ultima vez») y confirma la reserva. El sistema redirige a una pantalla de confirmaci\'on con los detalles de la cita.
+\textbf{Paso 2 --- Selecci\'on de fecha y hora:} Se presenta un calendario interactivo (Figura~\ref{fig:client-step2}) donde se muestran los huecos disponibles calculados en tiempo real.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/client_step2_slots.png}
+    \caption{Paso 2: Selecci\'on de fecha y franja horaria disponible.}
+    \label{fig:client-step2}
+\end{figure}
+
+\textbf{Paso 3 --- Confirmaci\'on:} Se muestra un resumen final (Figura~\ref{fig:client-step3}) para validar los datos antes de confirmar la reserva.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/client_step3_summary.png}
+    \caption{Paso 3: Resumen y confirmaci\'on final de la reserva.}
+    \label{fig:client-step3}
+\end{figure}
 
 \subsection{Gesti\'on de Citas}\label{subsec:gestion-citas-cliente}
 
-Desde la secci\'on «Mis Citas», el cliente puede:
+Desde la secci\'on «Mis Citas» (Figura~\ref{fig:client-appointments}), el cliente puede consultar el historial de sus citas y cancelar aquellas que est\'en pendientes mediante un formulario de confirmaci\'on (Figura~\ref{fig:client-cancel}).
 
-\begin{itemize}
-    \item Consultar el listado de sus citas futuras y pasadas con su estado (confirmada, completada, cancelada, no presentado).
-    \item Cancelar una cita futura, siempre que se respete el plazo m\'inimo de antelaci\'on configurado por el negocio (por defecto, 24 horas antes de la cita).
-\end{itemize}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/client_appointments.png}
+    \caption{Secci\'on de gesti\'on de citas del cliente.}
+    \label{fig:client-appointments}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{img/client_cancel_modal.png}
+    \caption{Formulario de confirmaci\'on de cancelaci\'on de cita.}
+    \label{fig:client-cancel}
+\end{figure}
 
 \subsection{Perfil de Usuario}\label{subsec:perfil}
 
-El cliente puede actualizar su nombre y tel\'efono de contacto, as\'i como cambiar su contrase\~na desde el \'area de perfil.
+El cliente puede actualizar sus datos personales y preferencias desde el \'area de perfil (Figura~\ref{fig:client-profile}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/client_profile.png}
+    \caption{Pantalla de perfil de usuario.}
+    \label{fig:client-profile}
+\end{figure}
 
 \section{Panel de Administraci\'on}\label{sec:manual-admin}
 
-El panel de administraci\'on es accesible \'unicamente para usuarios con rol \texttt{admin}. Se accede desde la misma p\'agina de \textit{login} y se presenta con una barra lateral de navegaci\'on que organiza las secciones del panel.
+El panel de administraci\'on permite una gesti\'on integral del negocio.
 
 \subsection{Dashboard}\label{subsec:dashboard}
 
-La pantalla principal del panel muestra un resumen del estado del negocio mediante tarjetas con indicadores clave:
+El Dashboard (Figura~\ref{fig:admin-dashboard}) ofrece una visi\'on global con indicadores clave y las citas pr\'oximas.
 
-\begin{itemize}
-    \item \textbf{Citas de hoy:} N\'umero de citas programadas para el d\'ia actual.
-    \item \textbf{Citas de la semana:} Total de citas de la semana en curso.
-    \item \textbf{Facturaci\'on mensual:} Suma de los precios de las citas completadas en el mes.
-    \item \textbf{Tasa de conversi\'on:} Número de citas completadas sobre el total de citas no canceladas.
-\end{itemize}
-
-Adem\'as, incluye un \textit{widget} con un listado de las citas m\'as próximas.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/admin_dashboard_full.png}
+    \caption{Dashboard principal del administrador.}
+    \label{fig:admin-dashboard}
+\end{figure}
 
 \subsection{Calendario}\label{subsec:calendario}
 
-El calendario interactivo permite visualizar la agenda completa del negocio. Ofrece dos vistas: semanal y diaria. En la vista diaria, cada profesional aparece como una columna independiente (vista de recursos), lo que permite ver la ocupaci\'on de cada uno de forma simult\'anea. Las citas se muestran con el color asignado al profesional y pueden consultarse en detalle haciendo clic sobre ellas. El administrador puede crear nuevas citas manualmente desde el propio calendario.
+El calendario permite visualizar la agenda en diferentes formatos. La vista semanal (Figura~\ref{fig:admin-calendar-week}) ofrece una perspectiva amplia, mientras que la vista diaria por recursos (Figura~\ref{fig:admin-calendar-day}) facilita la gesti\'on de los profesionales.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/admin_calendar_week.png}
+    \caption{Vista semanal del calendario de gesti\'on.}
+    \label{fig:admin-calendar-week}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/admin_calendar_day.png}
+    \caption{Vista diaria detallada por profesionales (recursos).}
+    \label{fig:admin-calendar-day}
+\end{figure}
+
+Desde cualquier vista del calendario, el administrador puede crear nuevas citas manualmente (Figura~\ref{fig:admin-new-app}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{img/admin_new_appointment.png}
+    \caption{Formulario de creaci\'on de nueva cita manual por el administrador.}
+    \label{fig:admin-new-app}
+\end{figure}
 
 \subsection{Gesti\'on de Servicios}\label{subsec:gestion-servicios}
 
-La p\'agina de servicios permite a\~nadir, editar y eliminar los servicios del cat\'alogo. Para cada servicio se configuran: nombre, descripci\'on, duraci\'on en minutos, precio, categor\'ia, profesionales capacitados para realizarlo y orden de aparici\'on en el cat\'alogo p\'ublico. Los servicios pueden desactivarse para ocultarlos del portal de reservas sin eliminarlos.
+Permite administrar el cat\'alogo de servicios ofrecidos (Figura~\ref{fig:admin-services}) y dar de alta nuevas opciones (Figura~\ref{fig:admin-new-service}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/admin_services_list.png}
+    \caption{Interfaz de gesti\'on del cat\'alogo de servicios.}
+    \label{fig:admin-services}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{img/admin_new_service.png}
+    \caption{Formulario de alta de nuevo servicio.}
+    \label{fig:admin-new-service}
+\end{figure}
 
 \subsection{Gesti\'on de Profesionales}\label{subsec:gestion-profesionales}
 
-Permite dar de alta a los profesionales del establecimiento indicando su nombre, especialidad y color para el calendario. Para cada profesional se configura su horario semanal, especificando para cada d\'ia de la semana si trabaja, su hora de entrada y salida, y opcionalmente una franja de descanso intermedia. Los profesionales pueden desactivarse temporalmente.
+Secci\'on para gestionar el equipo, sus horarios y especialidades (Figura~\ref{fig:admin-pros}). Es posible a\~nadir nuevos miembros a la plantilla (Figura~\ref{fig:admin-new-pro}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/admin_professionals_list.png}
+    \caption{Gesti\'on de la plantilla de profesionales.}
+    \label{fig:admin-pros}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{img/admin_new_professional.png}
+    \caption{Configuraci\'on de un nuevo profesional y sus horarios.}
+    \label{fig:admin-new-pro}
+\end{figure}
 
 \subsection{Gesti\'on de Bloqueos}\label{subsec:gestion-bloqueos}
 
-Los bloqueos permiten reservar periodos de tiempo en los que no se pueden agendar citas. Cada bloqueo incluye un t\'itulo, tipo (vacaciones, festivo, personal, mantenimiento u otro), fecha y hora de inicio y fin, y opcionalmente una descripci\'on. Un bloqueo puede asignarse a un profesional concreto o aplicarse a todo el negocio. El motor de disponibilidad los tiene en cuenta autom\'aticamente al calcular los huecos libres.
+Permite definir periodos de inactividad (Figura~\ref{fig:admin-blocks}) mediante un formulario dedicado (Figura~\ref{fig:admin-new-block}).
 
-\subsection{Gesti\'on de Clientes}\label{subsec:gestion-clientes}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/admin_blocks_list.png}
+    \caption{Pantalla de configuraci\'on de bloqueos horarios y vacaciones.}
+    \label{fig:admin-blocks}
+\end{figure}
 
-La p\'agina de clientes muestra un directorio con b\'usqueda por nombre, correo electr\'onico o tel\'efono. Desde esta secci\'on, el administrador puede consultar el historial de citas y las notas t\'ecnicas de cada cliente, as\'i como activar o desactivar cuentas de usuario.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{img/admin_new_block.png}
+    \caption{Formulario de creaci\'on de bloqueo de agenda.}
+    \label{fig:admin-new-block}
+\end{figure}
 
-\subsection{Notas T\'ecnicas}\label{subsec:notas-tecnicas}
+\subsection{Gesti\'on de Clientes y Notas T\'ecnicas}\label{subsec:gestion-clientes}
 
-Las notas t\'ecnicas constituyen el CRM del sistema. Permiten registrar informaci\'on asociada a cada cliente, categorizada como: \textit{color} (f\'ormulas de tinte aplicadas), \textit{tratamiento} (procedimientos realizados), \textit{alergia} (reacciones adversas detectadas), \textit{preferencia} (gustos del cliente) u \textit{otro}. Las notas pueden marcarse como importantes para que aparezcan destacadas en la ficha del cliente.
+El administrador puede acceder al historial detallado de cada cliente (Figura~\ref{fig:admin-client-details}) y gestionar sus notas t\'ecnicas (Figura~\ref{fig:admin-tech-notes}), permitiendo la creaci\'on de nuevas anotaciones (Figura~\ref{fig:admin-new-note}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/admin_client_details.png}
+    \caption{Detalle de la ficha de un cliente.}
+    \label{fig:admin-client-details}
+\end{figure}
+
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{img/admin_new_note.png}
+    \caption{Formulario para a\~nadir una nueva nota t\'ecnica al expediente del cliente.}
+    \label{fig:admin-new-note}
+\end{figure}
 
 \subsection{Configuraci\'on del Negocio}\label{subsec:configuracion}
 
-La p\'agina de ajustes permite modificar los par\'ametros globales del sistema: nombre del negocio, tel\'efono, correo electr\'onico, direcci\'on, zona horaria, duraci\'on de la rejilla de \textit{slots} (15 o 30 minutos), d\'ias m\'aximos de antelaci\'on para reservas, horas m\'inimas de antelaci\'on para cancelaciones, mensaje de bienvenida y pol\'itica de cancelaci\'on.
+Ajustes globales del sistema, horarios generales y pol\'iticas de reserva (Figura~\ref{fig:admin-settings}).
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{img/admin_settings.png}
+    \caption{Configuraci\'on general del establecimiento.}
+    \label{fig:admin-settings}
+\end{figure}

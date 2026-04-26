@@ -5,6 +5,28 @@
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {3.1}{\ignorespaces Arquitectura general del sistema}}{12}{}%
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Pantalla de registro de nuevos usuarios.}}{17}{}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Pantalla de inicio de sesi\'on para clientes registrados.}}{18}{}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Interfaz principal del portal de clientes tras el inicio de sesi\'on.}}{18}{}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Paso 1: Selecci\'on del servicio a reservar.}}{19}{}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Paso 2: Selecci\'on de fecha y franja horaria disponible.}}{19}{}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces Paso 3: Resumen y confirmaci\'on final de la reserva.}}{20}{}%
+\contentsline {figure}{\numberline {4.7}{\ignorespaces Secci\'on de gesti\'on de citas del cliente.}}{20}{}%
+\contentsline {figure}{\numberline {4.8}{\ignorespaces Formulario de confirmaci\'on de cancelaci\'on de cita.}}{21}{}%
+\contentsline {figure}{\numberline {4.9}{\ignorespaces Pantalla de perfil de usuario.}}{21}{}%
+\contentsline {figure}{\numberline {4.10}{\ignorespaces Dashboard principal del administrador.}}{22}{}%
+\contentsline {figure}{\numberline {4.11}{\ignorespaces Vista semanal del calendario de gesti\'on.}}{22}{}%
+\contentsline {figure}{\numberline {4.12}{\ignorespaces Vista diaria detallada por profesionales (recursos).}}{23}{}%
+\contentsline {figure}{\numberline {4.13}{\ignorespaces Formulario de creaci\'on de nueva cita manual por el administrador.}}{23}{}%
+\contentsline {figure}{\numberline {4.14}{\ignorespaces Interfaz de gesti\'on del cat\'alogo de servicios.}}{24}{}%
+\contentsline {figure}{\numberline {4.15}{\ignorespaces Formulario de alta de nuevo servicio.}}{24}{}%
+\contentsline {figure}{\numberline {4.16}{\ignorespaces Gesti\'on de la plantilla de profesionales.}}{25}{}%
+\contentsline {figure}{\numberline {4.17}{\ignorespaces Configuraci\'on de un nuevo profesional y sus horarios.}}{25}{}%
+\contentsline {figure}{\numberline {4.18}{\ignorespaces Pantalla de configuraci\'on de bloqueos horarios y vacaciones.}}{26}{}%
+\contentsline {figure}{\numberline {4.19}{\ignorespaces Formulario de creaci\'on de bloqueo de agenda.}}{26}{}%
+\contentsline {figure}{\numberline {4.20}{\ignorespaces Detalle de la ficha de un cliente.}}{27}{}%
+\contentsline {figure}{\numberline {4.21}{\ignorespaces Formulario para a\~nadir una nueva nota t\'ecnica al expediente del cliente.}}{27}{}%
+\contentsline {figure}{\numberline {4.22}{\ignorespaces Configuraci\'on general del establecimiento.}}{28}{}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
