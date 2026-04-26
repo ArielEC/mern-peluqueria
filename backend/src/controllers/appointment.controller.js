@@ -2,7 +2,6 @@ import Appointment from '../models/Appointment.js';
 import Blocker from '../models/Blocker.js';
 import Professional from '../models/Professional.js';
 import Service from '../models/Service.js';
-import TechnicalNote from '../models/TechnicalNote.js';
 import User from '../models/User.js';
 import {
   verificarDisponibilidadSlot,
@@ -66,47 +65,6 @@ const haFinalizadoCita = (appointment, now = new Date()) => {
   }
 
   return new Date(fin) <= now;
-};
-
-const sincronizarNotaTecnicaVinculada = async (appointment, notasInternas, session) => {
-  const contenido = typeof notasInternas === 'string' ? notasInternas.trim() : '';
-  const notaVinculada = await TechnicalNote.findOne({ cita: appointment._id })
-    .sort({ createdAt: -1 })
-    .session(session);
-
-  if (!contenido) {
-    if (notaVinculada) {
-      await TechnicalNote.deleteOne({ _id: notaVinculada._id }, { session });
-      return true;
-    }
-
-    return false;
-  }
-
-  if (notaVinculada) {
-    const haCambiado =
-      notaVinculada.contenido !== contenido
-      || notaVinculada.cliente?.toString() !== appointment.cliente?.toString();
-
-    if (!haCambiado) {
-      return false;
-    }
-
-    notaVinculada.contenido = contenido;
-    notaVinculada.cliente = appointment.cliente;
-    await notaVinculada.save({ session });
-    return true;
-  }
-
-  const nuevaNota = new TechnicalNote({
-    cliente: appointment.cliente,
-    cita: appointment._id,
-    contenido,
-    categoria: 'otro'
-  });
-
-  await nuevaNota.save({ session });
-  return true;
 };
 
 /**
@@ -567,7 +525,6 @@ export const updateAppointment = async (req, res) => {
 
     const session = await Appointment.startSession();
     let appointment = null;
-    let notasTecnicasActualizadas = false;
 
     try {
       await session.withTransaction(async () => {
@@ -576,14 +533,6 @@ export const updateAppointment = async (req, res) => {
           { $set: req.validatedBody },
           { new: true, runValidators: true, session }
         );
-
-        if (Object.prototype.hasOwnProperty.call(req.validatedBody, 'notasInternas')) {
-          notasTecnicasActualizadas = await sincronizarNotaTecnicaVinculada(
-            appointment,
-            req.validatedBody.notasInternas,
-            session
-          );
-        }
       });
     } finally {
       await session.endSession();
@@ -594,9 +543,6 @@ export const updateAppointment = async (req, res) => {
     await appointment.populate('servicio', 'nombre duracion precio');
 
     emitQuerySync('appointments');
-    if (notasTecnicasActualizadas) {
-      emitQuerySync('technicalNotes');
-    }
 
     res.json(appointment);
   } catch (error) {

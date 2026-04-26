@@ -667,7 +667,7 @@ export default function NewAppointmentModal({ initialDate, initialProfesionalId,
           )}
 
           {/* Notas */}
-          <Field label="Notas (opcional)">
+          <Field label="Notas del cliente (opcional)">
             <textarea
               value={form.notasCliente}
               onChange={(e) => set('notasCliente', e.target.value)}

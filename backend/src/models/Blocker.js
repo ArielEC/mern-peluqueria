@@ -44,7 +44,9 @@ const blockerSchema = new mongoose.Schema({
   // Creado por (admin)
   creadoPor: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    required: [true, 'El creador del bloqueo es obligatorio'],
+    immutable: true
   }
 }, {
   timestamps: true
