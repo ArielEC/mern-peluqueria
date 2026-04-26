@@ -35,6 +35,13 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
   const prof = appointment?.profesional;
   const serv = appointment?.servicio;
   const client = appointment?.cliente;
+  const clientNote = appointment?.notasCliente?.trim() || '';
+  const cancellationReason = appointment?.motivoCancelacion?.trim() || '';
+  const cancelledByLabel = appointment?.canceladaPor === 'cliente'
+    ? 'Cliente'
+    : appointment?.canceladaPor === 'admin'
+      ? 'Administración'
+      : null;
   const inicio = appointment ? new Date(appointment.fechaHoraInicio) : null;
   const finBase = appointment?.fechaHoraFinOperativa || appointment?.fechaHoraFin || appointment?.fechaHoraInicio;
   const fin = finBase ? new Date(finBase) : null;
@@ -165,6 +172,15 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
             </div>
           </div>
 
+          {clientNote && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-[#494454] mb-2">Nota del cliente</p>
+              <div className="rounded-lg bg-[#f2f3ff] px-3 py-3 text-[0.8rem] leading-relaxed text-[#131b2e]">
+                {clientNote}
+              </div>
+            </div>
+          )}
+
           {/* Notas internas */}
           <div>
             <p className="text-[11px] font-bold uppercase tracking-widest text-[#494454] mb-2">Notas internas</p>
@@ -175,7 +191,26 @@ export default function AppointmentDetailModal({ appointment, onClose }) {
               placeholder="Observaciones internas del admin..."
               className="w-full bg-[#f2f3ff] rounded-lg px-3 py-2 text-base sm:text-[0.8rem] text-[#131b2e] placeholder:text-[#494454]/50 outline-none focus:ring-2 focus:ring-[#6b38d4] resize-none border-0"
             />
+            <p className="mt-2 text-[0.7rem] text-[#494454]">
+              Esta nota tambien se guardara en las notas tecnicas del cliente y quedara vinculada a esta cita.
+            </p>
           </div>
+
+          {(appointment?.estado === 'cancelada' || cancellationReason || cancelledByLabel) && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-[#494454] mb-2">Cancelación</p>
+              <div className="space-y-2 rounded-lg border border-[#ffdad6] bg-[#fff6f5] px-3 py-3">
+                {cancelledByLabel && (
+                  <p className="text-[0.72rem] font-bold uppercase tracking-widest text-[#93000a]">
+                    Cancelada por: {cancelledByLabel}
+                  </p>
+                )}
+                <p className="text-[0.8rem] leading-relaxed text-[#131b2e]">
+                  {cancellationReason || 'Sin motivo de cancelación indicado.'}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Cancelar cita */}
           {canCancelAppointment && (

@@ -398,7 +398,9 @@ function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSe
   const dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
   const { data: availData, isLoading: loadingSlots, isFetching } = useAvailability(
     dateStr,
-    selectedService?._id
+    selectedService?._id,
+    '',
+    businessTimezone
   );
   const [filterProfesional, setFilterProfesional] = useState('');
 
@@ -780,7 +782,12 @@ export default function BookingPage() {
     [servicesData]
   );
   const selectedDateKey = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : null;
-  const { data: liveAvailabilityData } = useAvailability(selectedDateKey, selectedService?._id);
+  const { data: liveAvailabilityData } = useAvailability(
+    selectedDateKey,
+    selectedService?._id,
+    '',
+    businessTimezone
+  );
   const liveSlots = useMemo(() => liveAvailabilityData?.slots ?? [], [liveAvailabilityData]);
 
   // Calcular días no laborables (días donde NINGÚN profesional trabaja)
