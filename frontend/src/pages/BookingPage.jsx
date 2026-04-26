@@ -16,6 +16,7 @@ import { useCreateAppointment } from '@/hooks/useAppointments';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useSettings } from '@/hooks/useSettings';
 import { notifyInfo } from '@/lib/notifications';
+import { scrollViewportToTop } from '@/lib/scroll';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -859,6 +860,16 @@ export default function BookingPage() {
       })
     );
   }, [professionals]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const frameId = window.requestAnimationFrame(() => {
+      scrollViewportToTop();
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [step]);
 
   useEffect(() => {
     if (!selectedService || servicesData === undefined) return;
