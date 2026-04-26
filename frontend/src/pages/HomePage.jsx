@@ -5,6 +5,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useServices } from '@/hooks/useServices';
 import { Button } from '@/components/ui/button';
 import { scrollViewportToTop } from '@/lib/scroll';
+import heroSalonImage from '@/assets/conchy-vazquez-peluqueria-cambados.jpg';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -160,18 +161,13 @@ export default function HomePage() {
 
         {/* Hero image */}
         <div className="mt-14 sm:mt-20 px-4 sm:px-6 md:px-8 max-w-5xl mx-auto">
-          <div className="rounded-xl overflow-hidden ambient-shadow h-56 sm:h-72 md:h-[400px] bg-gradient-to-br from-primary/20 via-primary/5 to-background flex items-center justify-center">
-            <div className="text-center text-primary/30">
-              <svg className="mx-auto h-24 w-24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                <path d="M7 3C4 3 4 5.5 4 5.5C4 8 6 9 8 9C9.5 9 10.5 8 11 7" />
-                <path d="M17 3C20 3 20 5.5 20 5.5C20 8 18 9 16 9C14.5 9 13.5 8 13 7" />
-                <path d="M11 7C11 8.5 11 10 12 11C13 12 14 12.5 14 14C14 15.5 13 16.5 12 17" />
-                <path d="M13 7C13 8.5 13 10 12 11" />
-                <circle cx="9" cy="19" r="2" />
-                <circle cx="15" cy="19" r="2" />
-                <path d="M10.5 18L12 17L13.5 18" />
-              </svg>
-            </div>
+          <div className="rounded-xl overflow-hidden ambient-shadow h-56 sm:h-72 md:h-[400px] border border-border/20 bg-muted/40">
+            <img
+              src={heroSalonImage}
+              alt={`Interior de ${businessName}`}
+              className="h-full w-full object-cover object-center"
+              loading="eager"
+            />
           </div>
         </div>
       </section>
