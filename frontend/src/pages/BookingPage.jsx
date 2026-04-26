@@ -861,6 +861,18 @@ export default function BookingPage() {
   }, [professionals]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const frameId = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0 });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [step]);
+
+  useEffect(() => {
     if (!selectedService || servicesData === undefined) return;
 
     const serviceStillAvailable = activeServices.some((service) => service._id === selectedService._id);
