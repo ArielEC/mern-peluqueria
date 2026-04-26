@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex proyect"] 1777216945.27942 "proyect.aux" "proyect.bbl" "proyect" 1777216950.23552 0
+["bibtex proyect"] 1777217831.7393 "proyect.aux" "proyect.bbl" "proyect" 1777217836.54033 0
   "./apacite.bst" 1775577413 146156 9d7b79dbf9d91133318126032cff8c27 ""
   "./pfcbib.bib" 1777201698 2593 cbcfb0618084c795ae331ebc1d41c09b ""
-  "proyect.aux" 1777216949 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
+  "proyect.aux" 1777217835 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
   (generated)
   "proyect.bbl"
   "proyect.blg"
   (rewritten before read)
-["pdflatex"] 1777216945.60821 "c:/Users/Usuario/Desktop/ETSII US/2025-26/CBD/Proyecto/mern-peluqueria/Plantilla/Plantilla TfG/proyect.tex" "proyect.pdf" "proyect" 1777216950.23619 0
+["pdflatex"] 1777217832.0413 "c:/Users/Usuario/Desktop/ETSII US/2025-26/CBD/Proyecto/mern-peluqueria/Plantilla/Plantilla TfG/proyect.tex" "proyect.pdf" "proyect" 1777217836.54109 0
   "C:/Users/Usuario/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1777194498 82705 9cc9f144eacd499bc23a611703921467 ""
   "C:/Users/Usuario/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1769516040 13334455 465191c09344739b3c7327e0d5773376 ""
   "C:/Users/Usuario/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -117,7 +117,7 @@
   "Capitulos/capitulo1.tex" 1777196244 6959 b373b8f7aeddfefc98a4e1ed788923c4 ""
   "Capitulos/capitulo2.tex" 1777198270 16233 f82d2d75d98f8fe7cba6138532e93502 ""
   "Capitulos/capitulo3.tex" 1777198554 12396 7e982c01ea95bec1ed6930da304dfd88 ""
-  "Capitulos/capitulo4.tex" 1777216939 8736 f9cdc51b0c0dc06b80f9ace19646999d ""
+  "Capitulos/capitulo4.tex" 1777217821 8734 877b5c2558fe348e1c10bfb7253cf872 ""
   "Capitulos/capitulo5.tex" 1777200775 7773 8d182f5bf2c9819d911ceec594f44331 ""
   "Capitulos/conclusiones.tex" 1777200907 5218 2276394cd31af8efa0cc25f826178542 ""
   "Capitulos/uso_ia.tex" 1777201317 1324 2bdce4b7d22aca049efe0929320c2bdd ""
@@ -143,9 +143,9 @@
   "img/arquitectura.png" 1777193374 918338 0fadf43a4073521fcecc775bc8f111d2 ""
   "img/client_appointments.png" 1777211653 114300 414b4c8fb7430b1b13cd3565a7b35da3 ""
   "img/client_cancel_modal.png" 1777216097 188819 174b6ac3882c9d819fe8bc57595b47da ""
-  "img/client_home.png" 1777211594 182814 94ee0a616b41746109992710f8281560 ""
+  "img/client_home.png" 1777217494 208266 626109142688aeba0249b6f1acae31d8 ""
   "img/client_login.png" 1777212095 61656 074baef4f60ecbdb27b4deceeae20293 ""
-  "img/client_profile.png" 1777212203 182849 8186c90bfaedb8f1edcaa5feecf8f8b0 ""
+  "img/client_profile.png" 1777217504 130370 9c624e5f89d0208e208fa90ea9203dcf ""
   "img/client_register.png" 1777212083 79024 862deb4d87ff8c69e496d01789b53495 ""
   "img/client_step1_services.png" 1777212125 110403 b8c3e8253e553e5b876bfddf32166ca8 ""
   "img/client_step2_slots.png" 1777212159 129919 d259e052aa62c89c1b7bbfdc67840934 ""
@@ -157,12 +157,12 @@
   "lstmisc.sty" 1775577413 79057 d9d4762e984ff3346653b91fbcf676e9 ""
   "multicol.sty" 1775577413 16432 c287b7637095c4530300f304a130382e ""
   "pclass.cls" 1777201698 13768 c4a83521cfc86b2261a2c90f2f513085 ""
-  "proyect.aux" 1777216949 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
-  "proyect.bbl" 1777216945 7920 a97c71f5508262877cc1bfbb52788463 "bibtex proyect"
-  "proyect.lof" 1777216949 2912 f3ef1fcdd121f27f68a3e14e1440329e "pdflatex"
-  "proyect.lot" 1777216949 1476 99a33d7318ca0f54b8fe0f87b0dad724 "pdflatex"
+  "proyect.aux" 1777217835 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
+  "proyect.bbl" 1777217831 7920 a97c71f5508262877cc1bfbb52788463 "bibtex proyect"
+  "proyect.lof" 1777217835 2912 f3ef1fcdd121f27f68a3e14e1440329e "pdflatex"
+  "proyect.lot" 1777217835 1476 99a33d7318ca0f54b8fe0f87b0dad724 "pdflatex"
   "proyect.tex" 1777198053 1396 a7461049fb6039365c2c6ae61857b7a5 ""
-  "proyect.toc" 1777216949 5206 89fe62726d531afe1b6d19d7839df33f "pdflatex"
+  "proyect.toc" 1777217835 5206 89fe62726d531afe1b6d19d7839df33f "pdflatex"
   "resumen.tex" 1777194972 1670 eb9e8b95e86ebc7023e21a3ff95c9ac2 ""
   "spanish.apc" 1777201534 9948 5c1332cc71a17d8e69e82fb4c27c74bc ""
   "spanish.ldf" 1775577413 22948 cbf87845340e2bdcb3c1f4da7684d5f3 ""
