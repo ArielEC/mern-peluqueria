@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex proyect"] 1777233756.48982 "proyect.aux" "proyect.bbl" "proyect" 1777233760.91364 0
+["bibtex proyect"] 1777233756.48982 "proyect.aux" "proyect.bbl" "proyect" 1777238192.23776 0
   "./apacite.bst" 1775577413 146156 9d7b79dbf9d91133318126032cff8c27 ""
   "./pfcbib.bib" 1777233714 2593 cbcfb0618084c795ae331ebc1d41c09b ""
-  "proyect.aux" 1777233760 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
+  "proyect.aux" 1777238191 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
   (generated)
   "proyect.bbl"
   "proyect.blg"
   (rewritten before read)
-["pdflatex"] 1777233756.77741 "c:/Users/Usuario/Desktop/ETSII US/2025-26/CBD/Proyecto/mern-peluqueria/Plantilla/Plantilla TfG/proyect.tex" "proyect.pdf" "proyect" 1777233760.91437 0
+["pdflatex"] 1777238187.79343 "c:/Users/Usuario/Desktop/ETSII US/2025-26/CBD/Proyecto/mern-peluqueria/Plantilla/Plantilla TfG/proyect.tex" "proyect.pdf" "proyect" 1777238192.23844 0
   "C:/Users/Usuario/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1777194498 82705 9cc9f144eacd499bc23a611703921467 ""
   "C:/Users/Usuario/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1769516040 13334455 465191c09344739b3c7327e0d5773376 ""
   "C:/Users/Usuario/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -118,7 +118,7 @@
   "Capitulos/capitulo2.tex" 1777233714 16233 f82d2d75d98f8fe7cba6138532e93502 ""
   "Capitulos/capitulo3.tex" 1777233714 12396 7e982c01ea95bec1ed6930da304dfd88 ""
   "Capitulos/capitulo4.tex" 1777233714 8955 877b5c2558fe348e1c10bfb7253cf872 ""
-  "Capitulos/capitulo5.tex" 1777233714 7773 8d182f5bf2c9819d911ceec594f44331 ""
+  "Capitulos/capitulo5.tex" 1777238186 7722 400effde320f8a532cc7780baa9beab7 ""
   "Capitulos/conclusiones.tex" 1777233714 5218 2276394cd31af8efa0cc25f826178542 ""
   "Capitulos/uso_ia.tex" 1777233714 1324 2bdce4b7d22aca049efe0929320c2bdd ""
   "agradecimientos.tex" 1777233714 461 ec333fb514221fa34793244a94d0f4a6 ""
@@ -157,12 +157,12 @@
   "lstmisc.sty" 1775577413 79057 d9d4762e984ff3346653b91fbcf676e9 ""
   "multicol.sty" 1775577413 16432 c287b7637095c4530300f304a130382e ""
   "pclass.cls" 1777233714 13768 c4a83521cfc86b2261a2c90f2f513085 ""
-  "proyect.aux" 1777233760 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
+  "proyect.aux" 1777238191 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
   "proyect.bbl" 1777233756 7920 a97c71f5508262877cc1bfbb52788463 "bibtex proyect"
-  "proyect.lof" 1777233760 2912 f3ef1fcdd121f27f68a3e14e1440329e "pdflatex"
-  "proyect.lot" 1777233760 1476 99a33d7318ca0f54b8fe0f87b0dad724 "pdflatex"
+  "proyect.lof" 1777238191 2912 f3ef1fcdd121f27f68a3e14e1440329e "pdflatex"
+  "proyect.lot" 1777238191 1476 99a33d7318ca0f54b8fe0f87b0dad724 "pdflatex"
   "proyect.tex" 1777233749 1396 545c441ccf6ea60287f3ad2af35bce03 ""
-  "proyect.toc" 1777233760 5206 89fe62726d531afe1b6d19d7839df33f "pdflatex"
+  "proyect.toc" 1777238191 5206 89fe62726d531afe1b6d19d7839df33f "pdflatex"
   "resumen.tex" 1777233714 1670 eb9e8b95e86ebc7023e21a3ff95c9ac2 ""
   "spanish.apc" 1777233714 9948 5c1332cc71a17d8e69e82fb4c27c74bc ""
   "spanish.ldf" 1775577413 22948 cbf87845340e2bdcb3c1f4da7684d5f3 ""

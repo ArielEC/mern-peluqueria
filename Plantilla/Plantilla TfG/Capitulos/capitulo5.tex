@@ -22,7 +22,7 @@ Git & 2.x & Control de versiones y clonado del repositorio \\
 \subsection{Clonado del Repositorio}\label{subsec:clonado}
 
 \begin{verbatim}
-git clone <URL_DEL_REPOSITORIO> mern-peluqueria
+git clone https://github.com/ArielEC/mern-peluqueria.git
 cd mern-peluqueria
 \end{verbatim}
 
@@ -123,7 +123,7 @@ Un aspecto relevante es la configuraci\'on de \texttt{trust proxy} en Express. R
 
 \subsection{Despliegue del Frontend en Render}\label{subsec:deploy-frontend}
 
-Se crea un servicio de tipo \textit{Static Site} en Render vinculado al mismo repositorio. Se configura el directorio ra\'iz como \texttt{frontend}, el comando de construcci\'on como \texttt{npm install \&\& npm run build} y el directorio de publicaci\'on como \texttt{dist}. Como variable de entorno se define \texttt{VITE\_API\_URL} con la URL del \textit{backend} desplegado (por ejemplo, \texttt{https://nombre-api.onrender.com/api}).
+Se crea un servicio de tipo \textit{Static Site} en Render vinculado al mismo repositorio. Se configura el directorio ra\'iz como \texttt{frontend}, el comando de construcci\'on como \texttt{npm install \&\& npm run build} y el directorio de publicaci\'on como \texttt{dist}. Como variable de entorno se define \texttt{VITE\_API\_URL} con la URL del \textit{backend} desplegado.
 
 Render asigna autom\'aticamente un certificado SSL y un dominio \texttt{.onrender.com} a cada servicio, proporcionando HTTPS sin configuraci\'on adicional. Adem\'as, Render redespliega autom\'aticamente la aplicaci\'on cada vez que se detecta un nuevo \textit{commit} en la rama principal del repositorio.
 
