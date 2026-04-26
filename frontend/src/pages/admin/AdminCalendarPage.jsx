@@ -12,6 +12,7 @@ import { useSettings } from '@/hooks/useSettings';
 import NewAppointmentModal from '@/components/admin/NewAppointmentModal';
 import AppointmentDetailModal from '@/components/admin/AppointmentDetailModal';
 import { formatFullDateInTz, formatInBusinessTz, formatTimeInTz } from '@/lib/utils';
+import { scrollViewportToTop } from '@/lib/scroll';
 
 function buildResources(professionals) {
   return professionals.map((professional) => ({
@@ -1025,14 +1026,17 @@ export default function AdminCalendarPage() {
       ? { weeks: direction === 'prev' ? -1 : 1 }
       : { days: direction === 'prev' ? -1 : 1 };
 
+    scrollViewportToTop();
     setCurrentDate(anchor.plus(delta).toJSDate());
   }
 
   function goToday() {
+    scrollViewportToTop();
     setCurrentDate(DateTime.now().setZone(businessTimezone).toJSDate());
   }
 
   function switchView(nextView) {
+    scrollViewportToTop();
     setView(nextView);
   }
 

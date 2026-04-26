@@ -16,6 +16,7 @@ import { useCreateAppointment } from '@/hooks/useAppointments';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useSettings } from '@/hooks/useSettings';
 import { notifyInfo } from '@/lib/notifications';
+import { scrollViewportToTop } from '@/lib/scroll';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -864,9 +865,7 @@ export default function BookingPage() {
     if (typeof window === 'undefined') return undefined;
 
     const frameId = window.requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, left: 0 });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
+      scrollViewportToTop();
     });
 
     return () => window.cancelAnimationFrame(frameId);

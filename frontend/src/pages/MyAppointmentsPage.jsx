@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle,
@@ -15,6 +15,7 @@ import {
 import { useAppointments, useCancelAppointment } from '@/hooks/useAppointments';
 import { useSettings } from '@/hooks/useSettings';
 import { formatDateInTz, formatTimeInTz } from '@/lib/utils';
+import { scrollViewportToTop } from '@/lib/scroll';
 
 function formatPrice(price) {
   if (price === undefined || price === null) return '';
@@ -386,6 +387,10 @@ export default function MyAppointmentsPage() {
   const pastList = appointments
     .filter((a) => !isUpcoming(a))
     .sort((a, b) => new Date(b.fechaHoraInicio) - new Date(a.fechaHoraInicio));
+
+  useEffect(() => {
+    scrollViewportToTop();
+  }, [activeTab]);
 
   function handleConfirmCancel(reason) {
     if (!cancelTarget) return;

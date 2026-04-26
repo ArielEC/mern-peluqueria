@@ -1,9 +1,10 @@
-import { createElement } from 'react';
+import { createElement, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Clock, MapPin, Phone, Mail, ExternalLink } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import { useServices } from '@/hooks/useServices';
 import { Button } from '@/components/ui/button';
+import { scrollViewportToTop } from '@/lib/scroll';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -99,6 +100,10 @@ function ContactItem({ icon, label, children }) {
 export default function HomePage() {
   const { data: settings, isLoading: loadingSettings } = useSettings();
   const { data: services, isLoading: loadingServices } = useServices();
+
+  useEffect(() => {
+    scrollViewportToTop();
+  }, []);
 
   const businessName = settings?.nombreNegocio || 'Peluquería';
   const welcomeMsg =
