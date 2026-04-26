@@ -132,10 +132,10 @@ export function ActionButtons({ onEdit, onDelete }) {
   );
 }
 
-export function StatusToggle({ active, onChange }) {
+export function StatusToggle({ active, onChange, disabled = false }) {
   return (
-    <label className="relative inline-flex items-center cursor-pointer">
-      <input type="checkbox" checked={active} onChange={(e) => onChange(e.target.checked)} className="sr-only peer" />
+    <label className={`relative inline-flex items-center ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+      <input type="checkbox" checked={active} onChange={(e) => onChange(e.target.checked)} disabled={disabled} className="sr-only peer" />
       <div className="w-10 h-5 bg-[#cbc3d7]/40 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#6b38d4]" />
     </label>
   );

@@ -1,19 +1,27 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Calendar, Clock, CalendarCheck, History,
-  X, CheckCircle, XCircle, AlertCircle, Info, ArrowRight,
+  AlertCircle,
+  ArrowRight,
+  Calendar,
+  CalendarCheck,
+  CheckCircle,
+  Clock,
+  History,
+  Info,
+  X,
+  XCircle,
 } from 'lucide-react';
 import { useAppointments, useCancelAppointment } from '@/hooks/useAppointments';
 import { useSettings } from '@/hooks/useSettings';
-import { formatTimeInTz, formatDateInTz } from '@/lib/utils';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+import { formatDateInTz, formatTimeInTz } from '@/lib/utils';
 
 function formatPrice(price) {
   if (price === undefined || price === null) return '';
   return new Intl.NumberFormat('es-ES', {
-    style: 'currency', currency: 'EUR', minimumFractionDigits: 2,
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
   }).format(price);
 }
 
@@ -29,12 +37,17 @@ function getInitials(name = '') {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2) || '??';
 }
 
+function getCancellationLabel(canceladaPor) {
+  if (canceladaPor === 'cliente') return 'Cancelada por ti';
+  if (canceladaPor === 'admin') return 'Cancelada por administración';
+  return 'Cancelada';
+}
+
 function canCancelAppointment(appointment, horasMinimas = 24) {
   if (appointment.estado !== 'confirmada') return false;
   const inicio = new Date(appointment.fechaHoraInicio);
   const ahora = new Date();
   const horasRestantes = (inicio - ahora) / (1000 * 60 * 60);
-  // Usar >= para alinear con el backend (puedeCancelar usa >=)
   return horasRestantes >= horasMinimas;
 }
 
@@ -45,31 +58,27 @@ function isUpcoming(appointment) {
   return inicio >= new Date();
 }
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
-
 const STATUS_CONFIG = {
-  confirmada:    { label: 'Confirmada',    cls: 'bg-primary/10 text-primary',         Icon: CalendarCheck },
-  completada:    { label: 'Completada',    cls: 'bg-green-100 text-green-700',         Icon: CheckCircle },
-  cancelada:     { label: 'Cancelada',     cls: 'bg-destructive/10 text-destructive',  Icon: XCircle },
-  no_presentado: { label: 'No presentado', cls: 'bg-muted text-muted-foreground',      Icon: AlertCircle },
+  confirmada: { label: 'Confirmada', cls: 'bg-primary/10 text-primary', Icon: CalendarCheck },
+  completada: { label: 'Completada', cls: 'bg-green-100 text-green-700', Icon: CheckCircle },
+  cancelada: { label: 'Cancelada', cls: 'bg-destructive/10 text-destructive', Icon: XCircle },
+  no_presentado: { label: 'No presentado', cls: 'bg-muted text-muted-foreground', Icon: AlertCircle },
 };
 
 function StatusBadge({ estado }) {
   const cfg = STATUS_CONFIG[estado] ?? STATUS_CONFIG.no_presentado;
   return (
-    <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${cfg.cls}`}>
+    <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${cfg.cls}`}>
       {cfg.label}
     </span>
   );
 }
 
-// ─── Professional avatar ──────────────────────────────────────────────────────
-
 function ProfAvatar({ nombre, color, size = 'lg' }) {
   const sizeClass = size === 'lg' ? 'w-14 h-14 text-sm' : 'w-10 h-10 text-xs';
   return (
     <div
-      className={`${sizeClass} rounded-xl flex items-center justify-center text-white font-black shrink-0`}
+      className={`${sizeClass} shrink-0 rounded-xl flex items-center justify-center text-white font-black`}
       style={{ backgroundColor: color || '#6b38d4' }}
     >
       {getInitials(nombre)}
@@ -77,67 +86,69 @@ function ProfAvatar({ nombre, color, size = 'lg' }) {
   );
 }
 
-// ─── Upcoming appointment card ────────────────────────────────────────────────
-
 function UpcomingCard({ appointment, horasMinimas, onCancel, businessTz }) {
   const prof = appointment.profesional;
   const serv = appointment.servicio;
   const inicio = new Date(appointment.fechaHoraInicio);
   const fin = appointment.fechaHoraFin ? new Date(appointment.fechaHoraFin) : null;
   const cancellable = canCancelAppointment(appointment, horasMinimas);
+  const clientNote = appointment.notasCliente?.trim() || '';
 
   return (
-    <div className="bg-card rounded-xl p-4 sm:p-5 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 items-start md:items-center ambient-shadow border border-border/20">
-      {/* Avatar */}
-      <ProfAvatar nombre={prof?.nombre} color={prof?.color} />
+    <div className="ambient-shadow bg-card rounded-xl border border-border/20 p-4 sm:p-5 md:p-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
+        <ProfAvatar nombre={prof?.nombre} color={prof?.color} />
 
-      {/* Details */}
-      <div className="flex-1 space-y-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap mb-1">
-          <StatusBadge estado={appointment.estado} />
-          <span className="text-muted-foreground text-xs font-medium">
-            Ref: #{appointment._id.slice(-6).toUpperCase()}
-          </span>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <StatusBadge estado={appointment.estado} />
+            <span className="text-muted-foreground text-xs font-medium">
+              Ref: #{appointment._id.slice(-6).toUpperCase()}
+            </span>
+          </div>
+          <h3 className="text-foreground text-base font-bold leading-snug break-words">{serv?.nombre}</h3>
+          <p className="text-muted-foreground text-sm">
+            con <span className="text-foreground font-semibold">{prof?.nombre}</span>
+            {serv?.duracion && <span className="text-muted-foreground"> · {formatDuration(serv.duracion)}</span>}
+          </p>
         </div>
-        <h3 className="text-base font-bold text-foreground break-words leading-snug">{serv?.nombre}</h3>
-        <p className="text-sm text-muted-foreground">
-          con <span className="font-semibold text-foreground">{prof?.nombre}</span>
-          {serv?.duracion && <span className="text-muted-foreground"> · {formatDuration(serv.duracion)}</span>}
-        </p>
+
+        <div className="w-full shrink-0 space-y-0.5 text-left md:w-auto md:text-right">
+          <div className="text-primary flex items-center gap-1.5 text-sm font-bold md:justify-end">
+            <Calendar className="h-3.5 w-3.5 shrink-0" />
+            <span className="capitalize">{formatDateInTz(inicio, businessTz)}</span>
+          </div>
+          <div className="text-muted-foreground flex items-center gap-1.5 text-sm md:justify-end">
+            <Clock className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              {formatTimeInTz(inicio, businessTz)}
+              {fin && ` — ${formatTimeInTz(fin, businessTz)}`}
+            </span>
+          </div>
+          <p className="text-foreground mt-1 text-base font-black">
+            {formatPrice(appointment.precioFinal ?? serv?.precio)}
+          </p>
+        </div>
       </div>
 
-      {/* Date + time + price */}
-      <div className="w-full md:w-auto shrink-0 text-left md:text-right space-y-0.5">
-        <div className="flex items-center md:justify-end gap-1.5 text-primary font-bold text-sm">
-          <Calendar className="h-3.5 w-3.5 shrink-0" />
-          <span className="capitalize">
-            {formatDateInTz(inicio, businessTz)}
-          </span>
+      {clientNote && (
+        <div className="bg-primary/5 mt-4 rounded-xl px-4 py-3 text-sm text-muted-foreground">
+          <p className="text-primary mb-1 text-[10px] font-black uppercase tracking-widest">Tu nota al profesional</p>
+          <p className="text-foreground/90 leading-relaxed">{clientNote}</p>
         </div>
-        <div className="flex items-center md:justify-end gap-1.5 text-muted-foreground text-sm">
-          <Clock className="h-3.5 w-3.5 shrink-0" />
-          <span>
-            {formatTimeInTz(inicio, businessTz)}
-            {fin && ` — ${formatTimeInTz(fin, businessTz)}`}
-          </span>
-        </div>
-        <p className="text-base font-black text-foreground mt-1">
-          {formatPrice(appointment.precioFinal ?? serv?.precio)}
-        </p>
-      </div>
+      )}
 
-      {/* Cancel button */}
-      <div className="w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-border/20">
+      <div className="border-border/20 mt-4 w-full border-t pt-3">
         {cancellable ? (
           <button
             onClick={() => onCancel(appointment)}
-            className="w-full md:w-auto px-5 py-2.5 text-destructive font-bold hover:bg-destructive/10 transition-colors rounded-lg flex items-center justify-center gap-1.5 text-sm"
+            className="text-destructive flex w-full items-center justify-center gap-1.5 rounded-lg px-5 py-2.5 text-sm font-bold transition-colors hover:bg-destructive/10 md:w-auto"
           >
             <X className="h-4 w-4" />
             Cancelar
           </button>
         ) : (
-          <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wide font-bold px-2 block text-center md:text-right">
+          <span className="text-muted-foreground/50 block px-2 text-center text-[10px] font-bold uppercase tracking-wide md:text-right">
             No cancelable
           </span>
         )}
@@ -146,49 +157,75 @@ function UpcomingCard({ appointment, horasMinimas, onCancel, businessTz }) {
   );
 }
 
-// ─── History row ──────────────────────────────────────────────────────────────
-
 function HistoryRow({ appointment, businessTz }) {
   const prof = appointment.profesional;
   const serv = appointment.servicio;
   const inicio = new Date(appointment.fechaHoraInicio);
   const cfg = STATUS_CONFIG[appointment.estado] ?? STATUS_CONFIG.no_presentado;
   const Icon = cfg.Icon;
+  const clientNote = appointment.notasCliente?.trim() || '';
+  const cancellationReason = appointment.motivoCancelacion?.trim() || '';
+  const cancellationLabel = appointment.estado === 'cancelada'
+    ? getCancellationLabel(appointment.canceladaPor)
+    : null;
+  const textColor = cfg.cls.split(' ').find((c) => c.startsWith('text-')) ?? '';
 
   return (
-    <div className="bg-muted/50 rounded-xl p-4 md:p-5 flex flex-col md:flex-row gap-3 items-start md:items-center hover:bg-muted/80 transition-colors">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <Icon className={`h-4 w-4 shrink-0 ${cfg.cls.split(' ').find(c => c.startsWith('text-')) ?? ''}`} strokeWidth={2} />
-          <span className={`text-[10px] font-black uppercase tracking-widest ${cfg.cls.split(' ').find(c => c.startsWith('text-')) ?? ''}`}>
-            {cfg.label}
-          </span>
+    <div className="bg-muted/50 hover:bg-muted/80 rounded-xl p-4 transition-colors md:p-5">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-center gap-2">
+            <Icon className={`h-4 w-4 shrink-0 ${textColor}`} strokeWidth={2} />
+            <span className={`text-[10px] font-black uppercase tracking-widest ${textColor}`}>
+              {cfg.label}
+            </span>
+          </div>
+          <h4 className="text-foreground font-bold leading-snug break-words">{serv?.nombre}</h4>
+          <p className="text-muted-foreground text-xs">
+            {formatDateInTz(inicio, businessTz)}
+            {prof?.nombre && ` · ${prof.nombre}`}
+          </p>
+
+          {(clientNote || cancellationLabel || cancellationReason) && (
+            <div className="mt-3 space-y-2">
+              {clientNote && (
+                <div className="bg-card/80 rounded-lg px-3 py-2">
+                  <p className="text-primary mb-1 text-[10px] font-black uppercase tracking-widest">Tu nota al profesional</p>
+                  <p className="text-foreground/90 text-xs leading-relaxed">{clientNote}</p>
+                </div>
+              )}
+              {(cancellationLabel || cancellationReason) && (
+                <div className="bg-destructive/5 border-destructive/15 rounded-lg border px-3 py-2">
+                  <p className="text-destructive mb-1 text-[10px] font-black uppercase tracking-widest">
+                    {cancellationLabel || 'Motivo de cancelación'}
+                  </p>
+                  <p className="text-foreground/90 text-xs leading-relaxed">
+                    {cancellationReason || 'Sin motivo de cancelación indicado.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        <h4 className="font-bold text-foreground break-words leading-snug">{serv?.nombre}</h4>
-        <p className="text-xs text-muted-foreground">
-          {formatDateInTz(inicio, businessTz)}
-          {prof?.nombre && ` · ${prof.nombre}`}
-        </p>
-      </div>
-      <div className="flex items-center gap-3 shrink-0 w-full md:w-auto justify-between">
-        <span className="text-muted-foreground font-bold text-sm">
-          {formatPrice(appointment.precioFinal ?? serv?.precio)}
-        </span>
-        {appointment.estado === 'completada' && (
-          <Link
-            to="/book"
-            className="text-primary text-xs font-bold hover:underline flex items-center gap-1"
-          >
-            Reservar de nuevo
-            <ArrowRight className="h-3 w-3" />
-          </Link>
-        )}
+
+        <div className="flex w-full shrink-0 items-center justify-between gap-3 md:w-auto">
+          <span className="text-muted-foreground text-sm font-bold">
+            {formatPrice(appointment.precioFinal ?? serv?.precio)}
+          </span>
+          {appointment.estado === 'completada' && (
+            <Link
+              to="/book"
+              className="text-primary flex items-center gap-1 text-xs font-bold hover:underline"
+            >
+              Reservar de nuevo
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
-// ─── Cancel modal ─────────────────────────────────────────────────────────────
 
 function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending, businessTz }) {
   const [reason, setReason] = useState('');
@@ -201,19 +238,16 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
-      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
+        className="bg-foreground/20 absolute inset-0 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="relative w-full max-w-lg max-h-[calc(100vh-1.5rem)] bg-card rounded-xl ambient-shadow overflow-y-auto flex flex-col z-10">
-        {/* Header */}
-        <div className="p-6 md:p-8 pb-0">
-          <div className="flex items-center justify-between mb-6">
+      <div className="ambient-shadow bg-card relative z-10 flex max-h-[calc(100vh-1.5rem)] w-full max-w-lg flex-col overflow-y-auto rounded-xl">
+        <div className="p-6 pb-0 md:p-8 md:pb-0">
+          <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center text-destructive shrink-0">
+              <div className="bg-destructive/10 text-destructive flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
                 <XCircle className="h-6 w-6" strokeWidth={1.5} />
               </div>
               <div>
@@ -223,38 +257,37 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending,
             </div>
             <button
               onClick={onClose}
-              className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-muted"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg p-1 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Summary card */}
-          <div className="bg-muted rounded-xl p-5 mb-6 space-y-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
+          <div className="bg-muted mb-6 space-y-4 rounded-xl p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-1">Servicio</p>
+                <p className="text-muted-foreground mb-1 text-[10px] font-bold uppercase tracking-widest">Servicio</p>
                 <p className="text-foreground text-base font-semibold break-words">{serv?.nombre}</p>
               </div>
               <div className="text-left sm:text-right">
-                <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-1">Precio</p>
+                <p className="text-muted-foreground mb-1 text-[10px] font-bold uppercase tracking-widest">Precio</p>
                 <p className="text-primary font-bold">{formatPrice(appointment.precioFinal ?? serv?.precio)}</p>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border/20">
+            <div className="border-border/20 grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2">
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Calendar className="text-muted-foreground h-4 w-4 shrink-0" />
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">Fecha</span>
+                  <span className="text-muted-foreground block text-[10px] font-bold uppercase tracking-widest">Fecha</span>
                   <span className="text-foreground text-sm font-medium capitalize">
                     {formatDateInTz(inicio, businessTz)}
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Clock className="text-muted-foreground h-4 w-4 shrink-0" />
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">Hora</span>
+                  <span className="text-muted-foreground block text-[10px] font-bold uppercase tracking-widest">Hora</span>
                   <span className="text-foreground text-sm font-medium">
                     {formatTimeInTz(inicio, businessTz)}{fin && ` — ${formatTimeInTz(fin, businessTz)}`}
                   </span>
@@ -263,10 +296,9 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending,
             </div>
           </div>
 
-          {/* Reason textarea */}
-          <div className="space-y-4 mb-6">
+          <div className="mb-6 space-y-4">
             <div>
-              <label className="block text-foreground text-sm font-bold mb-2">
+              <label className="text-foreground mb-2 block text-sm font-bold">
                 Motivo de cancelación <span className="text-muted-foreground font-normal">(opcional)</span>
               </label>
               <textarea
@@ -274,13 +306,12 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending,
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
                 placeholder="Cuéntanos el motivo para que podamos mejorar..."
-                className="w-full bg-primary/10 border-0 focus:ring-2 focus:ring-primary rounded-xl p-4 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/50 transition-all resize-none outline-none"
+                className="bg-primary/10 text-foreground placeholder:text-muted-foreground/50 w-full resize-none rounded-xl border-0 p-4 text-base outline-none transition-all focus:ring-2 focus:ring-primary sm:text-sm"
               />
             </div>
 
-            {/* Policy warning */}
-            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200/60 rounded-xl">
-              <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="border-amber-200/60 bg-amber-50 flex items-start gap-3 rounded-xl border p-4">
+              <Info className="text-amber-600 mt-0.5 h-4 w-4 shrink-0" />
               <p className="text-amber-800 text-xs leading-relaxed">
                 Las cancelaciones con menos de <strong>{horasMinimas}h de antelación</strong> pueden estar sujetas a penalización según la política del establecimiento.
               </p>
@@ -288,15 +319,14 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending,
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="p-6 md:p-8 pt-0 flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-3 p-6 pt-0 md:flex-row md:p-8 md:pt-0">
           <button
             onClick={() => onConfirm(reason)}
             disabled={isPending}
-            className="flex-1 px-6 py-3.5 bg-destructive text-white font-semibold rounded-xl hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+            className="bg-destructive flex-1 rounded-xl px-6 py-3.5 font-semibold text-white transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
           >
             {isPending ? (
-              <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              <span className="mx-auto block h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
             ) : (
               'Confirmar cancelación'
             )}
@@ -304,7 +334,7 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending,
           <button
             onClick={onClose}
             disabled={isPending}
-            className="flex-1 px-6 py-3.5 bg-transparent border border-border/40 text-muted-foreground font-semibold rounded-xl hover:bg-muted hover:text-foreground active:scale-[0.98] transition-all"
+            className="border-border/40 text-muted-foreground hover:bg-muted hover:text-foreground flex-1 rounded-xl border bg-transparent px-6 py-3.5 font-semibold transition-all active:scale-[0.98]"
           >
             Volver
           </button>
@@ -314,33 +344,29 @@ function CancelModal({ appointment, horasMinimas, onClose, onConfirm, isPending,
   );
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
-
 function EmptyState({ tab }) {
   return (
-    <div className="text-center py-16 text-muted-foreground border-2 border-dashed border-border/30 rounded-xl">
+    <div className="border-border/30 text-muted-foreground rounded-xl border-2 border-dashed py-16 text-center">
       {tab === 'upcoming' ? (
         <>
-          <CalendarCheck className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <CalendarCheck className="mx-auto mb-3 h-10 w-10 opacity-30" />
           <p className="font-medium">No tienes citas próximas</p>
           <Link
             to="/book"
-            className="mt-4 inline-flex items-center gap-2 text-primary font-bold text-sm hover:underline"
+            className="text-primary mt-4 inline-flex items-center gap-2 text-sm font-bold hover:underline"
           >
             Reservar ahora <ArrowRight className="h-4 w-4" />
           </Link>
         </>
       ) : (
         <>
-          <History className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <History className="mx-auto mb-3 h-10 w-10 opacity-30" />
           <p className="font-medium">Sin historial todavía</p>
         </>
       )}
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MyAppointmentsPage() {
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -353,7 +379,6 @@ export default function MyAppointmentsPage() {
   const horasMinimas = settings?.horasMinimasCancelacion ?? 24;
   const businessTz = settings?.zonaHoraria || 'Europe/Madrid';
 
-  // Partition appointments
   const upcomingList = appointments
     .filter(isUpcoming)
     .sort((a, b) => new Date(a.fechaHoraInicio) - new Date(b.fechaHoraInicio));
@@ -372,42 +397,36 @@ export default function MyAppointmentsPage() {
 
   return (
     <div className="bg-background min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 md:py-12">
-
-        {/* Page header */}
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 md:py-12">
         <div className="mb-10">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-display text-foreground mb-2">
+          <h1 className="text-foreground mb-2 text-3xl font-extrabold tracking-display md:text-4xl">
             Mis citas
           </h1>
           <p className="text-muted-foreground font-medium">
             Gestiona tus próximas visitas y consulta tu historial.
           </p>
-          <p className="text-xs text-muted-foreground/60 mt-1 flex items-center gap-1">
+          <p className="text-muted-foreground/60 mt-1 flex items-center gap-1 text-xs">
             <Clock className="h-3 w-3" />
             Horarios en zona horaria: {businessTz}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-          {/* Sidebar */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           <aside className="lg:col-span-3">
-            <div className="bg-muted rounded-xl p-5 sm:p-6 space-y-6 lg:sticky lg:top-24">
-              {/* Stats */}
+            <div className="bg-muted space-y-6 rounded-xl p-5 sm:p-6 lg:sticky lg:top-24">
               <div>
-                <span className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest block mb-1">
+                <span className="text-muted-foreground mb-1 block text-[10px] font-bold uppercase tracking-widest">
                   Total reservas
                 </span>
-                <span className="text-3xl font-bold text-primary">{appointments.length}</span>
+                <span className="text-primary text-3xl font-bold">{appointments.length}</span>
               </div>
 
-              <div className="h-px bg-border/40" />
+              <div className="bg-border/40 h-px" />
 
-              {/* Navigation */}
               <nav className="flex flex-col gap-2">
                 <button
                   onClick={() => setActiveTab('upcoming')}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
                     activeTab === 'upcoming'
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-card hover:text-foreground'
@@ -416,7 +435,7 @@ export default function MyAppointmentsPage() {
                   <CalendarCheck className="h-4 w-4 shrink-0" />
                   Próximas
                   {upcomingList.length > 0 && (
-                    <span className={`ml-auto text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                    <span className={`ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-black ${
                       activeTab === 'upcoming' ? 'bg-white/20 text-primary-foreground' : 'bg-primary/10 text-primary'
                     }`}>
                       {upcomingList.length}
@@ -425,7 +444,7 @@ export default function MyAppointmentsPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab('past')}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-bold transition-all ${
                     activeTab === 'past'
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-card hover:text-foreground'
@@ -436,11 +455,10 @@ export default function MyAppointmentsPage() {
                 </button>
               </nav>
 
-              {/* Quick book CTA */}
-              <div className="pt-2 border-t border-border/40">
+              <div className="border-border/40 border-t pt-2">
                 <Link
                   to="/book"
-                  className="flex items-center justify-center gap-2 w-full py-3 bg-primary/10 text-primary rounded-xl font-bold text-sm hover:bg-primary/20 transition-colors"
+                  className="bg-primary/10 text-primary hover:bg-primary/20 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-colors"
                 >
                   Nueva reserva
                   <ArrowRight className="h-4 w-4" />
@@ -449,21 +467,19 @@ export default function MyAppointmentsPage() {
             </div>
           </aside>
 
-          {/* Main content */}
-          <div className="lg:col-span-9 space-y-8">
-
+          <div className="space-y-8 lg:col-span-9">
             {isLoading ? (
               <div className="space-y-4">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="bg-card rounded-xl h-28 animate-pulse border border-border/20" />
+                  <div key={i} className="bg-card border-border/20 h-28 rounded-xl border animate-pulse" />
                 ))}
               </div>
             ) : activeTab === 'upcoming' ? (
               <section>
-                <div className="flex items-center gap-2 mb-5">
-                  <h2 className="text-xl font-bold text-foreground">Próximas visitas</h2>
+                <div className="mb-5 flex items-center gap-2">
+                  <h2 className="text-foreground text-xl font-bold">Próximas visitas</h2>
                   {upcomingList.length > 0 && (
-                    <span className="bg-primary/10 text-primary text-xs font-black px-2 py-0.5 rounded-full">
+                    <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-black">
                       {upcomingList.length}
                     </span>
                   )}
@@ -486,7 +502,7 @@ export default function MyAppointmentsPage() {
               </section>
             ) : (
               <section>
-                <h2 className="text-xl font-bold text-muted-foreground mb-5">Historial reciente</h2>
+                <h2 className="text-muted-foreground mb-5 text-xl font-bold">Historial reciente</h2>
                 {pastList.length === 0 ? (
                   <EmptyState tab="past" />
                 ) : (
@@ -502,7 +518,6 @@ export default function MyAppointmentsPage() {
         </div>
       </div>
 
-      {/* Cancel modal */}
       <CancelModal
         appointment={cancelTarget}
         horasMinimas={horasMinimas}

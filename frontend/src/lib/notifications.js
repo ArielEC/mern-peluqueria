@@ -1,6 +1,6 @@
 import useUIStore from '@/stores/uiStore';
 
-export const DEFAULT_NOTIFICATION_DURATION = 10000;
+export const DEFAULT_NOTIFICATION_DURATION = 5000;
 
 export function notify({
   type = 'info',
