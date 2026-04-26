@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex proyect"] 1777217831.7393 "proyect.aux" "proyect.bbl" "proyect" 1777217836.54033 0
+["bibtex proyect"] 1777217831.7393 "proyect.aux" "proyect.bbl" "proyect" 1777220180.42152 0
   "./apacite.bst" 1775577413 146156 9d7b79dbf9d91133318126032cff8c27 ""
   "./pfcbib.bib" 1777201698 2593 cbcfb0618084c795ae331ebc1d41c09b ""
-  "proyect.aux" 1777217835 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
+  "proyect.aux" 1777220179 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
   (generated)
   "proyect.bbl"
   "proyect.blg"
   (rewritten before read)
-["pdflatex"] 1777217832.0413 "c:/Users/Usuario/Desktop/ETSII US/2025-26/CBD/Proyecto/mern-peluqueria/Plantilla/Plantilla TfG/proyect.tex" "proyect.pdf" "proyect" 1777217836.54109 0
+["pdflatex"] 1777220175.7356 "c:/Users/Usuario/Desktop/ETSII US/2025-26/CBD/Proyecto/mern-peluqueria/Plantilla/Plantilla TfG/proyect.tex" "proyect.pdf" "proyect" 1777220180.42241 0
   "C:/Users/Usuario/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1777194498 82705 9cc9f144eacd499bc23a611703921467 ""
   "C:/Users/Usuario/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1769516040 13334455 465191c09344739b3c7327e0d5773376 ""
   "C:/Users/Usuario/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -125,7 +125,7 @@
   "apacite.sty" 1775577413 74455 966b0b8d2be774cb1d3a7f97b253b725 ""
   "block.tss" 1775577413 1451 43b9615e9822cb7718486e4019742b72 ""
   "boxedminipage.sty" 1775577413 2311 c5e2f9cee7fb5e15894c6d8564217d5c ""
-  "c:/Users/Usuario/Desktop/ETSII US/2025-26/CBD/Proyecto/mern-peluqueria/Plantilla/Plantilla TfG/proyect.tex" 1777198053 1396 a7461049fb6039365c2c6ae61857b7a5 ""
+  "c:/Users/Usuario/Desktop/ETSII US/2025-26/CBD/Proyecto/mern-peluqueria/Plantilla/Plantilla TfG/proyect.tex" 1777220174 1396 545c441ccf6ea60287f3ad2af35bce03 ""
   "fancyhdr.sty" 1775577413 21006 e5d13d98d57bd53d4fed3aa61bd29c86 ""
   "img/admin_blocks_list.png" 1777212281 94606 8c83f5165fc204f486ea6d0895b774a6 ""
   "img/admin_calendar_day.png" 1777212239 116457 6fdbb5ae12361fae15e4b37dec459f9e ""
@@ -157,12 +157,12 @@
   "lstmisc.sty" 1775577413 79057 d9d4762e984ff3346653b91fbcf676e9 ""
   "multicol.sty" 1775577413 16432 c287b7637095c4530300f304a130382e ""
   "pclass.cls" 1777201698 13768 c4a83521cfc86b2261a2c90f2f513085 ""
-  "proyect.aux" 1777217835 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
+  "proyect.aux" 1777220179 25744 f63756def48d67b9d024a900787e86f9 "pdflatex"
   "proyect.bbl" 1777217831 7920 a97c71f5508262877cc1bfbb52788463 "bibtex proyect"
-  "proyect.lof" 1777217835 2912 f3ef1fcdd121f27f68a3e14e1440329e "pdflatex"
-  "proyect.lot" 1777217835 1476 99a33d7318ca0f54b8fe0f87b0dad724 "pdflatex"
-  "proyect.tex" 1777198053 1396 a7461049fb6039365c2c6ae61857b7a5 ""
-  "proyect.toc" 1777217835 5206 89fe62726d531afe1b6d19d7839df33f "pdflatex"
+  "proyect.lof" 1777220179 2912 f3ef1fcdd121f27f68a3e14e1440329e "pdflatex"
+  "proyect.lot" 1777220179 1476 99a33d7318ca0f54b8fe0f87b0dad724 "pdflatex"
+  "proyect.tex" 1777220174 1396 545c441ccf6ea60287f3ad2af35bce03 ""
+  "proyect.toc" 1777220179 5206 89fe62726d531afe1b6d19d7839df33f "pdflatex"
   "resumen.tex" 1777194972 1670 eb9e8b95e86ebc7023e21a3ff95c9ac2 ""
   "spanish.apc" 1777201534 9948 5c1332cc71a17d8e69e82fb4c27c74bc ""
   "spanish.ldf" 1775577413 22948 cbf87845340e2bdcb3c1f4da7684d5f3 ""
