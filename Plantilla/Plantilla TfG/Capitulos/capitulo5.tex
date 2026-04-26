@@ -45,7 +45,7 @@ JWT_SECRET=<clave_secreta_de_al_menos_32_caracteres>
 JWT_EXPIRES_IN=30d
 FRONTEND_URL=http://localhost:5173
 ADMIN_EMAIL=admin@peluqueria.com
-ADMIN_PASSWORD=<contraseña_del_administrador>
+ADMIN_PASSWORD=admin123
 \end{verbatim}
 
 La variable \texttt{JWT\_SECRET} debe contener una cadena aleatoria de al menos 32 caracteres. El sistema valida esta longitud al arrancar y no permite iniciar con un secreto insuficiente. Las variables \texttt{ADMIN\_EMAIL} y \texttt{ADMIN\_PASSWORD} se utilizan para crear autom\'aticamente el primer usuario administrador si no existe.
@@ -127,3 +127,11 @@ Se crea un servicio de tipo \textit{Static Site} en Render vinculado al mismo re
 
 Render asigna autom\'aticamente un certificado SSL y un dominio \texttt{.onrender.com} a cada servicio, proporcionando HTTPS sin configuraci\'on adicional. Adem\'as, Render redespliega autom\'aticamente la aplicaci\'on cada vez que se detecta un nuevo \textit{commit} en la rama principal del repositorio.
 
+\subsection{URLs de Despliegue y Consideraciones de Acceso}\label{subsec:urls-render}
+
+\begin{itemize}
+    \item \textbf{Backend:} \url{https://mern-peluqueria-api.onrender.com}
+    \item \textbf{Frontend:} \url{https://mern-peluqueria.onrender.com}
+\end{itemize}
+
+\textbf{Importante:} Debido a las limitaciones de la capa gratuita de Render, el servicio de backend puede entrar en estado de hibernación tras un periodo de inactividad. Por ello, es necesario acceder primero a la URL del backend y esperar unos segundos antes de intentar acceder a la aplicación frontend. De lo contrario, la aplicación cliente podría mostrar errores de conexión temporalmente hasta que el backend esté activo.

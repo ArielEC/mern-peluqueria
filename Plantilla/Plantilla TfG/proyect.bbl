@@ -26,8 +26,6 @@ Jones, M.%
 \newblock
 \begin{APACrefURL} \url{https://datatracker.ietf.org/doc/html/rfc7519}
   \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -50,8 +48,6 @@ Karpov, V.%
 \APACrefbtitle {Mongoose {ODM} Documentation.} {Mongoose {ODM} documentation.}
 \newblock
 \begin{APACrefURL} \url{https://mongoosejs.com/docs/} \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -75,8 +71,6 @@ Linsley, T.%
   {{TanStack} query --- powerful asynchronous state management.}
 \newblock
 \begin{APACrefURL} \url{https://tanstack.com/query/latest} \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -101,8 +95,6 @@ McDonnell, C.%
   inference.}
 \newblock
 \begin{APACrefURL} \url{https://zod.dev/} \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -126,8 +118,6 @@ react_docs}%
   {React --- the library for web and native user interfaces.}
 \newblock
 \begin{APACrefURL} \url{https://react.dev/} \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -151,8 +141,6 @@ mern_stack}%
 \newblock
 \begin{APACrefURL} \url{https://www.mongodb.com/resources/languages/mern-stack}
   \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -176,8 +164,6 @@ atlas_docs}%
   cloud database service.}
 \newblock
 \begin{APACrefURL} \url{https://www.mongodb.com/docs/atlas/} \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -200,8 +186,6 @@ mongodb_docs}%
 \APACrefbtitle {MongoDB Documentation.} {Mongodb documentation.}
 \newblock
 \begin{APACrefURL} \url{https://www.mongodb.com/docs/manual/} \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -226,8 +210,6 @@ express_docs}%
   for {Node.js}.}
 \newblock
 \begin{APACrefURL} \url{https://expressjs.com/} \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -253,8 +235,6 @@ owasp_rate_limiting}%
 \begin{APACrefURL}
   \url{https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html}
   \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -278,8 +258,6 @@ render_docs}%
   --- cloud application hosting for developers.}
 \newblock
 \begin{APACrefURL} \url{https://docs.render.com/} \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -303,8 +281,6 @@ Shaw, A.%
   {{FullCalendar} --- full-sized {JavaScript} calendar.}
 \newblock
 \begin{APACrefURL} \url{https://fullcalendar.io/} \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -329,8 +305,6 @@ Wathan, A.%
   without ever leaving your {HTML}.}
 \newblock
 \begin{APACrefURL} \url{https://tailwindcss.com/} \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \bibitem [\protect \citeauthoryear {%
@@ -354,8 +328,6 @@ You, E.%
   generation frontend tooling.}
 \newblock
 \begin{APACrefURL} \url{https://vite.dev/} \end{APACrefURL}
-\newblock
-\APACrefnote{Fecha de consulta: 20 de abril de 2025}
 \PrintBackRefs{\CurrentBib}
 
 \end{thebibliography}

@@ -74,11 +74,12 @@ activo & Boolean & S\'i & Visibilidad en el cat\'alogo p\'ublico \\
 orden & Number & No & Posici\'on para ordenaci\'on en la interfaz \\
 }
 
-El campo \texttt{profesionalesCapaces} establece una relaci\'on muchos-a-muchos entre servicios y profesionales, almacenada como un \textit{array} de referencias. Esta decisi\'on permite que el motor de disponibilidad filtre r\'apidamente qu\'e profesionales pueden atender un servicio concreto. El modelo incluye propiedades virtuales \texttt{duracionFormateada} y \texttt{precioFormateado} que generan cadenas legibles (por ejemplo, ``1h 30min'' o ``25,50 \euro{}'').
+El campo \texttt{profesionalesCapaces} establece una relaci\'on muchos-a-muchos entre servicios y profesionales, almacenada como un \textit{array} de referencias. Esta decisi\'on permite que el motor de disponibilidad filtre r\'apidamente qu\'e profesionales pueden atender un servicio concreto. El modelo incluye propiedades virtuales \texttt{duracionFormateada} y \texttt{precioFormateado} que generan cadenas legibles (por ejemplo, 1h 30min o 25,50 \euro{}).
 
 \subsection{Colecci\'on \texttt{appointments}}\label{subsec:appointments}
 
 Es la colecci\'on central del sistema, que registra cada cita reservada. El cuadro~\ref{tab:appointments} detalla sus campos.
+
 
 \cuadro{|l|l|l|p{4.5cm}|}{Estructura de la colecci\'on \texttt{appointments}}{tab:appointments}{
 \textbf{Campo} & \textbf{Tipo} & \textbf{Requerido} & \textbf{Descripci\'on} \\
@@ -181,7 +182,7 @@ technicalnotes & \{cliente: 1, createdAt: -1\} & Historial de notas de un client
 technicalnotes & \{cliente: 1, importante: 1\} & Notas cr\'iticas de un cliente \\
 }
 
-Los \'indices sobre \texttt{appointments} son especialmente cr\'iticos, ya que el motor de disponibilidad realiza consultas de rango temporal para cada \textit{slot} calculado. El \'indice compuesto \texttt{\{profesional, fechaHoraInicio\}} permite resolver la consulta de ``citas de un profesional en un d\'ia concreto'' mediante un recorrido secuencial del \'indice (\textit{index scan}) sin acceder a los documentos.
+Los \'indices sobre \texttt{appointments} son especialmente cr\'iticos, ya que el motor de disponibilidad realiza consultas de rango temporal para cada \textit{slot} calculado. El \'indice compuesto \texttt{\{profesional, fechaHoraInicio\}} permite resolver la consulta de «citas de un profesional en un d\'ia concreto» mediante un recorrido secuencial del \'indice (\textit{index scan}) sin acceder a los documentos.
 
 \section{Relaciones entre Colecciones}\label{sec:relaciones}
 
