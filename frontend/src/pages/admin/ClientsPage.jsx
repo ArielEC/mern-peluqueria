@@ -85,7 +85,7 @@ function NoteModal({ open, onClose, initial, clienteId }) {
       open={open}
       onClose={onClose}
       title={isEdit ? 'Editar Nota' : 'Nueva Nota Técnica'}
-      subtitle="Registro interno del profesional"
+      subtitle="Historial técnico del cliente"
       footer={<>
         <button onClick={onClose} className="flex-1 py-3 rounded-lg border border-[#cbc3d7]/40 text-[#494454] font-bold text-[0.875rem] hover:bg-[#f2f3ff]">Cancelar</button>
         <button onClick={handleSubmit} disabled={isPending} className="flex-1 py-3 rounded-lg bg-[#6b38d4] text-white font-bold text-[0.875rem] hover:brightness-110 disabled:opacity-60 flex items-center justify-center">
@@ -94,15 +94,6 @@ function NoteModal({ open, onClose, initial, clienteId }) {
       </>}
     >
       <div className="space-y-4">
-        {initial?.cita?.fechaHoraInicio && (
-          <div className="rounded-xl border border-[#cbc3d7]/30 bg-[#f8f5ff] px-4 py-3 text-[0.8rem] text-[#494454]">
-            Esta nota esta vinculada a la cita del{' '}
-            <span className="font-bold text-[#131b2e]">
-              {format(new Date(initial.cita.fechaHoraInicio), "d MMM yyyy 'a las' HH:mm", { locale: es })}
-            </span>
-            .
-          </div>
-        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="Categoría">
             <select className={selectCls} value={form.categoria} onChange={(e) => set('categoria', e.target.value)}>
@@ -208,14 +199,6 @@ function ClientDetail({ client, onClose, showCloseButton = true, onStatusChange,
                       )}
                       {note.titulo && <span className="text-[0.8rem] font-bold text-[#131b2e]">{note.titulo}</span>}
                     </div>
-                    {note.cita?.fechaHoraInicio && (
-                      <div className="mb-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#f2f3ff] px-2.5 py-1 text-[0.7rem] font-medium text-[#4e3b7c]">
-                        <span className="material-symbols-outlined text-[14px]">event</span>
-                        <span className="truncate">
-                          Cita vinculada: {format(new Date(note.cita.fechaHoraInicio), "d MMM yyyy '·' HH:mm", { locale: es })}
-                        </span>
-                      </div>
-                    )}
                     <p className="text-[0.8rem] text-[#494454] leading-relaxed">{note.contenido}</p>
                     <p className="text-[0.65rem] text-[#cbc3d7] mt-2">
                       {note.createdAt ? format(new Date(note.createdAt), "d MMM yyyy", { locale: es }) : ''}
