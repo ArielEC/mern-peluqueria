@@ -7,6 +7,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { DateTime } from 'luxon';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useAdminAppointmentsRange } from '@/hooks/useAdminAppointments';
+import { useAdminBlockers } from '@/hooks/useAdminEntities';
 import { useSettings } from '@/hooks/useSettings';
 import NewAppointmentModal from '@/components/admin/NewAppointmentModal';
 import AppointmentDetailModal from '@/components/admin/AppointmentDetailModal';
@@ -233,6 +234,90 @@ function buildUnavailableBackgroundEvents({
   });
 
   return events;
+}
+
+function getBlockerProfessionalId(blocker) {
+  if (!blocker?.profesional) return null;
+  return typeof blocker.profesional === 'object' ? blocker.profesional._id : blocker.profesional;
+}
+
+function blockerAffectsProfessional(blocker, professionalId) {
+  const blockerProfessionalId = getBlockerProfessionalId(blocker);
+  return blockerProfessionalId === null || blockerProfessionalId === professionalId;
+}
+
+function buildBlockerBackgroundEvents({
+  blockers,
+  professionals,
+  selectedProfessionalId,
+  useResources,
+}) {
+  const events = [];
+
+  blockers.forEach((blocker) => {
+    const blockerProfessionalId = getBlockerProfessionalId(blocker);
+    const baseEvent = {
+      display: 'background',
+      interactive: false,
+      overlap: false,
+      classNames: ['admin-calendar-unavailable', 'admin-calendar-blocker'],
+      start: blocker.fechaHoraInicio,
+      end: blocker.fechaHoraFin,
+    };
+
+    if (useResources) {
+      if (blockerProfessionalId) {
+        events.push({
+          ...baseEvent,
+          id: `blocker-${blocker._id}-${blockerProfessionalId}`,
+          resourceId: blockerProfessionalId,
+        });
+        return;
+      }
+
+      professionals.forEach((professional) => {
+        events.push({
+          ...baseEvent,
+          id: `blocker-${blocker._id}-${professional._id}`,
+          resourceId: professional._id,
+        });
+      });
+        return;
+    }
+
+    if (!selectedProfessionalId || blockerAffectsProfessional(blocker, selectedProfessionalId)) {
+      events.push({
+        ...baseEvent,
+        id: `blocker-${blocker._id}-${selectedProfessionalId || 'all'}`,
+      });
+    }
+  });
+
+  return events;
+}
+
+function isSlotBlockedByBlockers({
+  date,
+  professionalId,
+  blockers,
+  slotDurationMinutes,
+}) {
+  if (!professionalId || blockers.length === 0) {
+    return false;
+  }
+
+  const slotEnd = new Date(date.getTime() + slotDurationMinutes * 60000);
+
+  return blockers.some((blocker) => {
+    if (!blockerAffectsProfessional(blocker, professionalId)) {
+      return false;
+    }
+
+    const blockerStart = new Date(blocker.fechaHoraInicio);
+    const blockerEnd = new Date(blocker.fechaHoraFin);
+
+    return date < blockerEnd && slotEnd > blockerStart;
+  });
 }
 
 function isSlotSelectable({
@@ -754,6 +839,10 @@ export default function AdminCalendarPage() {
     range.desde,
     range.hasta
   );
+  const { data: blockers = [], isLoading: loadingBlockers } = useAdminBlockers({
+    desde: range.desde,
+    hasta: range.hasta,
+  });
   const professionalsById = useMemo(
     () => new Map(professionals.map((professional) => [professional._id, professional])),
     [professionals]
@@ -827,6 +916,32 @@ export default function AdminCalendarPage() {
     professionals,
     professionalsById,
   ]);
+  const visibleCalendarProfessionalIds = useMemo(
+    () => visibleCalendarProfessionals.map((professional) => professional._id),
+    [visibleCalendarProfessionals]
+  );
+  const visibleCalendarBlockers = useMemo(() => {
+    if (isMobileDayView || isMobileWeekView) {
+      return [];
+    }
+
+    if (isWeekView) {
+      if (!activeWeekProfessionalId) return [];
+      return blockers.filter((blocker) => blockerAffectsProfessional(blocker, activeWeekProfessionalId));
+    }
+
+    return blockers.filter((blocker) => {
+      const blockerProfessionalId = getBlockerProfessionalId(blocker);
+      return blockerProfessionalId === null || visibleCalendarProfessionalIds.includes(blockerProfessionalId);
+    });
+  }, [
+    activeWeekProfessionalId,
+    blockers,
+    isMobileDayView,
+    isMobileWeekView,
+    isWeekView,
+    visibleCalendarProfessionalIds,
+  ]);
   const calendarTimeBounds = useMemo(
     () => getCalendarTimeBounds({
       professionals: visibleCalendarProfessionals,
@@ -863,9 +978,24 @@ export default function AdminCalendarPage() {
       isMobileDayView,
     ]
   );
+  const blockerBackgroundEvents = useMemo(
+    () => buildBlockerBackgroundEvents({
+      blockers: visibleCalendarBlockers,
+      professionals: visibleCalendarProfessionals,
+      selectedProfessionalId: activeWeekProfessionalId,
+      useResources: isDayView && !isMobileDayView,
+    }),
+    [
+      activeWeekProfessionalId,
+      isDayView,
+      isMobileDayView,
+      visibleCalendarBlockers,
+      visibleCalendarProfessionals,
+    ]
+  );
   const events = useMemo(
-    () => [...unavailableBackgroundEvents, ...appointmentEvents],
-    [unavailableBackgroundEvents, appointmentEvents]
+    () => [...unavailableBackgroundEvents, ...blockerBackgroundEvents, ...appointmentEvents],
+    [unavailableBackgroundEvents, blockerBackgroundEvents, appointmentEvents]
   );
   const headerLabel = isMobileDayView
     ? `${capitalizeText(formatInBusinessTz(currentDate, businessTimezone, { weekday: 'long' }).replace('.', ''))}, ${
@@ -883,6 +1013,8 @@ export default function AdminCalendarPage() {
     currentDate.toISOString(),
     businessTimezone,
     slotDurationMinutes,
+    calendarTimeBounds.slotMinTime,
+    calendarTimeBounds.slotMaxTime,
     isDesktopWeekView ? activeWeekProfessionalId : 'all',
     isMobileDayView || isMobileWeekView ? activeMobileProfessionalId : 'all',
   ].join(':');
@@ -920,6 +1052,15 @@ export default function AdminCalendarPage() {
       return;
     }
 
+    if (isSlotBlockedByBlockers({
+      date: info.date,
+      professionalId: selectedProfessionalId,
+      blockers: visibleCalendarBlockers,
+      slotDurationMinutes,
+    })) {
+      return;
+    }
+
     setNewModal({
       date: info.dateStr,
       profesionalId: selectedProfessionalId,
@@ -932,6 +1073,8 @@ export default function AdminCalendarPage() {
     isMobileWeekView,
     isWeekView,
     professionalsById,
+    slotDurationMinutes,
+    visibleCalendarBlockers,
   ]);
 
   const handleEventClick = useCallback((info) => {
@@ -981,7 +1124,32 @@ export default function AdminCalendarPage() {
     };
   }, [isMobileDayView, isMobileWeekView, syncCalendarSize]);
 
-  const isLoading = loadingProfs || loadingAppts;
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    if (isMobileDayView || isMobileWeekView) return undefined;
+
+    const frameId = window.requestAnimationFrame(() => {
+      const api = calendarRef.current?.getApi?.();
+
+      if (!api?.scrollToTime) {
+        return;
+      }
+
+      api.scrollToTime(calendarTimeBounds.slotMinTime);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [
+    activeWeekProfessionalId,
+    calendarTimeBounds.slotMinTime,
+    isMobileDayView,
+    isMobileWeekView,
+    view,
+  ]);
+
+  const isLoading = loadingProfs || loadingAppts || loadingBlockers;
 
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col gap-4">
@@ -1108,6 +1276,7 @@ export default function AdminCalendarPage() {
             slotMinTime={calendarTimeBounds.slotMinTime}
             slotMaxTime={calendarTimeBounds.slotMaxTime}
             scrollTime={calendarTimeBounds.slotMinTime}
+            scrollTimeReset
             locale="es"
             firstDay={1}
             allDaySlot={false}

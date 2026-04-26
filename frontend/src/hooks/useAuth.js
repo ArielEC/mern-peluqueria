@@ -48,15 +48,61 @@ export const useRegister = () => {
 
 // Hook para obtener usuario actual
 export const useMe = () => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, updateUser } = useAuthStore();
 
   return useQuery({
     queryKey: authKeys.me(),
     queryFn: async () => {
       const { data } = await api.get('/auth/me');
+      if (data?.user) {
+        updateUser(data.user);
+      }
       return data;
     },
     enabled: isAuthenticated,
+  });
+};
+
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  const { updateUser } = useAuthStore();
+
+  return useMutation({
+    mutationFn: async (payload) => {
+      const { data } = await api.put('/auth/me', payload);
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.user) {
+        updateUser(data.user);
+        queryClient.setQueryData(authKeys.me(), { user: data.user });
+      }
+
+      void invalidateAndSyncGroups(queryClient, 'clients');
+      notifySuccess('Perfil actualizado con éxito');
+    },
+    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido actualizar el perfil')),
+  });
+};
+
+export const useChangePassword = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload) => {
+      const { data } = await api.put('/auth/change-password', payload);
+      return data;
+    },
+    onSuccess: () => {
+      notifySuccess('Contraseña actualizada. Inicia sesión de nuevo');
+
+      window.setTimeout(() => {
+        useAuthStore.getState().logout();
+        queryClient.clear();
+        window.location.replace('/login');
+      }, 1200);
+    },
+    onError: (error) => notifyError(getErrorMessage(error, 'No se ha podido cambiar la contraseña')),
   });
 };
 

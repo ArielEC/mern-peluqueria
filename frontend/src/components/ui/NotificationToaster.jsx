@@ -1,6 +1,8 @@
 import * as Toast from '@radix-ui/react-toast';
 import useUIStore from '@/stores/uiStore';
 
+const NOTIFICATION_DURATION_MS = 5000;
+
 const TOAST_STYLES = {
   success: {
     border: 'border-[#006e1c]/15',
@@ -26,7 +28,7 @@ function ToastItem({ notification, onDismiss }) {
   return (
     <Toast.Root
       defaultOpen
-      duration={notification.duration}
+      duration={NOTIFICATION_DURATION_MS}
       onOpenChange={(open) => {
         if (!open) onDismiss(notification.id);
       }}

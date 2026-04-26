@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { AdminPageHeader, AdminTable, ConfirmDeleteModal, AdminModal, FormField } from '@/components/admin/AdminTable';
+import { AdminPageHeader, AdminTable, ConfirmDeleteModal, AdminModal, FormField, StatusToggle } from '@/components/admin/AdminTable';
 import { inputCls, selectCls, textareaCls } from '@/components/admin/adminFormStyles';
-import { useAdminClients, useAdminTechnicalNotes, useAdminCreateNote, useAdminUpdateNote, useAdminDeleteNote } from '@/hooks/useAdminEntities';
+import { useAdminClients, useAdminTechnicalNotes, useAdminCreateNote, useAdminUpdateNote, useAdminDeleteNote, useAdminUpdateClientStatus } from '@/hooks/useAdminEntities';
 import { notifyValidationError } from '@/lib/notifications';
 
 const CATEGORIAS = [
@@ -94,6 +94,15 @@ function NoteModal({ open, onClose, initial, clienteId }) {
       </>}
     >
       <div className="space-y-4">
+        {initial?.cita?.fechaHoraInicio && (
+          <div className="rounded-xl border border-[#cbc3d7]/30 bg-[#f8f5ff] px-4 py-3 text-[0.8rem] text-[#494454]">
+            Esta nota esta vinculada a la cita del{' '}
+            <span className="font-bold text-[#131b2e]">
+              {format(new Date(initial.cita.fechaHoraInicio), "d MMM yyyy 'a las' HH:mm", { locale: es })}
+            </span>
+            .
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="Categoría">
             <select className={selectCls} value={form.categoria} onChange={(e) => set('categoria', e.target.value)}>
@@ -118,7 +127,7 @@ function NoteModal({ open, onClose, initial, clienteId }) {
 }
 
 // ─── Client detail panel ──────────────────────────────────────────────────────
-function ClientDetail({ client, onClose, showCloseButton = true }) {
+function ClientDetail({ client, onClose, showCloseButton = true, onStatusChange, statusPending = false }) {
   const { data: notes = [], isLoading } = useAdminTechnicalNotes(client._id);
   const deleteMut = useAdminDeleteNote();
   const [noteModal, setNoteModal] = useState(null);
@@ -136,15 +145,15 @@ function ClientDetail({ client, onClose, showCloseButton = true }) {
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-lg font-bold text-[#131b2e]">{client.nombre}</h3>
-            <span className={`px-2 py-0.5 rounded-full text-[0.65rem] font-bold ${client.activo !== false ? 'bg-[#e9ddff] text-[#4e3b7c]' : 'bg-[#eaedff] text-[#494454]'}`}>
-              {client.activo !== false ? 'Activo' : 'Inactivo'}
-            </span>
           </div>
           <p className="text-[0.8rem] text-[#494454] mt-1">{client.email}</p>
           {client.telefono && <p className="text-[0.8rem] text-[#494454]">{client.telefono}</p>}
           <p className="text-[0.7rem] text-[#cbc3d7] mt-2">
             Cliente desde {client.createdAt ? format(new Date(client.createdAt), "MMMM yyyy", { locale: es }) : '—'}
           </p>
+        </div>
+        <div className="flex items-center gap-3 rounded-xl bg-white/80 px-3 py-2 shadow-sm">
+          <StatusToggle active={client.activo !== false} onChange={onStatusChange} disabled={statusPending} />
         </div>
         {showCloseButton && (
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-[#494454] shrink-0">
@@ -199,6 +208,14 @@ function ClientDetail({ client, onClose, showCloseButton = true }) {
                       )}
                       {note.titulo && <span className="text-[0.8rem] font-bold text-[#131b2e]">{note.titulo}</span>}
                     </div>
+                    {note.cita?.fechaHoraInicio && (
+                      <div className="mb-2 inline-flex max-w-full items-center gap-1.5 rounded-full bg-[#f2f3ff] px-2.5 py-1 text-[0.7rem] font-medium text-[#4e3b7c]">
+                        <span className="material-symbols-outlined text-[14px]">event</span>
+                        <span className="truncate">
+                          Cita vinculada: {format(new Date(note.cita.fechaHoraInicio), "d MMM yyyy '·' HH:mm", { locale: es })}
+                        </span>
+                      </div>
+                    )}
                     <p className="text-[0.8rem] text-[#494454] leading-relaxed">{note.contenido}</p>
                     <p className="text-[0.65rem] text-[#cbc3d7] mt-2">
                       {note.createdAt ? format(new Date(note.createdAt), "d MMM yyyy", { locale: es }) : ''}
@@ -246,6 +263,7 @@ export default function ClientsPage() {
   const [selectedClient, setSelectedClient] = useState(null);
   const timerRef = useRef(null);
   const isMobile = useIsMobileBreakpoint();
+  const updateClientStatusMut = useAdminUpdateClientStatus();
 
   // Debounce limpio con useEffect
   useEffect(() => {
@@ -255,6 +273,21 @@ export default function ClientsPage() {
   }, [search]);
 
   const { data: clients = [], isLoading } = useAdminClients(debouncedSearch);
+  const selectedClientData = useMemo(() => {
+    if (!selectedClient) return null;
+    return clients.find((client) => client._id === selectedClient._id) ?? selectedClient;
+  }, [clients, selectedClient]);
+
+  function handleToggleClientStatus(client, activo) {
+    updateClientStatusMut.mutate(
+      { id: client._id, activo },
+      {
+        onSuccess: (updatedClient) => {
+          setSelectedClient((current) => (current?._id === client._id ? { ...current, ...updatedClient } : current));
+        },
+      }
+    );
+  }
 
   const columns = [
     {
@@ -281,12 +314,17 @@ export default function ClientsPage() {
     {
       key: 'activo', label: 'Estado', className: 'text-center',
       render: (c) => (
-        <div className="flex justify-center">
-          <span className={`px-2.5 py-1 rounded-full text-[0.7rem] font-bold ${c.activo !== false ? 'bg-[#e9ddff] text-[#4e3b7c]' : 'bg-[#eaedff] text-[#494454]'}`}>
-            {c.activo !== false ? 'Activo' : 'Inactivo'}
+        <div className="flex items-center justify-center">
+          <span onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+            <StatusToggle
+              active={c.activo !== false}
+              disabled={updateClientStatusMut.isPending}
+              onChange={(value) => handleToggleClientStatus(c, value)}
+            />
           </span>
         </div>
       ),
+      cellClassName: 'min-w-[88px]',
     },
     {
       key: 'createdAt', label: 'Registro',
@@ -308,7 +346,7 @@ export default function ClientsPage() {
         searchPlaceholder="Buscar por nombre, email o teléfono..."
       />
 
-      <div className={`grid gap-6 transition-all ${selectedClient && !isMobile ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
+      <div className={`grid gap-6 transition-all ${selectedClientData && !isMobile ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
         <AdminTable
           columns={columns}
           rows={clients.map((c) => ({ ...c, id: c._id }))}
@@ -324,28 +362,35 @@ export default function ClientsPage() {
               }
             },
             tabIndex: 0,
-            className: `cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6b38d4]/40 ${selectedClient?._id === client._id ? 'bg-[#f8f5ff]' : ''}`,
+            className: `cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6b38d4]/40 ${selectedClientData?._id === client._id ? 'bg-[#f8f5ff]' : ''}`,
           })}
         />
 
-        {selectedClient && !isMobile && (
+        {selectedClientData && !isMobile && (
           <div className="bg-white rounded-xl p-6 border border-[#cbc3d7]/20 shadow-[0_12px_40px_-12px_hsla(262,83%,10%,0.08)] h-fit">
-            <ClientDetail client={selectedClient} onClose={() => setSelectedClient(null)} />
+            <ClientDetail
+              client={selectedClientData}
+              onClose={() => setSelectedClient(null)}
+              onStatusChange={(activo) => handleToggleClientStatus(selectedClientData, activo)}
+              statusPending={updateClientStatusMut.isPending}
+            />
           </div>
         )}
       </div>
 
       <AdminModal
-        open={Boolean(selectedClient) && isMobile}
+        open={Boolean(selectedClientData) && isMobile}
         onClose={() => setSelectedClient(null)}
-        title={selectedClient?.nombre || 'Ficha de cliente'}
+        title={selectedClientData?.nombre || 'Ficha de cliente'}
         subtitle="Notas técnicas y detalles del cliente"
       >
-        {selectedClient && (
+        {selectedClientData && (
           <ClientDetail
-            client={selectedClient}
+            client={selectedClientData}
             onClose={() => setSelectedClient(null)}
             showCloseButton={false}
+            onStatusChange={(activo) => handleToggleClientStatus(selectedClientData, activo)}
+            statusPending={updateClientStatusMut.isPending}
           />
         )}
       </AdminModal>

@@ -13,6 +13,7 @@ const navLinks = [
 
 const authLinks = [
   { to: '/appointments', label: 'Mis citas' },
+  { to: '/profile', label: 'Perfil' },
 ];
 
 

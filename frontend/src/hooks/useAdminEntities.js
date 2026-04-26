@@ -139,14 +139,14 @@ export function useAdminDeleteProfessional() {
 
 const blockersAdminKeys = {
   all: ['admin', 'blockers'],
-  list: () => [...blockersAdminKeys.all, 'list'],
+  list: (filters = {}) => [...blockersAdminKeys.all, 'list', filters],
 };
 
-export function useAdminBlockers() {
+export function useAdminBlockers(filters = {}) {
   return useQuery({
-    queryKey: blockersAdminKeys.list(),
+    queryKey: blockersAdminKeys.list(filters),
     queryFn: async () => {
-      const { data } = await api.get('/blockers');
+      const { data } = await api.get('/blockers', { params: filters });
       return Array.isArray(data) ? data : [];
     },
     staleTime: 60 * 1000,
@@ -204,15 +204,18 @@ export function useAdminDeleteBlocker() {
 
 const clientsAdminKeys = {
   all: ['admin', 'clients'],
-  list: (search) => [...clientsAdminKeys.all, 'list', search],
+  list: (search, activo) => [...clientsAdminKeys.all, 'list', search, activo ?? 'all'],
 };
 
-export function useAdminClients(search = '') {
+export function useAdminClients(search = '', options = {}) {
+  const { activo } = options;
+
   return useQuery({
-    queryKey: clientsAdminKeys.list(search),
+    queryKey: clientsAdminKeys.list(search, activo),
     queryFn: async () => {
       const params = { limit: 50 };
       if (search) params.search = search;
+      if (activo !== undefined) params.activo = String(activo);
 
       const { data } = await api.get('/auth/clients', { params });
 
@@ -224,6 +227,22 @@ export function useAdminClients(search = '') {
     },
     staleTime: 30 * 1000,
     ...getAutoSyncQueryOptions(),
+  });
+}
+
+export function useAdminUpdateClientStatus() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, activo }) => {
+      const { data } = await api.put(`/auth/clients/${id}/status`, { activo });
+      return data?.client ?? data;
+    },
+    onSuccess: (_, variables) => {
+      invalidateAndSyncGroups(qc, 'clients');
+      notifySuccess(`Cliente ${variables.activo ? 'activado' : 'desactivado'} con éxito`);
+    },
+    onError: (error) => notifyMutationError(error, 'No se ha podido actualizar el estado del cliente'),
   });
 }
 

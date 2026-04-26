@@ -194,15 +194,12 @@
  \begin{center}\bf\sffamily
  
   {\normalsize ESCUELA T{\'E}CNICA SUPERIOR DE INGENIER{\'I}A INFORM{\'A}TICA}\\[1.5cm]
-  {\large Trabajo fin de \@tipo{}}\\[2cm]
   {\large \@titulacion{}}\\[2cm]
   {\large \@titulopro{}}\\[1.75cm]
   {\large Realizado por}\\
   {\large \@autorUno{}}\\
   {\large \@autorDos{}}\\ %%%%% DESCOMENTAR ESTA LINEA PARA QUE APAREZCAN DOS AUTORES
   [1.5cm]
-  {\large Dirigido por}\\
-  {\large \@tutor}\\[1.5cm]
   {\large Departamento}\\
   {\large \@departamento}   
 \end{center}
@@ -244,23 +241,25 @@
     \end{center}
   \end{figure}
 }
+
 %COMANDO PARA INSERTAR UNA CUADRO UTILIZANDO EL FORMATO:
 %1---> especificar numero de columnas y su alineacion ejm: |r||c|c| r=right, c=center,l=left
 %2---> especificar el caption o titulo del cuadro
 %3---> label para hacer referencia a la tabla insertada
 %4---> contenido de la tabla separando columnas con & y filas con \\
 
+% Requiere: \usepackage{float} en el preámbulo
 \newcommand{\cuadro}[4]{
-		\begin{table}[hbtp]
-			\centering
-				\begin{tabular}{#1}
-					\hline
-						#4
-					\hline
-				\end{tabular}
-			\caption{#2}
-			\label{#3}
-		\end{table}
+  \begin{table}[H]
+    \centering
+    \begin{tabular}{#1}
+      \hline
+      #4
+      \hline
+    \end{tabular}
+    \caption{#2}
+    \label{#3}
+  \end{table}
 }
 
 

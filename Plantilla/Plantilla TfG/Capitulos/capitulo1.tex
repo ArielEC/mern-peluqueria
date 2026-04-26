@@ -4,9 +4,9 @@
 
 \section{Contexto y Motivaci\'on}\label{sec:contexto}
 
-La digitalizaci\'on de los peque\~nos negocios locales se ha convertido en una necesidad en la econom\'ia actual. Los salones de belleza, barber\'ias y peluquer\'ias operan mayoritariamente bajo modelos de gesti\'on tradicionales: agenda f\'isica, llamadas telef\'onicas y la memoria del profesional. Sin embargo, los clientes actuales esperan poder reservar en cualquier momento sin realizar llamadas, recibir recordatorios autom\'aticos y gestionar sus citas desde dispositivos m\'oviles.
+La digitalizaci\'on de los peque\~nos negocios locales se ha convertido en una necesidad en la econom\'ia actual. Los salones de belleza, barber\'ias y peluquer\'ias operan mayoritariamente bajo modelos de gesti\'on tradicionales: agenda f\'isica, llamadas telef\'onicas y la memoria del profesional. Sin embargo, los clientes actuales esperan poder reservar en cualquier momento sin realizar llamadas y poder gestionar sus citas fácilmente desde dispositivos m\'oviles.
 
-Este proyecto nace de una necesidad real: la peluquer\'ia familiar de los autores carec\'ia de herramientas digitales adaptadas a su flujo de trabajo. Las soluciones comerciales existentes presentan dos problemas fundamentales: un coste recurrente elevado (entre 200 y 400 euros anuales en suscripciones) y una complejidad excesiva con funcionalidades innecesarias que dificultan la adopci\'on por parte de usuarios no t\'ecnicos.
+Este proyecto nace de una necesidad real: la peluquer\'ia familiar de uno de nosotros carec\'ia de herramientas digitales adaptadas a su flujo de trabajo. Las soluciones comerciales existentes presentan dos problemas fundamentales: un coste recurrente elevado y una complejidad excesiva con funcionalidades innecesarias que dificultan la adopci\'on por parte de usuarios no t\'ecnicos.
 
 La asignatura de Complementos de Bases de Datos ofrece el marco id\'oneo para abordar este reto, ya que el n\'ucleo del sistema reside en el dise\~no e implementaci\'on de una base de datos que soporte eficientemente todas las operaciones del negocio: gesti\'on de citas con control de solapamientos, historial t\'ecnico de clientes, configuraci\'on de horarios y bloqueos temporales.
 
@@ -18,7 +18,7 @@ La gesti\'on tradicional de citas en peque\~nos negocios locales presenta las si
 
 \textbf{Descontrol del historial:} Sin un sistema centralizado, resulta dif\'icil recordar qu\'e servicio se le realiz\'o a un cliente hace meses. Informaci\'on cr\'itica como f\'ormulas de color, preferencias de corte o alergias se pierde o queda dispersa en notas f\'isicas.
 
-\textbf{Falta de m\'etricas:} La ausencia de datos estructurados impide obtener una visi\'on clara del rendimiento del negocio. Preguntas como ``\textquestiondown cu\'ales son los servicios m\'as demandados?'' o ``\textquestiondown cu\'al es la facturaci\'on mensual?'' carecen de respuesta inmediata.
+\textbf{Falta de m\'etricas:} La ausencia de datos estructurados impide obtener una visi\'on clara del rendimiento del negocio. Preguntas como «¿cuáles son los servicios más demandados?» o «¿cuál es la facturación mensual?» carecen de respuesta inmediata.
 
 \textbf{Errores humanos:} La gesti\'on manual es propensa a solapamientos de citas (\textit{overbooking}) o huecos vac\'ios innecesarios, con impacto econ\'omico directo en la rentabilidad del negocio.
 
@@ -71,16 +71,3 @@ JSON Web Token & 9.x & Autenticaci\'on basada en \textit{tokens} \\
 }
 
 Adicionalmente, se emplean bibliotecas complementarias como Radix UI para componentes accesibles, Lucide React para iconograf\'ia, Day.js y date-fns para el manejo de fechas con soporte de zonas horarias, y Axios como cliente HTTP.
-
-\section{Estructura de la Memoria}\label{sec:estructura}
-
-La memoria se organiza de la siguiente forma:
-
-\begin{itemize}
-    \item \textbf{Cap\'itulo 2 --- Dise\~no de la Base de Datos:} Modelo de datos en MongoDB, descripci\'on de las colecciones, \'indices y relaciones entre documentos.
-    \item \textbf{Cap\'itulo 3 --- Implementaci\'on:} Arquitectura del sistema, API REST, l\'ogica de disponibilidad, autenticaci\'on e interfaz de usuario.
-    \item \textbf{Cap\'itulo 4 --- Manual de Usuario:} Gu\'ia de uso del portal de reservas y del panel de administraci\'on.
-    \item \textbf{Cap\'itulo 5 --- Manual de Despliegue:} Instrucciones de instalaci\'on y configuraci\'on del entorno.
-    \item \textbf{Cap\'itulo 6 --- Conclusiones:} Objetivos alcanzados, dificultades encontradas y l\'ineas de trabajo futuro.
-\end{itemize}
-

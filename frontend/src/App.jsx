@@ -8,6 +8,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import BookingPage from '@/pages/BookingPage';
 import BookingConfirmedPage from '@/pages/BookingConfirmedPage';
 import MyAppointmentsPage from '@/pages/MyAppointmentsPage';
+import ProfilePage from '@/pages/ProfilePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
 import AdminCalendarPage from '@/pages/admin/AdminCalendarPage';
@@ -34,6 +35,7 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/book" element={<BookingPage />} />
           <Route path="/appointments" element={<MyAppointmentsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
         {/* Confirmación — layout propio (pantalla enfocada) */}
         <Route path="/booking/confirmed" element={<BookingConfirmedPage />} />

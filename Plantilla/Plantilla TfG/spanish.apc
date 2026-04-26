@@ -123,7 +123,7 @@
 \renewcommand{\BAvailFrom}{Disponible en\ }% Available from
 %% The argument is the date on which it was last checked.
 \renewcommand{\BRetrieved}[1]{Descargado {#1}, de\ }% Retrieved ... from
-\renewcommand{\BRetrievedFrom}{Descargado de\ }%      Retrieved from
+\renewcommand{\BRetrievedFrom}{Obtenido de\ }%      Retrieved from
 \renewcommand{\BMsgPostedTo}{Mensaje colgado en\ }% Message posted to
 %%
 %% Punctuation
