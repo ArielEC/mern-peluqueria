@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   useAdminMonthAppointments,
   useAdminTodayAppointments,
   useAdminWeekAppointments,
 } from '@/hooks/useAdminDashboard';
+import AppointmentDetailModal from '@/components/admin/AppointmentDetailModal';
 import { useSettings } from '@/hooks/useSettings';
 import { formatFullDateInTz, formatTimeInTz } from '@/lib/utils';
 import useAuthStore from '@/stores/authStore';
@@ -77,14 +78,25 @@ function KpiCard({
 }
 
 /* ── appointment row ── */
-function AppointmentRow({ appt, businessTimezone }) {
+function AppointmentRow({ appt, businessTimezone, onOpen }) {
   const clientName = appt.cliente?.nombre || appt.nombreTercero || 'Cliente';
   const profName = appt.profesional?.nombre || '—';
   const serviceName = appt.servicio?.nombre || '—';
   const status = appt.estado || 'confirmada';
 
   return (
-    <tr className="hover:bg-[#f2f3ff]/40 transition-colors">
+    <tr
+      className="cursor-pointer transition-colors hover:bg-[#f2f3ff]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#6b38d4]/35"
+      onClick={() => onOpen(appt)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen(appt);
+        }
+      }}
+      tabIndex={0}
+      aria-label={`Ver detalle de la cita de ${clientName}`}
+    >
       <td className="px-4 sm:px-6 py-4 font-medium text-[#131b2e] tabular-nums">
         {appt.fechaHoraInicio ? formatTimeInTz(appt.fechaHoraInicio, businessTimezone) : '—'}
       </td>
@@ -112,6 +124,7 @@ function AppointmentRow({ appt, businessTimezone }) {
 /* ── page ── */
 export default function AdminDashboardPage() {
   const { user } = useAuthStore();
+  const [detailAppt, setDetailAppt] = useState(null);
   const { data: settings } = useSettings();
   const businessTimezone = settings?.zonaHoraria || 'Europe/Madrid';
   const { data: todayAppts = [], isLoading: loadingToday } = useAdminTodayAppointments(businessTimezone);
@@ -249,7 +262,12 @@ export default function AdminDashboardPage() {
                   </thead>
                   <tbody className="divide-y divide-[#cbc3d7]/10">
                     {todayAppts.map((appt) => (
-                      <AppointmentRow key={appt._id} appt={appt} businessTimezone={businessTimezone} />
+                      <AppointmentRow
+                        key={appt._id}
+                        appt={appt}
+                        businessTimezone={businessTimezone}
+                        onOpen={setDetailAppt}
+                      />
                     ))}
                   </tbody>
                 </table>
@@ -308,6 +326,14 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
+
+      {detailAppt && (
+        <AppointmentDetailModal
+          key={`${detailAppt._id}-${detailAppt.estado}-${detailAppt.updatedAt || detailAppt.fechaHoraInicio}`}
+          appointment={detailAppt}
+          onClose={() => setDetailAppt(null)}
+        />
+      )}
     </div>
   );
 }
