@@ -251,11 +251,11 @@ function TimeSelectBlock({
   const defaultMinuteOption = buildMinuteOptions(slotDurationMinutes)[0] || '00';
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-[0.68rem] font-bold uppercase tracking-wider text-[#494454]">{label}</span>
-      <div className="grid max-w-[11rem] grid-cols-2 gap-2">
+    <div className="flex flex-col items-center gap-1.5 lg:items-start">
+      <span className="text-center text-[0.68rem] font-bold uppercase tracking-wider text-[#494454] lg:text-left">{label}</span>
+      <div className="mx-auto grid max-w-[11rem] grid-cols-2 gap-2">
         <div className="flex flex-col gap-1">
-          <span className="text-[0.62rem] font-bold uppercase tracking-wide text-[#81768f]">Hora</span>
+          <span className="text-center text-[0.62rem] font-bold uppercase tracking-wide text-[#81768f]">Hora</span>
           <select
             value={hour}
             onChange={(event) => {
@@ -294,7 +294,7 @@ function TimeSelectBlock({
         </div>
 
         <div className="flex flex-col gap-1">
-          <span className="text-[0.62rem] font-bold uppercase tracking-wide text-[#81768f]">Minutos</span>
+          <span className="text-center text-[0.62rem] font-bold uppercase tracking-wide text-[#81768f]">Minutos</span>
           <select
             value={minute}
             onChange={(event) => {
@@ -349,7 +349,7 @@ function HorarioEditor({ horario, onChange, error, slotDurationMinutes }) {
         </div>
       )}
 
-      <div className="rounded-lg bg-[#f8f7ff] px-4 py-3 text-[0.76rem] text-[#494454]">
+      <div className="rounded-lg bg-[#f8f7ff] px-4 py-3 text-center text-[0.76rem] text-[#494454] lg:text-left">
         Los minutos siguen el slot configurado del negocio: {buildMinuteOptions(slotDurationMinutes).join(', ')}.
       </div>
 
@@ -376,8 +376,8 @@ function HorarioEditor({ horario, onChange, error, slotDurationMinutes }) {
               : 'border-[#cbc3d7]/20 bg-[#faf8ff]'
               }`}
           >
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
-              <label className="flex w-20 shrink-0 cursor-pointer items-center gap-2">
+            <div className="flex flex-col items-center gap-3 lg:flex-row lg:items-start">
+              <label className="flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 lg:w-20 lg:justify-start">
                 <input
                   type="checkbox"
                   checked={dia.activo}
@@ -390,8 +390,8 @@ function HorarioEditor({ horario, onChange, error, slotDurationMinutes }) {
               </label>
 
               {dia.activo ? (
-                <div className="flex-1 space-y-3">
-                  <div className="grid gap-3 lg:grid-cols-2">
+                <div className="flex w-full flex-1 flex-col items-center space-y-3 lg:items-stretch">
+                  <div className="grid w-full justify-items-center gap-3 lg:grid-cols-2 lg:justify-items-stretch">
                     <TimeSelectBlock
                       label="Inicio jornada"
                       value={dia.inicio}
@@ -406,9 +406,9 @@ function HorarioEditor({ horario, onChange, error, slotDurationMinutes }) {
                     />
                   </div>
 
-                  <div className="rounded-xl bg-[#faf9ff] p-3">
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <span className="text-[0.72rem] font-bold uppercase tracking-[0.16em] text-[#81768f]">
+                  <div className="w-full rounded-xl bg-[#faf9ff] p-3">
+                    <div className="mb-2 flex flex-col items-center justify-between gap-3 lg:flex-row">
+                      <span className="text-center text-[0.72rem] font-bold uppercase tracking-[0.16em] text-[#81768f] lg:text-left">
                         Descanso opcional
                       </span>
                       <button
@@ -426,7 +426,7 @@ function HorarioEditor({ horario, onChange, error, slotDurationMinutes }) {
                         Sin descanso
                       </button>
                     </div>
-                    <div className="grid gap-3 lg:grid-cols-2">
+                    <div className="grid w-full justify-items-center gap-3 lg:grid-cols-2 lg:justify-items-stretch">
                       <TimeSelectBlock
                         label="Inicio descanso"
                         value={dia.descansoInicio}
@@ -447,7 +447,7 @@ function HorarioEditor({ horario, onChange, error, slotDurationMinutes }) {
                   </div>
                 </div>
               ) : (
-                <span className="text-[0.75rem] italic text-[#cbc3d7]">No trabaja</span>
+                <span className="text-center text-[0.75rem] italic text-[#cbc3d7]">No trabaja</span>
               )}
             </div>
           </div>
