@@ -11,7 +11,7 @@ import {
   CalendarCheck, ArrowRight, ArrowLeft, Check, Scissors,
 } from 'lucide-react';
 import { useServices } from '@/hooks/useServices';
-import { useAvailability } from '@/hooks/useAvailability';
+import { useAvailability, useAvailabilityDates } from '@/hooks/useAvailability';
 import { useCreateAppointment } from '@/hooks/useAppointments';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useSettings } from '@/hooks/useSettings';
@@ -127,8 +127,15 @@ function Stepper({ currentStep }) {
 
 const DIAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
-function MiniCalendar({ selected, onSelect, maxDays = 30, nonWorkingDays = [] }) {
-  const [viewDate, setViewDate] = useState(startOfMonth(new Date()));
+function MiniCalendar({
+  selected,
+  onSelect,
+  maxDays = 30,
+  nonWorkingDays = [],
+  disabledDateSet = new Set(),
+  viewDate,
+  onViewDateChange,
+}) {
 
   const today = startOfDay(new Date());
   const maxDate = addDays(today, maxDays);
@@ -139,8 +146,8 @@ function MiniCalendar({ selected, onSelect, maxDays = 30, nonWorkingDays = [] })
   // Padding: Monday = 0, ..., Sunday = 6
   const firstDayOfWeek = (getDay(monthStart) + 6) % 7; // convert Sun=0 to Mon=0
 
-  const prevMonth = () => setViewDate((d) => subMonths(d, 1));
-  const nextMonth = () => setViewDate((d) => addMonths(d, 1));
+  const prevMonth = () => onViewDateChange(subMonths(viewDate, 1));
+  const nextMonth = () => onViewDateChange(addMonths(viewDate, 1));
 
   const isPrevDisabled = isBefore(endOfMonth(subMonths(viewDate, 1)), today);
   const isNextDisabled = isBefore(maxDate, startOfMonth(addMonths(viewDate, 1)));
@@ -189,9 +196,10 @@ function MiniCalendar({ selected, onSelect, maxDays = 30, nonWorkingDays = [] })
         {days.map((day) => {
           const isPast = isBefore(day, today);
           const isTooFar = isBefore(maxDate, day);
+          const isUnavailableDate = disabledDateSet.has(format(day, 'yyyy-MM-dd'));
           // getDay(): 0=domingo, 1=lunes, ..., 6=sábado
           const isNonWorking = nonWorkingDays.includes(getDay(day));
-          const disabled = isPast || isTooFar || isNonWorking;
+          const disabled = isPast || isTooFar || isNonWorking || isUnavailableDate;
           const isSelected = selected && isSameDay(day, selected);
           const isCurrentDay = isToday(day);
 
@@ -403,6 +411,48 @@ function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSe
     businessTimezone
   );
   const [filterProfesional, setFilterProfesional] = useState('');
+  const [calendarViewDate, setCalendarViewDate] = useState(() => startOfMonth(selectedDate || new Date()));
+  const today = startOfDay(new Date());
+  const maxDate = addDays(today, maxDays);
+  const monthStart = startOfMonth(calendarViewDate);
+  const monthEnd = endOfMonth(calendarViewDate);
+  const visibleMonthDateStrings = useMemo(() => {
+    const rangeStart = monthStart < today ? today : monthStart;
+    const rangeEnd = monthEnd > maxDate ? maxDate : monthEnd;
+
+    if (rangeStart > rangeEnd) return [];
+
+    return eachDayOfInterval({ start: rangeStart, end: rangeEnd }).map((day) => format(day, 'yyyy-MM-dd'));
+  }, [maxDate, monthEnd, monthStart, today]);
+  const { byDate: availabilityByDate } = useAvailabilityDates(
+    visibleMonthDateStrings,
+    selectedService?._id,
+    '',
+    businessTimezone
+  );
+  const disabledDateSet = useMemo(() => {
+    const disabledDates = new Set();
+
+    visibleMonthDateStrings.forEach((dateKey) => {
+      const query = availabilityByDate.get(dateKey);
+
+      if (query?.status === 'success' && (query.data?.totalSlots ?? query.data?.slots?.length ?? 0) === 0) {
+        disabledDates.add(dateKey);
+      }
+    });
+
+    return disabledDates;
+  }, [availabilityByDate, visibleMonthDateStrings]);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+
+    const selectedDateKey = format(selectedDate, 'yyyy-MM-dd');
+    if (!disabledDateSet.has(selectedDateKey)) return;
+
+    onSelectSlot(null);
+    onSelectDate(null);
+  }, [disabledDateSet, onSelectDate, onSelectSlot, selectedDate]);
 
   const allSlots = useMemo(() => availData?.slots ?? [], [availData]);
 
@@ -438,7 +488,15 @@ function Step2({ selectedService, selectedDate, onSelectDate, selectedSlot, onSe
             <p className="text-muted-foreground text-sm font-medium mt-1">Elige el día de tu cita.</p>
           </div>
 
-          <MiniCalendar selected={selectedDate} onSelect={onSelectDate} maxDays={maxDays} nonWorkingDays={nonWorkingDays} />
+          <MiniCalendar
+            selected={selectedDate}
+            onSelect={onSelectDate}
+            maxDays={maxDays}
+            nonWorkingDays={nonWorkingDays}
+            disabledDateSet={disabledDateSet}
+            viewDate={calendarViewDate}
+            onViewDateChange={setCalendarViewDate}
+          />
 
           {/* Currently selected */}
           {selectedDate && (

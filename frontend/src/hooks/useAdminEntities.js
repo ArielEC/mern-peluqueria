@@ -139,14 +139,14 @@ export function useAdminDeleteProfessional() {
 
 const blockersAdminKeys = {
   all: ['admin', 'blockers'],
-  list: () => [...blockersAdminKeys.all, 'list'],
+  list: (filters = {}) => [...blockersAdminKeys.all, 'list', filters],
 };
 
-export function useAdminBlockers() {
+export function useAdminBlockers(filters = {}) {
   return useQuery({
-    queryKey: blockersAdminKeys.list(),
+    queryKey: blockersAdminKeys.list(filters),
     queryFn: async () => {
-      const { data } = await api.get('/blockers');
+      const { data } = await api.get('/blockers', { params: filters });
       return Array.isArray(data) ? data : [];
     },
     staleTime: 60 * 1000,
